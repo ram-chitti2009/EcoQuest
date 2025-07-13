@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
+import { NextRequest, NextResponse } from 'next/server';
 
-const PUBLIC_PATHS = ['/', '/login', '/signup', '/dashboard'];
+const PUBLIC_PATHS = ['/', '/login', '/signup', '/dashboard', '/landingPage'];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -38,7 +38,7 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Protect everything except /, /login, /signup, and static/image assets
-    '/((?!_next/static|_next/image|favicon.ico|login|signup).*)',
+    // Protect everything except /, /login, /signup, /landingPage, and static/image assets
+    '/((?!_next/static|_next/image|favicon.ico|login|signup|landingPage).*)',
   ],
 };

@@ -504,7 +504,7 @@ const SideBar = ()=>{
             console.error('Logout error:', error.message);
         } else {
             // Redirect to home page
-            window.location.href = '/';
+            window.location.href = '/landingPage';
         }
     }
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Fragment"], {
@@ -727,7 +727,7 @@ const SideBar = ()=>{
                                 onClick: handleLogout,
                                 icon: LogOutIcon,
                                 label: "Log Out",
-                                href: "#"
+                                href: "/landingPage"
                             }, void 0, false, {
                                 fileName: "[project]/src/app/components/Sidebar.tsx",
                                 lineNumber: 297,

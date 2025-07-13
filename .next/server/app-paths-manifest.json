@@ -1,5 +1,5 @@
 {
-  "/dashboard/page": "app/dashboard/page.js",
-  "/page": "app/page.js",
-  "/roadmap-builder/page": "app/roadmap-builder/page.js"
+  "/favicon.ico/route": "app/favicon.ico/route.js",
+  "/landingPage/page": "app/landingPage/page.js",
+  "/page": "app/page.js"
 }
