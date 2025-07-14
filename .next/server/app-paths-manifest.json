@@ -1,5 +1,10 @@
 {
+  "/_not-found/page": "app/_not-found/page.js",
+  "/dashboard/page": "app/dashboard/page.js",
+  "/ec-db/page": "app/ec-db/page.js",
   "/favicon.ico/route": "app/favicon.ico/route.js",
   "/landingPage/page": "app/landingPage/page.js",
-  "/page": "app/page.js"
+  "/login/page": "app/login/page.js",
+  "/page": "app/page.js",
+  "/roadmap-builder/page": "app/roadmap-builder/page.js"
 }

@@ -1,8 +1,8 @@
 "use client"
 
-import { ArrowRight, Award, Bot, CalendarCheck, MapPin, Sparkles, Zap } from "lucide-react"
+import { ArrowRight, Award, Bot, CalendarCheck, Camera, CheckCircle, MapPin, Sparkles, Users, Zap } from "lucide-react"
 import Image from "next/image"
-
+import Link from "next/link"
 import { useEffect, useRef, useState } from "react"
 import { Button } from "../ui/Button"
 import { Card, CardContent } from "../ui/Card"
@@ -39,18 +39,24 @@ export default function LandingPage() {
 
   // Intersection observers for each section
   const heroSection = useIntersectionObserver()
+  const howItWorksSection = useIntersectionObserver()
   const featuresSection = useIntersectionObserver()
   const testimonialSection = useIntersectionObserver()
   const ctaSection = useIntersectionObserver()
 
   // Refs for smooth scroll
   const heroRef = useRef<HTMLDivElement>(null)
+  const howItWorksRef = useRef<HTMLDivElement>(null)
   const featuresRef = useRef<HTMLDivElement>(null)
 
   // Scroll handlers
   const scrollToHero = (e?: React.MouseEvent) => {
     if (e) e.preventDefault()
     heroRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+  const scrollToHowItWorks = (e?: React.MouseEvent) => {
+    if (e) e.preventDefault()
+    howItWorksRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
   const scrollToFeatures = (e?: React.MouseEvent) => {
     if (e) e.preventDefault()
@@ -90,39 +96,47 @@ export default function LandingPage() {
             <span className="font-semibold text-gray-900 text-lg md:text-xl">EcoQuest</span>
           </div>
           {/* Navigation + Login Grouped */}
-          <div className="hidden md:flex items-center space-x-8 mr-0">
+          <div className="hidden md:flex items-center space-x-8 -mr-16">
             <a href="#hero" onClick={scrollToHero} className="text-gray-900 font-bold hover:text-green-700 transition-colors duration-300 cursor-pointer">
               About
+            </a>
+            <a href="#how-it-works" onClick={scrollToHowItWorks} className="text-gray-900 font-bold hover:text-green-700 transition-colors duration-300 cursor-pointer">
+              How It Works
             </a>
             <a href="#features" onClick={scrollToFeatures} className="text-gray-900 font-bold hover:text-green-700 transition-colors duration-300 cursor-pointer">
               Features
             </a>
-            <Button
-              size="lg"
-              className="bg-green-600 hover:bg-green-700 px-6 md:px-8 py-2 ml-4 transition-all duration-300 hover:scale-105"
-            >
-              <span className="hidden sm:inline">Login</span>
-              <span className="inline sm:hidden">
-                <ArrowRight className="w-5 h-5" />
-              </span>
-            </Button>
+            <Link href="/login">
+                <Button
+                  size="lg"
+                  className="bg-green-600 hover:bg-green-700 px-6 md:px-8 py-2 ml-4 transition-all duration-300 hover:scale-105"
+                >
+                  <span className="hidden sm:inline">Login</span>
+                  <span className="inline sm:hidden">
+                    <ArrowRight className="w-5 h-5" />
+                  </span>
+                </Button>
+            </Link>
           </div>
         </div>
         {/* Mobile Nav: Show links and login as row below header */}
-        <div className="flex md:hidden items-center justify-center gap-6 border-t border-green-100 py-2 bg-white">
-          <a href="#hero" onClick={scrollToHero} className="text-gray-900 font-bold hover:text-green-700 text-base transition-colors duration-300 cursor-pointer">
+        <div className="flex md:hidden items-center justify-center gap-4 border-t border-green-100 py-2 bg-white text-sm">
+          <a href="#hero" onClick={scrollToHero} className="text-gray-900 font-bold hover:text-green-700 transition-colors duration-300 cursor-pointer">
             About
           </a>
-          <a href="#features" onClick={scrollToFeatures} className="text-gray-900 font-bold hover:text-green-700 text-base transition-colors duration-300 cursor-pointer">
+          <a href="#how-it-works" onClick={scrollToHowItWorks} className="text-gray-900 font-bold hover:text-green-700 transition-colors duration-300 cursor-pointer">
+            How It Works
+          </a>
+          <a href="#features" onClick={scrollToFeatures} className="text-gray-900 font-bold hover:text-green-700 transition-colors duration-300 cursor-pointer">
             Features
           </a>
           <Button
             size="sm"
-            className="bg-green-600 hover:bg-green-700 px-4 py-2 text-white text-base transition-all duration-300 hover:scale-105"
+            className="bg-green-600 hover:bg-green-700 px-4 py-2 text-white transition-all duration-300 hover:scale-105"
           >
             <span className="hidden xs:inline">Login</span>
             <span className="inline xs:hidden">
-              <ArrowRight className="w-5 h-5" />
+              <ArrowRight className="w-4 h-4" />
             </span>
           </Button>
         </div>
@@ -161,7 +175,7 @@ export default function LandingPage() {
               rewards, and make a real difference in your community.
             </p>
 
-            {/* Hero Image with enhanced animation */}
+            {/* Hero Image */}
             <div className={`relative max-w-3xl mx-auto transition-all duration-1200 delay-800 ${
               heroSection.isIntersecting ? "opacity-100 scale-100 translate-y-0" : "opacity-0 scale-95 translate-y-12"
             }`}>
@@ -174,7 +188,7 @@ export default function LandingPage() {
                   className="w-full h-auto rounded-2xl"
                 />
 
-                {/* Enhanced Floating Stats */}
+                {/* Floating Stats */}
                 <div className={`absolute -top-4 -right-4 bg-white rounded-2xl p-4 shadow-xl transition-all duration-1000 delay-1200 ${
                   heroSection.isIntersecting ? "opacity-100 translate-x-0 translate-y-0" : "opacity-0 translate-x-8 -translate-y-8"
                 }`}>
@@ -209,7 +223,157 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Enhanced Features Section with section transition */}
+      {/* How It Works Section */}
+      <section 
+        ref={el => { howItWorksSection.elementRef.current = el as HTMLDivElement; howItWorksRef.current = el as HTMLDivElement }}
+        id="how-it-works"
+        className={`py-20 bg-gradient-to-br from-gray-50 to-green-50 relative transition-all duration-1000 ${
+          howItWorksSection.isIntersecting ? "opacity-100" : "opacity-0"
+        }`}
+      >
+        <div className="container mx-auto px-6">
+          <div className="max-w-6xl mx-auto">
+            {/* Section Header */}
+            <div className={`text-center mb-16 transition-all duration-1000 delay-200 ${
+              howItWorksSection.isIntersecting ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+            }`}>
+              <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+                How <span className="text-green-600">EcoQuest</span> Works
+              </h2>
+              <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+                Making environmental impact simple and rewarding in just three steps
+              </p>
+            </div>
+
+            {/* Steps */}
+            <div className="grid md:grid-cols-3 gap-12 lg:gap-16">
+              {/* Step 1: Spot & Report */}
+              <div className={`text-center transition-all duration-1000 delay-400 ${
+                howItWorksSection.isIntersecting ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-12 scale-95"
+              }`}>
+                <div className="relative mb-8">
+                  {/* Step Number */}
+                  <div className="absolute -top-4 -left-4 w-12 h-12 bg-green-500 text-white rounded-full flex items-center justify-center font-bold text-lg shadow-lg z-10">
+                    1
+                  </div>
+                  
+                  {/* Visual Card */}
+                  <div className="bg-white rounded-3xl p-8 shadow-xl hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 border-4 border-green-100">
+                    <div className="w-20 h-20 bg-green-100 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:bg-green-500 transition-all duration-300">
+                      <Camera className="w-10 h-10 text-green-600" />
+                    </div>
+                    
+                    {/* Mock Phone Screen */}
+                    <div className="bg-gray-900 rounded-2xl p-4 mx-auto max-w-48">
+                      <div className="bg-green-50 rounded-xl p-4 space-y-3">
+                        <div className="w-full h-24 bg-green-200 rounded-lg flex items-center justify-center">
+                          <Camera className="w-8 h-8 text-green-700" />
+                        </div>
+                        <div className="space-y-2">
+                          <div className="h-2 bg-green-300 rounded w-3/4"></div>
+                          <div className="h-2 bg-green-200 rounded w-1/2"></div>
+                        </div>
+                        <div className="w-full h-8 bg-green-500 rounded-lg"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <h3 className="text-2xl font-bold text-gray-900 mb-4">Spot & Report</h3>
+                <p className="text-gray-600 leading-relaxed">
+                  See litter or environmental issues? Snap a photo, drop a pin on the map, and report it instantly. 
+                  Your report helps build a real-time map of environmental concerns in your community.
+                </p>
+              </div>
+
+              {/* Step 2: Plan & Join */}
+              <div className={`text-center transition-all duration-1000 delay-600 ${
+                howItWorksSection.isIntersecting ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-12 scale-95"
+              }`}>
+                <div className="relative mb-8">
+                  {/* Step Number */}
+                  <div className="absolute -top-4 -left-4 w-12 h-12 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold text-lg shadow-lg z-10">
+                    2
+                  </div>
+                  
+                  {/* Visual Card */}
+                  <div className="bg-white rounded-3xl p-8 shadow-xl hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 border-4 border-blue-100">
+                    <div className="w-20 h-20 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                      <Users className="w-10 h-10 text-blue-600" />
+                    </div>
+                    
+                    {/* Mock Map Interface */}
+                    <div className="bg-gray-900 rounded-2xl p-4 mx-auto max-w-48">
+                      <div className="bg-blue-50 rounded-xl p-4 space-y-3">
+                        <div className="w-full h-24 bg-blue-200 rounded-lg relative">
+                          <div className="absolute top-2 left-2 w-3 h-3 bg-red-500 rounded-full"></div>
+                          <div className="absolute top-4 right-3 w-3 h-3 bg-red-500 rounded-full"></div>
+                          <div className="absolute bottom-3 left-1/2 w-4 h-4 bg-blue-600 rounded-full transform -translate-x-1/2"></div>
+                        </div>
+                        <div className="flex space-x-2">
+                          <div className="flex-1 h-6 bg-blue-300 rounded"></div>
+                          <div className="w-6 h-6 bg-blue-500 rounded"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <h3 className="text-2xl font-bold text-gray-900 mb-4">Plan & Join</h3>
+                <p className="text-gray-600 leading-relaxed">
+                  Schedule cleanup events or join existing ones near you. Invite friends, coordinate with your school, 
+                  and see exactly where help is needed most on our interactive map.
+                </p>
+              </div>
+
+              {/* Step 3: Clean & Compete */}
+              <div className={`text-center transition-all duration-1000 delay-800 ${
+                howItWorksSection.isIntersecting ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-12 scale-95"
+              }`}>
+                <div className="relative mb-8">
+                  {/* Step Number */}
+                  <div className="absolute -top-4 -left-4 w-12 h-12 bg-purple-500 text-white rounded-full flex items-center justify-center font-bold text-lg shadow-lg z-10">
+                    3
+                  </div>
+                  
+                  {/* Visual Card */}
+                  <div className="bg-white rounded-3xl p-8 shadow-xl hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 border-4 border-purple-100">
+                    <div className="w-20 h-20 bg-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                      <CheckCircle className="w-10 h-10 text-purple-600" />
+                    </div>
+                    
+                    {/* Mock Achievement Screen */}
+                    <div className="bg-gray-900 rounded-2xl p-4 mx-auto max-w-48">
+                      <div className="bg-purple-50 rounded-xl p-4 space-y-3">
+                        <div className="w-full h-16 bg-gradient-to-r from-purple-200 to-purple-300 rounded-lg flex items-center justify-center">
+                          <div className="text-purple-700 font-bold text-lg">+50 XP</div>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="h-3 bg-purple-300 rounded w-full"></div>
+                          <div className="h-2 bg-purple-200 rounded w-2/3"></div>
+                        </div>
+                        <div className="flex space-x-1">
+                          <div className="w-6 h-6 bg-yellow-400 rounded-full"></div>
+                          <div className="w-6 h-6 bg-yellow-400 rounded-full"></div>
+                          <div className="w-6 h-6 bg-yellow-400 rounded-full"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <h3 className="text-2xl font-bold text-gray-900 mb-4">Clean & Compete</h3>
+                <p className="text-gray-600 leading-relaxed">
+                  Take action and track your impact! Log items collected, earn XP, unlock achievements, 
+                  and climb the leaderboard. See your real environmental impact grow over time.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Features Section with section transition */}
       <section 
         ref={el => { featuresSection.elementRef.current = el as HTMLDivElement; featuresRef.current = el as HTMLDivElement }}
         id="features"
@@ -310,7 +474,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Enhanced Testimonial Section */}
+      {/* Testimonial Section */}
       <section 
         ref={testimonialSection.elementRef}
         className={`py-16 bg-gradient-to-br from-green-50 to-blue-50 relative transition-all duration-1200 ${
@@ -351,7 +515,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Enhanced Final CTA Section */}
+      {/* Final CTA Section */}
       <section 
         ref={ctaSection.elementRef}
         className={`bg-gradient-to-r from-green-500 to-green-600 py-20 relative overflow-hidden transition-all duration-1200 ${
@@ -392,13 +556,13 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Enhanced Footer */}
+      {/* Footer */}
       <footer className={`bg-gray-900 py-8 transition-all duration-1000 ${
         isLoaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
       }`}>
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2 -ml-24">
               <div className="w-16 h-16 relative bg-white rounded-full shadow-lg flex items-center justify-center p-2 transition-transform duration-300 hover:scale-110">
                 <Image
                   src="/Screenshot%202025-07-12%20172658.png"
@@ -416,7 +580,7 @@ export default function LandingPage() {
         </div>
       </footer>
 
-      {/* Enhanced Background Elements with parallax effect */}
+      {/* parallax effect */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className={`absolute top-1/4 left-1/4 w-64 h-64 bg-green-200/20 rounded-full blur-3xl transition-all duration-3000 ${
           isLoaded ? "animate-pulse opacity-100" : "opacity-0"

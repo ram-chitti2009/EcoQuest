@@ -1,9 +1,10 @@
 "use client";
 import { createClient } from '@/utils/supabase/client';
-import Image from 'next/image'
-import Link from 'next/link'
-import { useState } from 'react'
+import { ArrowRight } from "lucide-react";
+import Image from 'next/image';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 export default function SignInPage() {
   const supabase = createClient();
@@ -11,6 +12,11 @@ export default function SignInPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [message, setMessage] = useState<{ type: 'error' | 'success', text: string } | null>(null)
+  const [isLoaded, setIsLoaded] = useState(false)
+
+  useEffect(() => {
+    setIsLoaded(true)
+  }, [])
 
   const handleGoogle = async () => {
     console.log("Google login attempted");
@@ -52,51 +58,82 @@ export default function SignInPage() {
   };
 
   return (
-    <div className="min-h-screen relative overflow-hidden bg-cover bg-center" style={{ backgroundImage: 'url(/loginPageBackground.png)' }}>
-      {/* Navigation Header */}
-      <nav className="relative z-10 flex items-center justify-between px-8 py-6 bg-[#1A3A43]">
-        <div className="flex items-center space-x-2">
-          <div className="w-10 h-10 relative">
-            <Image
-              src="/7af5f81692dac3589195d75e0f337f9c427252c1.png"
-              alt="SlatePath Logo"
-              layout="fill"
-              objectFit="contain"
-              className="rounded-md"
-            />
+    <div className={`min-h-screen relative overflow-hidden bg-cover bg-center bg-no-repeat transition-all duration-1000 ease-out ${
+      isLoaded ? "opacity-100" : "opacity-0"
+    }`} style={{ backgroundImage: 'url(/76080.png)' }}>
+      {/* Responsive Header */}
+      <header
+        className={`border-b-4 border-green-800 relative bg-white transition-all duration-1000 z-30 ${
+          isLoaded ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-full"
+        }`}
+      >
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between md:pl-0 md:pr-4">
+          {/* Logo and Brand */}
+          <div className="flex items-center space-x-2 -ml-4 md:-ml-20">
+            <div className="w-12 h-12 md:w-16 md:h-16 relative bg-white rounded-full shadow-lg flex items-center justify-center p-2 transition-transform duration-300 hover:scale-110">
+              <Image
+                src="/Screenshot%202025-07-12%20172658.png"
+                alt="EcoQuest Logo"
+                layout="fill"
+                objectFit="contain"
+                className="rounded-full"
+                priority
+              />
+            </div>
+            <span className="font-semibold text-gray-900 text-lg md:text-xl">EcoQuest</span>
           </div>
-          <span className="text-white font-semibold text-lg">SlatePath</span>
+          {/* Navigation + Login Grouped */}
+          <div className="hidden md:flex items-center space-x-8 -mr-16">
+            <Link href="/" className="text-gray-900 font-bold hover:text-green-700 transition-colors duration-300 cursor-pointer">
+              Home
+            </Link>
+            <Link href="/#features" className="text-gray-900 font-bold hover:text-green-700 transition-colors duration-300 cursor-pointer">
+              Features
+            </Link>
+            <Link href="/signup">
+              <button className="bg-green-600 hover:bg-green-700 text-white px-6 md:px-8 py-2 ml-4 rounded-lg transition-all duration-300 hover:scale-105">
+                <span className="hidden sm:inline">Sign Up</span>
+                <span className="inline sm:hidden">
+                  <ArrowRight className="w-5 h-5" />
+                </span>
+              </button>
+            </Link>
+          </div>
         </div>
-        <div className="hidden md:flex items-center space-x-6 ml-auto mr-20">
-          <a href="#" className="text-white hover:text-teal-200 transition-colors">
+        {/* Mobile Nav */}
+        <div className="flex md:hidden items-center justify-center gap-6 border-t border-green-100 py-2 bg-white">
+          <Link href="/" className="text-gray-900 font-bold hover:text-green-700 text-base transition-colors duration-300 cursor-pointer">
             Home
-          </a>
-          <a href="#" className="text-white hover:text-teal-200 transition-colors">
-            Highschool
-          </a>
-          <a href="#" className="text-white hover:text-teal-200 transition-colors mr-0">
-            College
-          </a>
+          </Link>
+          <Link href="/#features" className="text-gray-900 font-bold hover:text-green-700 text-base transition-colors duration-300 cursor-pointer">
+            Features
+          </Link>
+          <Link href="/signup">
+            <button className="bg-green-600 hover:bg-green-700 px-4 py-2 text-white text-base rounded-lg transition-all duration-300 hover:scale-105">
+              <span className="hidden xs:inline">Sign Up</span>
+              <span className="inline xs:hidden">
+                <ArrowRight className="w-5 h-5" />
+              </span>
+            </button>
+          </Link>
         </div>
-        <Link
-          href="/login"
-          className="bg-teal-600 hover:bg-teal-500 text-white px-6 py-2 rounded-lg transition-colors"
-        >
-          Login
-        </Link>
-      </nav>
+      </header>
+
       {/* Login Form */}
-      <div className="relative z-10 flex items-center justify-center min-h-[calc(100vh-100px)] px-4">
+      <div className={`relative z-10 flex items-center justify-center min-h-[calc(100vh-100px)] px-4 transition-all duration-1200 delay-300 ${
+        isLoaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+      }`}>
         <div className="bg-gray-100 rounded-3xl p-8 w-full max-w-md shadow-2xl shadow-black/30">
           {/* Logo */}
-          <div className="flex justify-center mb-6">
-            <div className="w-12 h-12 relative">
+          <div className="flex justify-center mb-8">
+            <div className="w-20 h-20 relative drop-shadow-xl">
                 <Image
-                    src="/7af5f81692dac3589195d75e0f337f9c427252c1.png"
-                    alt="SlatePath Logo"
+                    src="/Screenshot%202025-07-12%20172658.png"
+                    alt="EcoQuest Logo"
                     layout="fill"
                     objectFit="contain"
-                    className="rounded-md"
+                    className="rounded-full"
+                    priority
                 />
             </div>
           </div>
@@ -124,7 +161,7 @@ export default function SignInPage() {
                 onChange={e => setPassword(e.target.value)}
               />
             </div>
-            <button type="submit" className="w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold py-3 rounded-full transition-colors shadow-md shadow-black/20">
+            <button type="submit" className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-full transition-colors shadow-md shadow-black/20">
               Login
             </button>
           </form>
