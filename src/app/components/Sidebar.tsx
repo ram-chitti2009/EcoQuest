@@ -1,26 +1,32 @@
-"use client";
-
+"use client"
+import { type ClassValue, clsx } from "clsx"
 import {
+  ChevronLeft,
+  ChevronRight,
   CircleArrowUp,
   GraduationCap,
   Home,
-  LucideProps,
+  type LucideIcon,
   Menu,
   MessageCircleMore,
   Search,
   Settings,
   User,
-} from "lucide-react";
-import { useRouter } from "next/navigation";
-import { forwardRef, useEffect, useState } from "react";
-import { createClient } from "../../utils/supabase/client";
-import { NavItem } from "./NavItem";
+  X,
+} from "lucide-react"
+import { useRouter } from "next/navigation"
+import { forwardRef, useEffect, useState } from "react"
+import { twMerge } from "tailwind-merge"
+import { createClient } from "../../utils/supabase/client"
+import { NavItem } from "./NavItem"
 
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}
 
 
 // === ICON COMPONENTS ===
-
-const NetworkIcon = forwardRef<SVGSVGElement, LucideProps>((props, ref) => (
+const NetworkIcon = forwardRef<SVGSVGElement, React.ComponentProps<LucideIcon>>((props, ref) => (
   <svg
     ref={ref}
     width="24"
@@ -43,10 +49,7 @@ const NetworkIcon = forwardRef<SVGSVGElement, LucideProps>((props, ref) => (
       d="M4.36 19.61C5.94 19.61 7.22 18.33 7.22 16.75C7.22 15.17 5.94 13.89 4.36 13.89C2.78 13.89 1.5 15.17 1.5 16.75C1.5 18.33 2.78 19.61 4.36 19.61Z"
       strokeWidth="2"
     />
-    <path
-      d="M6 19.09C7.6 20.66 9.76 21.53 12 21.53C14.24 21.53 16.4 20.66 18 19.09"
-      strokeWidth="2"
-    />
+    <path d="M6 19.09C7.6 20.66 9.76 21.53 12 21.53C14.24 21.53 16.4 20.66 18 19.09" strokeWidth="2" />
     <path
       d="M14.82 4.82C16.51 5.4 17.97 6.5 19 7.95C20.04 9.41 20.59 11.15 20.59 12.93C20.59 13.3 20.56 13.67 20.51 14.03"
       strokeWidth="2"
@@ -56,42 +59,37 @@ const NetworkIcon = forwardRef<SVGSVGElement, LucideProps>((props, ref) => (
       strokeWidth="2"
     />
   </svg>
-));
-NetworkIcon.displayName = "NetworkIcon";
+))
+NetworkIcon.displayName = "NetworkIcon"
 
-const ScholarshipDatabaseIcon = forwardRef<SVGSVGElement, LucideProps>(
-  (props, ref) => (
-    <svg
-      ref={ref}
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      xmlns="http://www.w3.org/2000/svg"
-      {...props}
-    >
-      <path
-        d="M12 12.98L12.6 14.24L13.95 14.44L12.98 15.42L13.21 16.8L12 16.15L10.79 16.8L11.02 15.42L10.05 14.44L11.4 14.24L12 12.98Z"
-        strokeWidth="2"
-      />
-      <path
-        d="M8.17 10.11C9.35 9.49 10.66 9.15 12 9.11C13.34 9.15 14.65 9.49 15.83 10.11"
-        strokeWidth="2"
-      />
-      <path d="M18.69 5.33H5.3V20.63H18.69V5.33Z" strokeWidth="2" />
-      <path d="M3.39 5.33H20.61" strokeWidth="2" />
-      <path d="M13.91 23.5V20.63" strokeWidth="2" />
-      <path d="M17.74 23.5V20.63" strokeWidth="2" />
-      <path d="M10.09 23.5V20.63" strokeWidth="2" />
-      <path d="M6.26 23.5V20.63" strokeWidth="2" />
-      <path d="M17.74 5.33H6.26L12 1.5L17.74 5.33Z" strokeWidth="2" />
-    </svg>
-  )
-);
-ScholarshipDatabaseIcon.displayName = "ScholarshipDatabaseIcon";
+const ScholarshipDatabaseIcon = forwardRef<SVGSVGElement, React.ComponentProps<LucideIcon>>((props, ref) => (
+  <svg
+    ref={ref}
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <path
+      d="M12 12.98L12.6 14.24L13.95 14.44L12.98 15.42L13.21 16.8L12 16.15L10.79 16.8L11.02 15.42L10.05 14.44L11.4 14.24L12 12.98Z"
+      strokeWidth="2"
+    />
+    <path d="M8.17 10.11C9.35 9.49 10.66 9.15 12 9.11C13.34 9.15 14.65 9.49 15.83 10.11" strokeWidth="2" />
+    <path d="M18.69 5.33H5.3V20.63H18.69V5.33Z" strokeWidth="2" />
+    <path d="M3.39 5.33H20.61" strokeWidth="2" />
+    <path d="M13.91 23.5V20.63" strokeWidth="2" />
+    <path d="M17.74 23.5V20.63" strokeWidth="2" />
+    <path d="M10.09 23.5V20.63" strokeWidth="2" />
+    <path d="M6.26 23.5V20.63" strokeWidth="2" />
+    <path d="M17.74 5.33H6.26L12 1.5L17.74 5.33Z" strokeWidth="2" />
+  </svg>
+))
+ScholarshipDatabaseIcon.displayName = "ScholarshipDatabaseIcon"
 
-const TestPrepIcon = forwardRef<SVGSVGElement, LucideProps>((props, ref) => (
+const TestPrepIcon = forwardRef<SVGSVGElement, React.ComponentProps<LucideIcon>>((props, ref) => (
   <svg
     ref={ref}
     width="24"
@@ -114,10 +112,10 @@ const TestPrepIcon = forwardRef<SVGSVGElement, LucideProps>((props, ref) => (
     <path d="M4.36 14.86H15.82" strokeWidth="2" />
     <path d="M4.36 18.68H15.82" strokeWidth="2" />
   </svg>
-));
-TestPrepIcon.displayName = "TestPrepIcon";
+))
+TestPrepIcon.displayName = "TestPrepIcon"
 
-const ResearchHub = forwardRef<SVGSVGElement, LucideProps>((props, ref) => (
+const ResearchHub = forwardRef<SVGSVGElement, React.ComponentProps<LucideIcon>>((props, ref) => (
   <svg
     ref={ref}
     width="24"
@@ -134,41 +132,39 @@ const ResearchHub = forwardRef<SVGSVGElement, LucideProps>((props, ref) => (
     <path d="M9.14 10.09H18.68" strokeWidth="2" />
     <path d="M9.14 13.91H14.86" strokeWidth="2" />
   </svg>
-));
-ResearchHub.displayName = "ResearchHub";
+))
+ResearchHub.displayName = "ResearchHub"
 
-const CalendarTrackerIcon = forwardRef<SVGSVGElement, LucideProps>(
-  (props, ref) => (
-    <svg
-      ref={ref}
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      xmlns="http://www.w3.org/2000/svg"
-      {...props}
-    >
-      <path d="M22.52 3.37H1.48V8.15H22.52V3.37Z" strokeWidth="2" />
-      <path d="M22.52 8.15H1.48V22.5H22.52V8.15Z" strokeWidth="2" />
-      <path
-        d="M5.3 12.93H7.22M9.13 12.93H11.04M12.96 12.93H14.87M16.78 12.93H18.7M16.78 17.72H18.7M5.3 17.72H7.22M9.13 17.72H11.04M12.96 17.72H14.87"
-        strokeWidth="2"
-      />
-      <path d="M6.26 0.5V5.28M12 0.5V5.28M17.74 0.5V5.28" strokeWidth="2" />
-    </svg>
-  )
-);
-CalendarTrackerIcon.displayName = "CalendarTrackerIcon";
-
-const LogOutIcon = forwardRef<SVGSVGElement, LucideProps>((props, ref) => (
+const CalendarTrackerIcon = forwardRef<SVGSVGElement, React.ComponentProps<LucideIcon>>((props, ref) => (
   <svg
     ref={ref}
     width="24"
     height="24"
     viewBox="0 0 24 24"
     fill="none"
-    stroke="white"
+    stroke="currentColor"
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <path d="M22.52 3.37H1.48V8.15H22.52V3.37Z" strokeWidth="2" />
+    <path d="M22.52 8.15H1.48V22.5H22.52V8.15Z" strokeWidth="2" />
+    <path
+      d="M5.3 12.93H7.22M9.13 12.93H11.04M12.96 12.93H14.87M16.78 12.93H18.7M16.78 17.72H18.7M5.3 17.72H7.22M9.13 17.72H11.04M12.96 17.72H14.87"
+      strokeWidth="2"
+    />
+    <path d="M6.26 0.5V5.28M12 0.5V5.28M17.74 0.5V5.28" strokeWidth="2" />
+  </svg>
+))
+CalendarTrackerIcon.displayName = "CalendarTrackerIcon"
+
+const LogOutIcon = forwardRef<SVGSVGElement, React.ComponentProps<LucideIcon>>((props, ref) => (
+  <svg
+    ref={ref}
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
     xmlns="http://www.w3.org/2000/svg"
     {...props}
   >
@@ -186,119 +182,236 @@ const LogOutIcon = forwardRef<SVGSVGElement, LucideProps>((props, ref) => (
     />
     <path d="M13.91 16.77H19.64" strokeWidth="2" />
   </svg>
-));
-LogOutIcon.displayName = "LogOutIcon";
+))
+LogOutIcon.displayName = "LogOutIcon"
 
 // === SIDEBAR COMPONENT ===
-
 export const SideBar = () => {
-  const supabase = createClient(); 
-  const router = useRouter();
-  const [isOpen, setIsOpen] = useState(false);
-  
+  const supabase = createClient()
+  const router = useRouter()
+  const [isOpen, setIsOpen] = useState(false)
+  const [isCollapsed, setIsCollapsed] = useState(false)
+
+  // Load collapse state from localStorage on component mount
+  useEffect(() => {
+    const savedCollapsed = localStorage.getItem('sidebar-collapsed')
+    if (savedCollapsed !== null) {
+      setIsCollapsed(JSON.parse(savedCollapsed))
+    }
+  }, [])
+
+  // Save collapse state to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('sidebar-collapsed', JSON.stringify(isCollapsed))
+  }, [isCollapsed])
+
   // Close sidebar when screen gets larger than md breakpoint
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth >= 768) {
-        setIsOpen(false);
+        setIsOpen(false)
       }
-    };
-    
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+    }
 
+    window.addEventListener("resize", handleResize)
+    return () => window.removeEventListener("resize", handleResize)
+  }, [])
 
-async function handleLogout() {
-  const { error } = await supabase.auth.signOut()
+  // Add keyboard shortcut to toggle collapse (Ctrl+B or Cmd+B)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
+        e.preventDefault()
+        setIsCollapsed(!isCollapsed)
+      }
+    }
 
-  if (error) {
-    console.error('Logout error:', error.message)
-  } else {
-    // Redirect to landing page using Next.js router
-    router.push('/landingPage')
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isCollapsed])
+
+  async function handleLogout() {
+    try {
+      const { error } = await supabase.auth.signOut()
+      if (error) throw error
+      
+      router.push('/landingPage')
+    } catch (error) {
+      console.error('Logout error:', error)
+    }
   }
-}
 
-  
+  const toggleCollapse = () => {
+    setIsCollapsed(!isCollapsed)
+  }
+
+  const toggleMobileMenu = () => {
+    setIsOpen(!isOpen)
+  }
+
   return (
     <>
       {/* Mobile menu button */}
-      <button 
-        className="md:hidden fixed top-4 left-4 z-[100] p-2 rounded-md bg-teal-700 text-white shadow-lg"
-        onClick={() => setIsOpen(!isOpen)}
-        style={{ top: "1rem", left: "0.5rem" }}
+      <button
+        className={cn(
+          "md:hidden fixed top-4 left-4 z-[100] p-2 rounded-lg shadow-lg transition-all duration-200",
+          "bg-teal-700 hover:bg-teal-600 text-white",
+          "hover:scale-105 active:scale-95"
+        )}
+        onClick={toggleMobileMenu}
         aria-label="Toggle menu"
       >
         <Menu size={24} />
       </button>
-      
+
       {/* Overlay for mobile */}
       {isOpen && (
         <div 
-          className="md:hidden fixed inset-0 bg-black bg-opacity-50 z-40"
-          onClick={() => setIsOpen(false)}
+          className="md:hidden fixed inset-0 bg-black/50 z-40 backdrop-blur-sm transition-opacity duration-300" 
+          onClick={() => setIsOpen(false)} 
         />
       )}
-      
+
       <div
-        className={`fixed md:sticky md:top-0 md:translate-x-0 inset-y-0 left-0 z-40 flex flex-col h-screen max-h-screen w-72 md:w-64 text-white transform transition-all duration-300 ease-in-out ${
-          isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
-        }`}
-        style={{ backgroundColor: "#20606B" }}
-      >   
-        <div className="flex items-center justify-between h-16 border-b border-teal-600 px-4">
-          <h1 className="text-xl font-semibold">Your SlateSpace</h1>
-          <button 
-            className="md:hidden p-2 rounded-md hover:bg-teal-600 text-white"
-            onClick={() => setIsOpen(false)}
-          >
-            ✕
-          </button>
-        </div>
-        
-      <nav className="flex-1 p-4 overflow-y-auto">
-        <div>
-          <NavItem icon={Home} label="Dashboard" href="/dashboard" />
-          <NavItem icon={User} label="Profile" href="#" />
-          <NavItem icon={Search} label="Search" href="#" />
+        className={cn(
+          "fixed md:sticky md:top-0 inset-y-0 left-0 z-50 flex flex-col h-screen text-white",
+          "transform transition-all duration-300 ease-in-out",
+          "bg-gradient-to-b from-teal-700 to-teal-800 shadow-2xl",
+          isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
+          isCollapsed ? "md:w-16" : "md:w-64",
+          "w-72"
+        )}
+      >
+        {/* Header */}
+        <div className={cn(
+          "flex items-center justify-between h-16 border-b border-teal-600/50 px-4",
+          "bg-teal-800/50 backdrop-blur-sm"
+        )}>
+          {!isCollapsed && (
+            <h1 className="text-xl font-bold bg-gradient-to-r from-white to-teal-100 bg-clip-text text-transparent">
+              Your EcoQuest's
+            </h1>
+          )}
+          <div className="flex items-center gap-2">
+            {/* Desktop collapse button */}
+            <button
+              className={cn(
+                "hidden md:block p-2 rounded-lg transition-all duration-200",
+                "hover:bg-teal-600/50 text-white",
+                "hover:scale-110 active:scale-95",
+                "focus:outline-none focus:ring-2 focus:ring-teal-400"
+              )}
+              onClick={toggleCollapse}
+              aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+              title={`${isCollapsed ? "Expand" : "Collapse"} sidebar (Ctrl+B)`}
+            >
+              {isCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
+            </button>
+            {/* Mobile close button */}
+            <button 
+              className={cn(
+                "md:hidden p-2 rounded-lg transition-all duration-200",
+                "hover:bg-teal-600/50 text-white",
+                "hover:scale-110 active:scale-95"
+              )}
+              onClick={() => setIsOpen(false)}
+            >
+              <X size={20} />
+            </button>
+          </div>
         </div>
 
-        <div className="pt-6">
-          <h3 className="text-sm font-medium text-teal-100 mb-3">
-            High School
-          </h3>
+        {/* Navigation */}
+        <nav className="flex-1 p-4 overflow-y-auto scrollbar-thin scrollbar-track-teal-800 scrollbar-thumb-teal-600">
+          {/* Main Navigation */}
+          <div className="space-y-1 mb-6">
+            {!isCollapsed && (
+              <h3 className="text-xs font-semibold text-teal-100/80 uppercase tracking-wider mb-3 px-3">
+                Main
+              </h3>
+            )}
+            <NavItem icon={Home} label="Dashboard" href="/dashboard" isCollapsed={isCollapsed} />
+            <NavItem icon={User} label="Profile" href="#" isCollapsed={isCollapsed} />
+            <NavItem icon={Search} label="Search" href="#" isCollapsed={isCollapsed} />
+          </div>
+
+          {/* High School Section */}
           <div className="space-y-1">
-            <NavItem icon={GraduationCap} label="Roadmap Builder" href="/roadmap-builder" />
-            <NavItem
-              icon={NetworkIcon}
-              label="Extracurricular Database"
-              href="/ec-db"
+            {!isCollapsed && (
+              <h3 className="text-xs font-semibold text-teal-100/80 uppercase tracking-wider mb-3 px-3">
+                Quests
+              </h3>
+            )}
+            <NavItem 
+              icon={GraduationCap} 
+              label="Roadmap Builder" 
+              href="/roadmap-builder" 
+              isCollapsed={isCollapsed} 
             />
-            <NavItem icon={CircleArrowUp} label="Application Hub" href="/application-hub" />
+            <NavItem 
+              icon={NetworkIcon} 
+              label="Extracurricular Database" 
+              href="/ec-db" 
+              isCollapsed={isCollapsed} 
+            />
+            <NavItem 
+              icon={CircleArrowUp} 
+              label="Application Hub" 
+              href="/application-hub" 
+              isCollapsed={isCollapsed} 
+            />
             <NavItem
               icon={ScholarshipDatabaseIcon}
               label="Scholarship Database"
               href="/scholarship-db"
+              isCollapsed={isCollapsed}
             />
-            <NavItem icon={TestPrepIcon} label="Test Prep" href="/test-prep" />
-            <NavItem icon={ResearchHub} label="Research Hub" href="#" />
-            <NavItem
-              icon={CalendarTrackerIcon}
-              label="Calendar Tracker"
-              href="#"
+            <NavItem 
+              icon={TestPrepIcon} 
+              label="Test Prep" 
+              href="/test-prep" 
+              isCollapsed={isCollapsed} 
             />
-            <NavItem icon={MessageCircleMore} label="Community" href="#" />
+            <NavItem 
+              icon={ResearchHub} 
+              label="Research Hub" 
+              href="#" 
+              isCollapsed={isCollapsed} 
+            />
+            <NavItem 
+              icon={CalendarTrackerIcon} 
+              label="Calendar Tracker" 
+              href="#" 
+              isCollapsed={isCollapsed} 
+            />
+            <NavItem 
+              icon={MessageCircleMore} 
+              label="Community" 
+              href="#" 
+              isCollapsed={isCollapsed} 
+            />
           </div>
-        </div>
-      </nav>
+        </nav>
 
-      <div className="p-4 border-t border-teal-600">
-        <NavItem icon={Settings} label="Settings" href="#" />
-        <NavItem onClick = {handleLogout} icon={LogOutIcon} label="Log Out" href="/landingPage" />
+        {/* Footer */}
+        <div className={cn(
+          "p-4 border-t border-teal-600/50 space-y-1",
+          "bg-teal-800/30 backdrop-blur-sm"
+        )}>
+          <NavItem icon={Settings} label="Settings" href="#" isCollapsed={isCollapsed} />
+          <NavItem
+            onClick={handleLogout}
+            icon={LogOutIcon}
+            label="Log Out"
+            href="/landingPage"
+            isCollapsed={isCollapsed}
+          />
+        </div>
+
+        {/* Collapse hint for desktop */}
       </div>
-    </div>
     </>
-  );
-};
-export default SideBar;
+  )
+}
+
+export default SideBar
