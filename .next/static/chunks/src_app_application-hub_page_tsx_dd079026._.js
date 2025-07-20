@@ -1,8 +1,9 @@
 (globalThis.TURBOPACK_CHUNK_LISTS = globalThis.TURBOPACK_CHUNK_LISTS || []).push({
     script: typeof document === "object" ? document.currentScript : undefined,
     chunks: [
-  "static/chunks/node_modules_@supabase_node-fetch_browser_6e91860f.js",
+  "static/chunks/node_modules_@supabase_node-fetch_browser_23d286bd.js",
   "static/chunks/src_de3e5e54._.js",
+  "static/chunks/node_modules_tailwind-merge_dist_bundle-mjs_mjs_b854acb4._.js",
   "static/chunks/node_modules_@supabase_auth-js_dist_module_6004bf20._.js",
   "static/chunks/node_modules_prosemirror-view_dist_index_212d9a9b.js",
   "static/chunks/node_modules_@tiptap_core_dist_index_bbf02861.js",
@@ -11,7 +12,7 @@
   "static/chunks/node_modules_@radix-ui_7995b529._.js",
   "static/chunks/node_modules_@floating-ui_9ec1fa39._.js",
   "static/chunks/node_modules_@tiptap_e0b8c8ea._.js",
-  "static/chunks/node_modules_d2d607d2._.js",
+  "static/chunks/node_modules_25f41d86._.js",
   "static/chunks/src_app_application-hub_components_EditorStyles_dc3527b6.css"
 ],
     source: "dynamic"

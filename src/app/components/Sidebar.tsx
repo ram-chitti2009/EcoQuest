@@ -1,18 +1,23 @@
 "use client"
 import { type ClassValue, clsx } from "clsx"
 import {
+  BookOpen,
+  Calendar,
+  Camera,
   ChevronLeft,
   ChevronRight,
   CircleArrowUp,
-  GraduationCap,
   Home,
   type LucideIcon,
   Menu,
   MessageCircleMore,
+  Mic,
   Search,
   Settings,
+  Trash2,
+  Trophy,
   User,
-  X,
+  X
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { forwardRef, useEffect, useState } from "react"
@@ -336,60 +341,76 @@ export const SideBar = () => {
           </div>
 
           {/* High School Section */}
-          <div className="space-y-1">
+          <div>
             {!isCollapsed && (
               <h3 className="text-xs font-semibold text-teal-100/80 uppercase tracking-wider mb-3 px-3">
                 Quests
               </h3>
             )}
-            <NavItem 
-              icon={GraduationCap} 
-              label="Roadmap Builder" 
-              href="/roadmap-builder" 
-              isCollapsed={isCollapsed} 
-            />
-            <NavItem 
-              icon={NetworkIcon} 
-              label="Extracurricular Database" 
-              href="/ec-db" 
-              isCollapsed={isCollapsed} 
-            />
-            <NavItem 
-              icon={CircleArrowUp} 
-              label="Application Hub" 
-              href="/application-hub" 
-              isCollapsed={isCollapsed} 
-            />
-            <NavItem
-              icon={ScholarshipDatabaseIcon}
-              label="Scholarship Database"
-              href="/scholarship-db"
-              isCollapsed={isCollapsed}
-            />
-            <NavItem 
-              icon={TestPrepIcon} 
-              label="Test Prep" 
-              href="/test-prep" 
-              isCollapsed={isCollapsed} 
-            />
-            <NavItem 
-              icon={ResearchHub} 
-              label="Research Hub" 
-              href="#" 
-              isCollapsed={isCollapsed} 
-            />
-            <NavItem 
-              icon={CalendarTrackerIcon} 
-              label="Calendar Tracker" 
-              href="#" 
-              isCollapsed={isCollapsed} 
-            />
-            <NavItem 
-              icon={MessageCircleMore} 
-              label="Community" 
-              href="#" 
-              isCollapsed={isCollapsed} 
-            />
+            <div className="mb-2">
+              <NavItem 
+                icon={Trash2} 
+                label="Community Cleanup" 
+                href="/roadmap-builder" 
+                isCollapsed={isCollapsed} 
+              />
+            </div>
+            <div className="mb-2">
+              <NavItem 
+                icon={Camera} 
+                label="Litter Lens" 
+                href="/ec-db" 
+                isCollapsed={isCollapsed} 
+              />
+            </div>
+            <div className="mb-2">
+              <NavItem 
+                icon={Mic} 
+                label="Eco Echo" 
+                href="/application-hub" 
+                isCollapsed={isCollapsed} 
+              />
+            </div>
+            <div className="mb-2">
+              <NavItem
+                icon={CircleArrowUp}
+                label="Carbon Clash"
+                href="/scholarship-db"
+                isCollapsed={isCollapsed}
+              />
+            </div>
+            <div className="mb-2">
+              <NavItem 
+                icon={BookOpen} 
+                label="Learning Patch" 
+                href="/test-prep" 
+                isCollapsed={isCollapsed} 
+              />
+            </div>
+            <div className="mb-2">
+              <NavItem 
+                icon={Trophy} 
+                label="Leaderboard" 
+                href="#" 
+                isCollapsed={isCollapsed} 
+              />
+            </div>
+            <div className="mb-2">
+              <NavItem 
+                icon={Calendar} 
+                label="Calendar Tracker" 
+                href="#" 
+                isCollapsed={isCollapsed} 
+              />
+            </div>
+            <div>
+              <NavItem 
+                icon={MessageCircleMore} 
+                label="Community" 
+                href="#" 
+                isCollapsed={isCollapsed} 
+              />
+            </div>
           </div>
         </nav>
 
