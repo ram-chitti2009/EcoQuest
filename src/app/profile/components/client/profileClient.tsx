@@ -3,6 +3,7 @@
 import { Award, Calendar, Camera, Clock, Edit3, Leaf, MapPin, Save, TreePine, User, Users, X } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 import { AchievementsModal } from "../achievments"
+import { ImpactModal } from "../impactModel"
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar"
 import { Badge } from "../ui/badge"
 import { Button } from "../ui/button"
@@ -355,7 +356,10 @@ export default function Component() {
               {/* Impact Summary */}
               <Card className="shadow-lg border-0 bg-white">
                 <CardHeader className="pb-4 sm:pb-5 md:pb-6">
-                  <CardTitle className="text-xl sm:text-2xl md:text-3xl text-gray-900">Your Impact</CardTitle>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-xl sm:text-2xl md:text-3xl text-gray-900">Your Impact</CardTitle>
+                    <ImpactModal userStats={userStats} />
+                  </div>
                 </CardHeader>
                 <CardContent className="pb-4 sm:pb-6 md:pb-8">
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
