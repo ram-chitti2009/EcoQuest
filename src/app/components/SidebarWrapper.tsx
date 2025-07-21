@@ -4,6 +4,7 @@ import SideBar from "./Sidebar";
 
 const sidebarRoutes = [
   "/dashboard",
+  "/profile",
   "/ec-db",
   "/scholarship-db",
   "/application-hub",

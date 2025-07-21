@@ -329,15 +329,15 @@ export const SideBar = () => {
         {/* Navigation */}
         <nav className="flex-1 p-4 overflow-y-auto scrollbar-thin scrollbar-track-teal-800 scrollbar-thumb-teal-600">
           {/* Main Navigation */}
-          <div className="space-y-1 mb-6">
+          <div className="space-y-1 mb-10">
             {!isCollapsed && (
               <h3 className="text-xs font-semibold text-teal-100/80 uppercase tracking-wider mb-3 px-3">
                 Main
               </h3>
             )}
             <NavItem icon={Home} label="Dashboard" href="/dashboard" isCollapsed={isCollapsed} />
-            <NavItem icon={User} label="Profile" href="#" isCollapsed={isCollapsed} />
-            <NavItem icon={Search} label="Search" href="#" isCollapsed={isCollapsed} />
+            <NavItem icon={User} label="Profile" href="/profile" isCollapsed={isCollapsed} />
+            
           </div>
 
           {/* High School Section */}
