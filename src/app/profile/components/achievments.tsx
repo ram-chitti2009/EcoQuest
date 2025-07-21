@@ -1,6 +1,6 @@
 "use client"
 
-import { Award, Leaf, Users, TreePine, Recycle, Target, Globe, Star, X } from "lucide-react"
+import { Award, Globe, Leaf, Recycle, Star, Target, TreePine, Users, X } from "lucide-react"
 import { useState } from "react"
 
 const allAchievements = [
@@ -173,7 +173,7 @@ export function AchievementsModal() {
                             </p>
 
                             <div className="flex items-center justify-between">
-                              <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors text-foreground">
+                              <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors text-black">
                                 {achievement.category}
                               </span>
                               <p className="text-xs text-gray-500">{achievement.requirement}</p>

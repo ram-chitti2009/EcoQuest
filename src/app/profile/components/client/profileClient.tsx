@@ -173,16 +173,17 @@ export default function Component() {
                       {isEditingName ? (
                         <div className="space-y-3 sm:space-y-4 w-full">
                           <div className="space-y-2 sm:space-y-3">
+                            {/* Name and Title */}
                             <Input
                               value={tempProfile.name}
                               onChange={(e) => setTempProfile({ ...tempProfile, name: e.target.value })}
-                              className="text-center text-base sm:text-lg font-bold border-2 focus:border-blue-500"
+                              className="text-center text-base sm:text-lg font-bold border-2 focus:border-blue-500 text-black"
                               placeholder="Enter your name"
                             />
                             <Input
                               value={tempProfile.title}
                               onChange={(e) => setTempProfile({ ...tempProfile, title: e.target.value })}
-                              className="text-center text-sm sm:text-base border-2 focus:border-blue-500"
+                              className="text-center text-sm sm:text-base border-2 focus:border-blue-500 text-black"
                               placeholder="Enter your title"
                             />
                           </div>
@@ -201,8 +202,8 @@ export default function Component() {
                               onClick={handleCancelNameEdit}
                               className="flex items-center gap-1 sm:gap-2 border-2 bg-transparent px-3 sm:px-4"
                             >
-                              <X className="w-3 h-3 sm:w-4 sm:h-4" />
-                              <span className="text-xs sm:text-sm">Cancel</span>
+                      <X className="w-3 h-3 sm:w-4 sm:h-4 text-black" />
+                              <span className="text-xs sm:text-sm text-black">Cancel</span>
                             </Button>
                           </div>
                         </div>
@@ -231,7 +232,7 @@ export default function Component() {
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-lg sm:text-xl md:text-2xl flex items-center gap-2 sm:gap-3">
                       <MapPin className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-green-600" />
-                      Location
+                      <span className="text-black">Location</span>
                     </CardTitle>
                     {!isEditingLocation && (
                       <Button
@@ -253,7 +254,7 @@ export default function Component() {
                         <Input
                           value={tempLocation.city}
                           onChange={(e) => setTempLocation({ ...tempLocation, city: e.target.value })}
-                          className="border-2 focus:border-blue-500 text-sm sm:text-base"
+                          className="border-2 focus:border-blue-500 text-sm sm:text-base text-black"
                           placeholder="Enter your city"
                         />
                       </div>
@@ -262,7 +263,7 @@ export default function Component() {
                         <Input
                           value={tempLocation.country}
                           onChange={(e) => setTempLocation({ ...tempLocation, country: e.target.value })}
-                          className="border-2 focus:border-blue-500 text-sm sm:text-base"
+                          className="border-2 focus:border-blue-500 text-sm sm:text-base text-black"
                           placeholder="Enter your country"
                         />
                       </div>
@@ -281,8 +282,8 @@ export default function Component() {
                           onClick={handleCancelLocationEdit}
                           className="flex items-center gap-1 sm:gap-2 border-2 bg-transparent px-3 sm:px-4"
                         >
-                          <X className="w-3 h-3 sm:w-4 sm:h-4" />
-                          <span className="text-xs sm:text-sm">Cancel</span>
+                      <X className="w-3 h-3 sm:w-4 sm:h-4 text-black" />
+                          <span className="text-xs sm:text-sm text-black">Cancel</span>
                         </Button>
                       </div>
                     </div>
@@ -300,7 +301,7 @@ export default function Component() {
               <Card className="shadow-md border-0 bg-white flex-1">
                 <CardHeader className="pb-3 sm:pb-4">
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg sm:text-xl md:text-2xl">About Me</CardTitle>
+                    <CardTitle className="text-lg sm:text-xl md:text-2xl text-black">About Me</CardTitle>
                     {!isEditingAbout && (
                       <Button
                         variant="ghost"
@@ -319,7 +320,7 @@ export default function Component() {
                       <Textarea
                         value={aboutText}
                         onChange={(e) => setAboutText(e.target.value)}
-                        className="min-h-[100px] sm:min-h-[120px] md:min-h-[140px] resize-none border-2 focus:border-blue-500 text-sm sm:text-base"
+                        className="min-h-[100px] sm:min-h-[120px] md:min-h-[140px] resize-none border-2 focus:border-blue-500 text-sm sm:text-base text-black"
                         placeholder="Tell us about yourself..."
                       />
                       <div className="flex gap-2 sm:gap-3">
@@ -337,8 +338,8 @@ export default function Component() {
                           onClick={handleCancelAboutEdit}
                           className="flex items-center gap-1 sm:gap-2 border-2 bg-transparent px-3 sm:px-4"
                         >
-                          <X className="w-3 h-3 sm:w-4 sm:h-4" />
-                          <span className="text-xs sm:text-sm">Cancel</span>
+                      <X className="w-3 h-3 sm:w-4 sm:h-4 text-black" />
+                          <span className="text-xs sm:text-sm text-black">Cancel</span>
                         </Button>
                       </div>
                     </div>
