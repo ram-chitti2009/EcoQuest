@@ -13,6 +13,7 @@ const sidebarRoutes = [
   "/research-hub",
   "/roadmap-builder",
   "/test-prep",
+  "/leaderboard",
 ];
 
 export default function SidebarWrapper({ loading }: { loading: boolean }) {

@@ -391,7 +391,7 @@ export const SideBar = () => {
               <NavItem 
                 icon={Trophy} 
                 label="Leaderboard" 
-                href="#" 
+                href="/leaderboard" 
                 isCollapsed={isCollapsed} 
               />
             </div>
