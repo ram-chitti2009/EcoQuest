@@ -14,6 +14,7 @@ const sidebarRoutes = [
   "/roadmap-builder",
   "/test-prep",
   "/leaderboard",
+  "/calendar",
 ];
 
 export default function SidebarWrapper({ loading }: { loading: boolean }) {
