@@ -399,7 +399,7 @@ export const SideBar = () => {
               <NavItem 
                 icon={Calendar} 
                 label="Calendar Tracker" 
-                href="#" 
+                href="/calendar" 
                 isCollapsed={isCollapsed} 
               />
             </div>

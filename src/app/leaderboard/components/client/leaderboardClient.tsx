@@ -1,6 +1,6 @@
 "use client"
 
-import { Calendar, User } from "lucide-react"
+import { Atom, Calendar, User } from "lucide-react"
 import Image from "next/image"
 import { useState } from "react"
 import { Avatar } from "../ui/avatar"
@@ -298,7 +298,7 @@ export default function Component() {
                     active={selectedMetric === "carbon"}
                     className="flex-1"
                   >
-                    <Leaf className="h-5 w-5" />
+                    <Atom className="h-5 w-5" />
                     Carbon Impact
                   </Button>
                   <Button
