@@ -335,7 +335,7 @@ export const SideBar = () => {
                 Main
               </h3>
             )}
-            <NavItem icon={Home} label="Dashboard" href="/dashboard" isCollapsed={isCollapsed} />
+            <NavItem icon={Home} label="Home" href="/dashboard" isCollapsed={isCollapsed} />
             <NavItem icon={User} label="Profile" href="/profile" isCollapsed={isCollapsed} />
             
           </div>

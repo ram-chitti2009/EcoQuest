@@ -1,6 +1,6 @@
 "use client";
 import SidebarWrapper from "../components/SidebarWrapper";
-import ApplicationHubPage from "./components/client/ApplicationHubPage";
+import EcoEcho from "./components/client/ecoEchoCoverClient";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
 import LoadingScreen from "@/components/LoadingScreen";
 
@@ -15,7 +15,7 @@ export default function ApplicationHub() {
     <div className="flex">
       <SidebarWrapper loading={false} />
       <main className="flex-1">
-        <ApplicationHubPage />
+        <EcoEcho />
       </main>
     </div>
   );
