@@ -367,7 +367,7 @@ export const SideBar = () => {
               <NavItem 
                 icon={Mic} 
                 label="Eco Echo" 
-                href="/application-hub" 
+                href="/eco-echo" 
                 isCollapsed={isCollapsed} 
               />
             </div>

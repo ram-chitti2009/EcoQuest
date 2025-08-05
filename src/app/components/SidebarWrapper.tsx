@@ -7,7 +7,7 @@ const sidebarRoutes = [
   "/profile",
   "/ec-db",
   "/scholarship-db",
-  "/application-hub",
+  "/eco-echo",
   "/community",
   "/interview-ai",
   "/research-hub",
