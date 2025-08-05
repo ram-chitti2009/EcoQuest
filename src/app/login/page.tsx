@@ -58,9 +58,18 @@ export default function SignInPage() {
   };
 
   return (
-    <div className={`min-h-screen relative overflow-hidden bg-cover bg-center bg-no-repeat transition-all duration-1000 ease-out ${
+    <div className={`min-h-screen relative overflow-hidden transition-all duration-1000 ease-out ${
       isLoaded ? "opacity-100" : "opacity-0"
-    }`} style={{ backgroundImage: 'url(/76080.png)' }}>
+    }`}>
+      {/* Background Image */}
+      <Image
+        src="/76080.png"
+        alt="EcoQuest background"
+        fill
+        priority
+        quality={80}
+        className="object-cover object-center absolute inset-0 z-0"
+      />
       {/* Responsive Header */}
       <header
         className={`border-b-4 border-green-800 relative bg-white transition-all duration-1000 z-30 ${
