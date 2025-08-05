@@ -1,6 +1,12 @@
 {
   "/_not-found/page": "app/_not-found/page.js",
-  "/eco-echo/page": "app/eco-echo/page.js",
+  "/dashboard/page": "app/dashboard/page.js",
+  "/ec-db/page": "app/ec-db/page.js",
   "/favicon.ico/route": "app/favicon.ico/route.js",
-  "/scholarship-db/page": "app/scholarship-db/page.js"
+  "/landingPage/page": "app/landingPage/page.js",
+  "/litterAnalysis/page": "app/litterAnalysis/page.js",
+  "/litterLens/page": "app/litterLens/page.js",
+  "/login/page": "app/login/page.js",
+  "/page": "app/page.js",
+  "/testAnalysis/page": "app/testAnalysis/page.js"
 }

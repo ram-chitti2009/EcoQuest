@@ -359,7 +359,7 @@ export const SideBar = () => {
               <NavItem 
                 icon={Camera} 
                 label="Litter Lens" 
-                href="/ec-db" 
+                href="/litterLens" 
                 isCollapsed={isCollapsed} 
               />
             </div>

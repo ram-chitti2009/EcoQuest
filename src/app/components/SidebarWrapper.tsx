@@ -5,7 +5,7 @@ import SideBar from "./Sidebar";
 const sidebarRoutes = [
   "/dashboard",
   "/profile",
-  "/ec-db",
+  "/litterLens",
   "/scholarship-db",
   "/eco-echo",
   "/community",
