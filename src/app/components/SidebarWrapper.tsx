@@ -11,7 +11,7 @@ const sidebarRoutes = [
   "/community",
   "/interview-ai",
   "/research-hub",
-  "/roadmap-builder",
+  "/community-cleanup",
   "/test-prep",
   "/leaderboard",
   "/calendar",
