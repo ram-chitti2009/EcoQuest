@@ -7,9 +7,10 @@ import { useEffect, useRef, useState } from "react"
 import { Button } from "../ui/Button"
 import { Card, CardContent } from "../ui/Card"
 
-// Custom hook for intersection observer
+// Custom hook for intersection observer that only triggers once
 function useIntersectionObserver(options = {}) {
   const [isIntersecting, setIsIntersecting] = useState(false)
+  const [hasAnimated, setHasAnimated] = useState(false)
   const elementRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -18,7 +19,11 @@ function useIntersectionObserver(options = {}) {
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        setIsIntersecting(entry.isIntersecting)
+        if (entry.isIntersecting && !hasAnimated) {
+          setIsIntersecting(true)
+          setHasAnimated(true)
+          observer.unobserve(element) // Stop observing after first trigger
+        }
       },
       {
         threshold: 0.1,
@@ -29,7 +34,7 @@ function useIntersectionObserver(options = {}) {
 
     observer.observe(element)
     return () => observer.disconnect()
-  }, [options])
+  }, [hasAnimated, options])
 
   return { elementRef, isIntersecting }
 }

@@ -15,7 +15,7 @@ interface HeaderProps {
 export default function Header({
   title = "EcoQuest",
   subtitle = "",
-  centerMessage = "🌍 Your Sustainability Partner 🌱",
+  centerMessage = "",
   showTimeDate = true,
   showUserAvatar = true,
 }: HeaderProps) {

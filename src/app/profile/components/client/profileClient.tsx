@@ -10,12 +10,12 @@ import { Button } from "../ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card"
 import { Input } from "../ui/Input"
 import { Textarea } from "../ui/textArea"
+import Header from "../layout/Header"
 
 export default function Component() {
   const [isEditingAbout, setIsEditingAbout] = useState(false)
   const [isEditingLocation, setIsEditingLocation] = useState(false)
   const [isEditingName, setIsEditingName] = useState(false)
-  const [currentTime, setCurrentTime] = useState(new Date())
   const [profileImage, setProfileImage] = useState("/placeholder.svg?height=192&width=192")
   const [aboutText, setAboutText] = useState(
     "Passionate about environmental conservation and making a positive impact in my community. I love participating in cleanup events and finding new ways to reduce my carbon footprint. Always looking for opportunities to learn and help others on their sustainability journey!",
@@ -32,14 +32,6 @@ export default function Component() {
   })
   const [tempLocation, setTempLocation] = useState(location)
   const fileInputRef = useRef<HTMLInputElement>(null)
-
-  // Update current time every second
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date())
-    }, 1000)
-    return () => clearInterval(timer)
-  }, [])
 
   const userStats = {
     carbonSaved: 127.5,
@@ -113,29 +105,10 @@ export default function Component() {
   return (
     <div className="h-screen bg-gray-50 flex flex-col overflow-hidden">
       {/* Header - Fully responsive */}
-      <header className="bg-white border-b border-gray-200 px-3 sm:px-4 md:px-6 py-3 sm:py-4 shadow-sm sticky top-0 z-50 flex-shrink-0">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2 sm:gap-3">
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">Profile</h1>
-          </div>
-          <div className="flex items-center gap-2 sm:gap-3 md:gap-4">
-            <div className="hidden sm:flex items-center gap-2 text-xs sm:text-sm font-medium text-gray-700 bg-gray-100 px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 rounded-lg border border-gray-200">
-              <Clock className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600" />
-              <span className="hidden md:inline">{currentTime.toLocaleTimeString()}</span>
-              <span className="md:hidden">{currentTime.toLocaleTimeString([], { timeStyle: 'short' })}</span>
-            </div>
-            <div className="hidden sm:flex items-center gap-2 text-xs sm:text-sm font-medium text-gray-700 bg-gray-100 px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 rounded-lg border border-gray-200">
-              <Calendar className="w-3 h-3 sm:w-4 sm:h-4 text-green-600" />
-              <span className="hidden lg:inline">{currentTime.toLocaleDateString()}</span>
-              <span className="lg:hidden">{currentTime.toLocaleDateString([], { dateStyle: 'short' })}</span>
-            </div>
-            <div className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105 cursor-pointer">
-              <User className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-            </div>
-          </div>
-        </div>
-      </header>
-
+      {/* Header */}
+      <Header 
+        title="Profile"
+      />
       <div className="flex-1 p-3 sm:p-4 md:p-6 overflow-y-auto">
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
