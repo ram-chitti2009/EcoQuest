@@ -3,11 +3,11 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import Image from "next/image";
 import { ChangeEvent } from "react";
-import { Card, CardHeader, CardContent } from "../../../ec-db/components/ui/Card";
-import { Button } from "../../../ec-db/components/ui/Button";
+import { Card, CardHeader, CardContent } from "../../../litterLens/components/ui/Card";
+import { Button } from "../../../litterLens/components/ui/Button";
 import { Filter, Heart } from "lucide-react";
 import { Badge } from "../../../ec-db/components/ui/Badge";
-import { Header } from "../../../ec-db/components/layout/Header";
+import { Header } from "../../../litterLens/components/layout/Header";
 import { Input } from "../../../ec-db/components/ui/Input";
 import Select from "../../../ec-db/components/ui/Select";
 import { createClient } from "@/utils/supabase/client";

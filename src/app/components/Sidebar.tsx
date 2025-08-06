@@ -351,7 +351,7 @@ export const SideBar = () => {
               <NavItem 
                 icon={Trash2} 
                 label="Community Cleanup" 
-                href="/roadmap-builder" 
+                href="/community-cleanup" 
                 isCollapsed={isCollapsed} 
               />
             </div>
@@ -359,7 +359,7 @@ export const SideBar = () => {
               <NavItem 
                 icon={Camera} 
                 label="Litter Lens" 
-                href="/ec-db" 
+                href="/litterLens" 
                 isCollapsed={isCollapsed} 
               />
             </div>
