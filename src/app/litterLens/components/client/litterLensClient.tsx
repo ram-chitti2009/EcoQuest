@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import React, { useRef, useState } from "react"
 import { Button } from "../ui/Button"
 import { Card, CardContent } from "../ui/Card"
-import Header from "../layout/Header"
+import Header from "@/app/components/Header"
 
 export default function LitterLensHome() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null)

@@ -1,5 +1,5 @@
+import Header from "@/app/components/Header"
 import { EcoEchoChat } from "../ui/ecoEchoClient"
-import Header from "../layout/Header"
 
 export default function Component() {
   return (

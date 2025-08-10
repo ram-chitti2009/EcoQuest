@@ -1,22 +1,21 @@
 "use client"
 
+import Header from "@/app/components/Header"
 import { Calendar, MapPin, Users } from "lucide-react"
 import { CompactCalendar } from "../compact-calendar"
-import { Header } from "../layout/Header"
 import { UpcomingEvents } from "../upcomingEvents"
 
 export default function EcoCalendar() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50">
+      {/* Header */}
+      <Header 
+        title="Eco Calendar" 
+      />
       <div className="flex">
         {/* Main Content */}
         <div className="flex-1 p-8">
           <div className="max-w-7xl mx-auto">
-            {/* Header */}
-            <Header 
-              title="Your Eco Calendar" 
-              subtitle="Discover and join eco-friendly events in your community" 
-            />
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
               {[
