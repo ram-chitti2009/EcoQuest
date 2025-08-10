@@ -163,24 +163,24 @@ export default function AnalyzePage() {
                   <CardHeader>
                     <CardTitle className="flex items-center space-x-2">
                       <Trash2 className="w-5 h-5 text-green-600" />
-                      <span>Litter Identification</span>
+                      <span className="text-black">Litter Identification</span>
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="flex items-center justify-between">
-                      <span className="font-medium">Type:</span>
+                      <span className="font-medium text-black">Type:</span>
                       <Badge className="bg-blue-100 text-blue-800 border-blue-200">{mockAnalysisData.litterType}</Badge>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="font-medium">Confidence:</span>
+                      <span className="font-medium text-black">Confidence:</span>
                       <span className="text-green-600 font-semibold">{mockAnalysisData.confidence}%</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="font-medium">Quantity:</span>
-                      <span>{mockAnalysisData.quantity}</span>
+                      <span className="font-medium text-black">Quantity:</span>
+                      <span className="text-green-600">{mockAnalysisData.quantity}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="font-medium">Recyclable:</span>
+                      <span className="font-medium text-black">Recyclable:</span>
                       <Badge
                         className={
                           mockAnalysisData.recyclable
@@ -193,7 +193,7 @@ export default function AnalyzePage() {
                       </Badge>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="font-medium">Hazard Level:</span>
+                      <span className="font-medium text-black">Hazard Level:</span>
                       <Badge variant="outline" className="text-yellow-600 border-yellow-600">
                         <AlertTriangle className="w-3 h-3 mr-1" />
                         {mockAnalysisData.hazardLevel}
@@ -207,7 +207,7 @@ export default function AnalyzePage() {
                   <CardHeader>
                     <CardTitle className="flex items-center space-x-2">
                       <CheckCircle className="w-5 h-5 text-green-600" />
-                      <span>Disposal Plan</span>
+                      <span className="text-black">Disposal Plan</span>
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -229,7 +229,7 @@ export default function AnalyzePage() {
                   <CardHeader>
                     <CardTitle className="flex items-center space-x-2">
                       <span>🌍</span>
-                      <span>Environmental Impact</span>
+                      <span className="text-black">Environmental Impact</span>
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">

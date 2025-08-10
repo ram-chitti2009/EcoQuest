@@ -10,7 +10,7 @@ import { Button } from "../ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card"
 import { Input } from "../ui/Input"
 import { Textarea } from "../ui/textArea"
-import Header from "../layout/Header"
+import Header from "@/app/components/Header"
 
 export default function Component() {
   const [isEditingAbout, setIsEditingAbout] = useState(false)

@@ -407,7 +407,7 @@ export const SideBar = () => {
               <NavItem 
                 icon={MessageCircleMore} 
                 label="Community" 
-                href="#" 
+                href="/community" 
                 isCollapsed={isCollapsed} 
               />
             </div>
