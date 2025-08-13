@@ -4,12 +4,9 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useEffect, useState } from 'react';
 import { ArrowRight } from "lucide-react";
-import { useRouter } from 'next/navigation';
-import LoadingScreen from '@/components/LoadingScreen';
 
 export default function SignInPage() {
   const supabase = createClient();
-  const router = useRouter();
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [message, setMessage] = useState<{ type: 'error' | 'success', text: string } | null>(null)
@@ -41,20 +38,13 @@ export default function SignInPage() {
 
   const handleEmailSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log("Login attempted");
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    console.log("Signup attempted");
+    const { error } = await supabase.auth.signUp({ email, password });
     if (error) {
       setMessage({ type: 'error', text: error.message });
     } else {
-      // Check if email is confirmed
-      const user = data?.user;
-      if (user && !user.email_confirmed_at) {
-        setMessage({ type: 'error', text: 'Please confirm your email before logging in.' });
-        await supabase.auth.signOut();
-      } else {
-        setMessage({ type: 'success', text: 'Signed in!' });
-        router.push('/dashboard');
-      }
+      setMessage({ type: 'success', text: 'Check your email for confirmation link!' });
+      // Don't redirect immediately for signup, user needs to confirm email first
     }
   };
 
