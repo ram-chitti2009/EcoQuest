@@ -23,7 +23,7 @@ export default function SignInPage() {
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/dashboard`
+        redirectTo: `${window.location.origin}/landingPage`
       }
     });
   };
@@ -33,7 +33,7 @@ export default function SignInPage() {
     await supabase.auth.signInWithOAuth({
       provider: 'apple',
       options: {
-        redirectTo: `${window.location.origin}/dashboard`
+        redirectTo: `${window.location.origin}/landingPage`
       }
     });
   };
@@ -60,16 +60,7 @@ export default function SignInPage() {
   return (
     <div className={`min-h-screen relative overflow-hidden transition-all duration-1000 ease-out ${
       isLoaded ? "opacity-100" : "opacity-0"
-    }`}>
-      {/* Background Image */}
-      <Image
-        src="/76080.png"
-        alt="EcoQuest background"
-        fill
-        priority
-        quality={80}
-        className="object-cover object-center absolute inset-0 z-0"
-      />
+    }`} style={{ backgroundImage: 'url(/76080.png)' }}>
       {/* Responsive Header */}
       <header
         className={`border-b-4 border-green-800 relative bg-white transition-all duration-1000 z-30 ${
@@ -81,11 +72,11 @@ export default function SignInPage() {
           <div className="flex items-center space-x-2 -ml-4 md:-ml-20">
             <div className="w-12 h-12 md:w-16 md:h-16 relative bg-white rounded-full shadow-lg flex items-center justify-center p-2 transition-transform duration-300 hover:scale-110">
               <Image
-                src="/Screenshot%202025-07-12%20172658.png"
+                src="/Screenshot 2025-07-12 172658.png"
                 alt="EcoQuest Logo"
-                layout="fill"
-                objectFit="contain"
-                className="rounded-full"
+                width={48}
+                height={48}
+                className="rounded-full object-contain"
                 priority
               />
             </div>
@@ -137,11 +128,11 @@ export default function SignInPage() {
           <div className="flex justify-center mb-8">
             <div className="w-20 h-20 relative drop-shadow-xl">
                 <Image
-                    src="/Screenshot%202025-07-12%20172658.png"
+                    src="/Screenshot 2025-07-12 172658.png"
                     alt="EcoQuest Logo"
-                    layout="fill"
-                    objectFit="contain"
-                    className="rounded-full"
+                    width={80}
+                    height={80}
+                    className="rounded-full object-contain"
                     priority
                 />
             </div>
