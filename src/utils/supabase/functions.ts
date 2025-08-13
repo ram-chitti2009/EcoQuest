@@ -370,8 +370,8 @@ export async function getUserStatistics(userId: string) {
 
 //Update-update user statistics
 export async function updateUserStatistics(userId:string, updates: UserStatisticsUpdate){
-    const{data, error} = await supabase.
-    from('user_statistics')
+    const{data, error} = await supabase
+    .from('user_statistics')
     .update({
         ...updates,
         updated_at : new Date().toISOString()
@@ -382,6 +382,7 @@ export async function updateUserStatistics(userId:string, updates: UserStatistic
 
     if(error){
         console.error("error updating user statistics", error)
+        return {data:null, error}
     }
     return {data, error:null}
 }
@@ -476,14 +477,14 @@ export async function fetchBadgesByUserId(userId:string){
 //award a badge to the user
 
 export async function createUserBadge(data:UserBadgeInsert){
-    const {data:result, error} = await supabase.
-    from('user_badges')
+    const {data:result, error} = await supabase
+    .from('user_badges')
     .insert(data)
     .select()
     .single()
 
-    if(erorr){
-        console.error("Error creaitng user badge", error)
+    if(error){
+        console.error("Error creating user badge", error)
         return {data:null, error};
     }
     return {data:result, error:null}
@@ -552,18 +553,18 @@ export interface UserImpactDetailsUpdate{
 
 export async function createUserImpactDetails(data:UserImpactDetailsInsert){
 
-    const {data:result, error} = await supabase.
-    from('user_impact_details')
+    const {data:result, error} = await supabase
+    .from('user_impact_details')
     .insert(data)
     .select()
     .single()
 
     if(error){
         console.error("Error creating user impact details", error)
-        return {data:[], error};
+        return {data:null, error};
     }
 
-    return {data, error:null}
+    return {data:result, error:null}
 
 }
 
@@ -573,16 +574,16 @@ export async function updateUserImpactDetails(userId:string, categoryId:number, 
     .from('user_impact_details')
     .update({
         ...updates,
-        last_updated:new Date(0.toISOString())
+        last_updated:new Date().toISOString()
     })
     .eq('user_id', userId)
     .eq('category_id', categoryId)
-    .select().
-    single()
+    .select()
+    .single()
 
 
     if(error){
-        console.error("Error updating user impact details")
+        console.error("Error updating user impact details", error)
         return {data:null, error};
     }
 
@@ -697,9 +698,11 @@ export async function updateUserImpactAchievement(id:number, updates:UserImpactA
     .single()
 
     if(error){
-        console.error("Error updating user impact achievements")
+        console.error("Error updating user impact achievements", error)
         return {data:null, error}
     }
+
+    return {data, error:null}
 
 }
 
@@ -835,6 +838,92 @@ export async function deleteUsersMonthlyGoal(id: number) {
   }
 
   return { data: true, error: null };
+}
+
+// Enhanced leaderboard function with user profiles and statistics
+export async function getLeaderboardWithUserData() {
+    const { data, error } = await supabase
+        .from('leaderboard')
+        .select(`
+            *,
+            user_profiles (
+                name,
+                profile_image_url,
+                city,
+                country
+            )
+        `)
+        .order('rank', { ascending: true });
+
+    if (error) {
+        console.error("Error fetching leaderboard with user data:", error);
+        return { data: [], error };
+    }
+
+    return { data, error: null };
+}
+
+// Get community impact statistics
+export async function getCommunityStats() {
+    try {
+        // Get total carbon saved
+        const { data: carbonData, error: carbonError } = await supabase
+            .from('user_statistics')
+            .select('carbon_saved');
+
+        // Get total volunteer hours
+        const { data: hoursData, error: hoursError } = await supabase
+            .from('user_statistics')
+            .select('volunteer_hours');
+
+        // Get total cleanups
+        const { data: cleanupsData, error: cleanupsError } = await supabase
+            .from('user_statistics')
+            .select('cleanups_participated');
+
+        // Get active users count
+        const { count: usersCount, error: usersError } = await supabase
+            .from('user_profiles')
+            .select('*', { count: 'exact', head: true });
+
+        if (carbonError || hoursError || cleanupsError || usersError) {
+            console.error("Error fetching community stats");
+            return {
+                data: {
+                    total_carbon_saved: 0,
+                    total_volunteer_hours: 0,
+                    total_cleanups: 0,
+                    active_users: 0
+                },
+                error: carbonError || hoursError || cleanupsError || usersError
+            };
+        }
+
+        const totalCarbon = carbonData?.reduce((sum, item) => sum + (item.carbon_saved || 0), 0) || 0;
+        const totalHours = hoursData?.reduce((sum, item) => sum + (item.volunteer_hours || 0), 0) || 0;
+        const totalCleanups = cleanupsData?.reduce((sum, item) => sum + (item.cleanups_participated || 0), 0) || 0;
+
+        return {
+            data: {
+                total_carbon_saved: totalCarbon,
+                total_volunteer_hours: totalHours,
+                total_cleanups: totalCleanups,
+                active_users: usersCount || 0
+            },
+            error: null
+        };
+    } catch (error) {
+        console.error("Error in getCommunityStats:", error);
+        return {
+            data: {
+                total_carbon_saved: 0,
+                total_volunteer_hours: 0,
+                total_cleanups: 0,
+                active_users: 0
+            },
+            error
+        };
+    }
 }
 
 
