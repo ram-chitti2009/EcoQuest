@@ -58,7 +58,7 @@ export default function SignInPage() {
   };
 
   return (
-    <div className={`min-h-screen relative overflow-hidden transition-all duration-1000 ease-out ${
+    <div className={`min-h-screen relative overflow-hidden transition-all duration-1000 ease-out bg-cover bg-center bg-no-repeat ${
       isLoaded ? "opacity-100" : "opacity-0"
     }`} style={{ backgroundImage: 'url(/76080.png)' }}>
       {/* Responsive Header */}

@@ -209,7 +209,7 @@ function SignInPage() {
         }
     };
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-        className: `min-h-screen relative overflow-hidden transition-all duration-1000 ease-out ${isLoaded ? "opacity-100" : "opacity-0"}`,
+        className: `min-h-screen relative overflow-hidden transition-all duration-1000 ease-out bg-cover bg-center bg-no-repeat ${isLoaded ? "opacity-100" : "opacity-0"}`,
         style: {
             backgroundImage: 'url(/76080.png)'
         },

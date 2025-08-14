@@ -1,8 +1,10 @@
 "use client"
 
+import { createClient } from '@/utils/supabase/client'
 import { ArrowRight, Award, Bot, CalendarCheck, Camera, CheckCircle, MapPin, Sparkles, Users, Zap } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
+import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from "react"
 import { Button } from "../ui/Button"
 import { Card, CardContent } from "../ui/Card"
@@ -41,6 +43,32 @@ function useIntersectionObserver(options = {}) {
 
 export default function LandingPage() {
   const [isLoaded, setIsLoaded] = useState(false)
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const supabase = createClient()
+  const router = useRouter()
+
+  // Check authentication status
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      setIsLoggedIn(!!session)
+    }
+    checkAuth()
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setIsLoggedIn(!!session)
+    })
+
+    return () => subscription.unsubscribe()
+  }, [supabase])
+
+  // Handle button click for logged-in users
+  const handleAuthButtonClick = () => {
+    if (isLoggedIn) {
+      router.push('/dashboard')
+    }
+  }
 
   // Intersection observers for each section
   const heroSection = useIntersectionObserver()
@@ -111,7 +139,19 @@ export default function LandingPage() {
             <a href="#features" onClick={scrollToFeatures} className="text-gray-900 font-bold hover:text-green-700 transition-colors duration-300 cursor-pointer">
               Features
             </a>
-            <Link href="/login">
+            {isLoggedIn ? (
+              <Button
+                onClick={handleAuthButtonClick}
+                size="lg"
+                className="bg-green-600 hover:bg-green-700 px-6 md:px-8 py-2 ml-4 transition-all duration-300 hover:scale-105"
+              >
+                <span className="hidden sm:inline">Start your Quests</span>
+                <span className="inline sm:hidden">
+                  <ArrowRight className="w-5 h-5" />
+                </span>
+              </Button>
+            ) : (
+              <Link href="/login">
                 <Button
                   size="lg"
                   className="bg-green-600 hover:bg-green-700 px-6 md:px-8 py-2 ml-4 transition-all duration-300 hover:scale-105"
@@ -121,7 +161,8 @@ export default function LandingPage() {
                     <ArrowRight className="w-5 h-5" />
                   </span>
                 </Button>
-            </Link>
+              </Link>
+            )}
           </div>
         </div>
         {/* Mobile Nav: Show links and login as row below header */}
@@ -135,15 +176,30 @@ export default function LandingPage() {
           <a href="#features" onClick={scrollToFeatures} className="text-gray-900 font-bold hover:text-green-700 transition-colors duration-300 cursor-pointer">
             Features
           </a>
-          <Button
-            size="sm"
-            className="bg-green-600 hover:bg-green-700 px-4 py-2 text-white transition-all duration-300 hover:scale-105"
-          >
-            <span className="hidden xs:inline">Login</span>
-            <span className="inline xs:hidden">
-              <ArrowRight className="w-4 h-4" />
-            </span>
-          </Button>
+          {isLoggedIn ? (
+            <Button
+              onClick={handleAuthButtonClick}
+              size="sm"
+              className="bg-green-600 hover:bg-green-700 px-4 py-2 text-white transition-all duration-300 hover:scale-105"
+            >
+              <span className="hidden xs:inline">Start your Quests</span>
+              <span className="inline xs:hidden">
+                <ArrowRight className="w-4 h-4" />
+              </span>
+            </Button>
+          ) : (
+            <Link href="/login">
+              <Button
+                size="sm"
+                className="bg-green-600 hover:bg-green-700 px-4 py-2 text-white transition-all duration-300 hover:scale-105"
+              >
+                <span className="hidden xs:inline">Login</span>
+                <span className="inline xs:hidden">
+                  <ArrowRight className="w-4 h-4" />
+                </span>
+              </Button>
+            </Link>
+          )}
         </div>
       </header>
 
@@ -549,15 +605,30 @@ export default function LandingPage() {
             environmental journey starts with a single action.
           </p>
           
-          <Button
-            size="lg"
-            className={`bg-white text-green-600 hover:bg-gray-100 rounded-2xl px-12 py-4 text-lg font-semibold transition-all duration-500 hover:scale-105 hover:shadow-2xl group ${
-              ctaSection.isIntersecting ? "opacity-100 translate-y-0 delay-700" : "opacity-0 translate-y-8"
-            }`}
-          >
-            Start Your Quest
-            <ArrowRight className="ml-3 w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
-          </Button>
+          {isLoggedIn ? (
+            <Button
+              onClick={handleAuthButtonClick}
+              size="lg"
+              className={`bg-white text-green-600 hover:bg-gray-100 rounded-2xl px-12 py-4 text-lg font-semibold transition-all duration-500 hover:scale-105 hover:shadow-2xl group ${
+                ctaSection.isIntersecting ? "opacity-100 translate-y-0 delay-700" : "opacity-0 translate-y-8"
+              }`}
+            >
+              Start Your Quest
+              <ArrowRight className="ml-3 w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
+            </Button>
+          ) : (
+            <Link href="/login">
+              <Button
+                size="lg"
+                className={`bg-white text-green-600 hover:bg-gray-100 rounded-2xl px-12 py-4 text-lg font-semibold transition-all duration-500 hover:scale-105 hover:shadow-2xl group ${
+                  ctaSection.isIntersecting ? "opacity-100 translate-y-0 delay-700" : "opacity-0 translate-y-8"
+                }`}
+              >
+                Start Your Quest
+                <ArrowRight className="ml-3 w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
+              </Button>
+            </Link>
+          )}
         </div>
       </section>
 

@@ -10,10 +10,11 @@ import {
   getUserProfileByUserId,
   getUserStatistics,
   updateUserProfile,
-  type UserProfileUpdate
+  type UserProfileUpdate,
 } from "@/utils/supabase/functions"
 import { Award, Camera, Clock, Edit3, Leaf, MapPin, Save, TreePine, Users, X } from "lucide-react"
-import React, { useEffect, useRef, useState } from "react"
+import type React from "react"
+import { useEffect, useRef, useState } from "react"
 import { AchievementsModal } from "../achievments"
 import { ImpactModal } from "../impactModel"
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar"
@@ -22,6 +23,35 @@ import { Button } from "../ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card"
 import { Input } from "../ui/Input"
 import { Textarea } from "../ui/textArea"
+
+// Level system configuration
+const LEVEL_SYSTEM = [
+  { level: 1, name: "Eco Newbie", minPoints: 0, color: "text-gray-600" },
+  { level: 2, name: "Tree Hugger", minPoints: 200, color: "text-green-600" },
+  { level: 3, name: "Green Guardian", minPoints: 500, color: "text-green-700" },
+  { level: 4, name: "Eco Warrior", minPoints: 1000, color: "text-blue-600" },
+  { level: 5, name: "Planet Protector", minPoints: 1800, color: "text-blue-700" },
+  { level: 6, name: "Climate Champion", minPoints: 2800, color: "text-purple-600" },
+  { level: 7, name: "Earth Hero", minPoints: 3900, color: "text-orange-600" },
+  { level: 8, name: "Sustainability Master", minPoints: 5000, color: "text-red-600" },
+  { level: 9, name: "Environmental Legend", minPoints: 5800, color: "text-indigo-600" },
+  { level: 10, name: "Eco God", minPoints: 7000, color: "text-yellow-600" },
+]
+
+// Calculate total eco points from user statistics
+const calculateEcoPoints = (stats: { carbonSaved: number; volunteerHours: number; cleanupsParticipated: number }) => {
+  return stats.carbonSaved * 2 + stats.volunteerHours * 10 + stats.cleanupsParticipated * 25
+}
+
+// Get user level based on eco points
+const getUserLevel = (ecoPoints: number) => {
+  for (let i = LEVEL_SYSTEM.length - 1; i >= 0; i--) {
+    if (ecoPoints >= LEVEL_SYSTEM[i].minPoints) {
+      return LEVEL_SYSTEM[i]
+    }
+  }
+  return LEVEL_SYSTEM[0]
+}
 
 export default function Component() {
   const [isEditingAbout, setIsEditingAbout] = useState(false)
@@ -45,48 +75,60 @@ export default function Component() {
     volunteerHours: 0,
     cleanupsParticipated: 0,
   })
-  const [recentBadges, setRecentBadges] = useState<{id: number, name: string, icon: React.ComponentType<{className?: string}>, earned: boolean}[]>([])
+  const [recentBadges, setRecentBadges] = useState<
+    { id: number; name: string; icon: React.ComponentType<{ className?: string }>; earned: boolean }[]
+  >([])
   const [loading, setLoading] = useState(true)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Calculate derived values
+  const totalEcoPoints = calculateEcoPoints(userStats)
+  const userLevel = getUserLevel(totalEcoPoints)
 
   // Fetch current user and all data
   useEffect(() => {
     const fetchUserData = async () => {
       try {
         const supabase = createClient()
-        
+
         // Get current user
-        const { data: { user } } = await supabase.auth.getUser()
+        const {
+          data: { user },
+        } = await supabase.auth.getUser()
         if (!user) {
           console.error("No user found")
           return
         }
-        
+
         setCurrentUserId(user.id)
-        
+
         // Fetch user profile
         const profileResult = await getUserProfileByUserId(user.id)
         if (profileResult.data) {
           const profile = profileResult.data
           setUserProfile({
             name: profile.name || "",
-            title: profile.title || "Environmental Enthusiast"
+            title: profile.title || "Environmental Enthusiast",
           })
           setTempProfile({
             name: profile.name || "",
-            title: profile.title || "Environmental Enthusiast"
+            title: profile.title || "Environmental Enthusiast",
           })
           setAboutText(profile.about || "")
           setLocation({
             city: profile.city || "",
             country: profile.country || "",
-            memberSince: profile.member_since ? new Date(profile.member_since).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : "Recently"
+            memberSince: profile.member_since
+              ? new Date(profile.member_since).toLocaleDateString("en-US", { month: "long", year: "numeric" })
+              : "Recently",
           })
           setTempLocation({
             city: profile.city || "",
             country: profile.country || "",
-            memberSince: profile.member_since ? new Date(profile.member_since).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : "Recently"
+            memberSince: profile.member_since
+              ? new Date(profile.member_since).toLocaleDateString("en-US", { month: "long", year: "numeric" })
+              : "Recently",
           })
           if (profile.profile_image_url) {
             setProfileImage(profile.profile_image_url)
@@ -96,45 +138,45 @@ export default function Component() {
           console.log("No profile found, creating default")
           const defaultProfile = {
             id: user.id,
-            name: user.user_metadata?.name || user.email?.split('@')[0] || "User",
+            name: user.user_metadata?.name || user.email?.split("@")[0] || "User",
             title: "Environmental Enthusiast",
             about: "Passionate about environmental conservation and making a positive impact in my community.",
             city: "",
             country: "",
-            member_since: new Date().toISOString()
+            member_since: new Date().toISOString(),
           }
-          
+
           const createResult = await createUserProfile(defaultProfile)
           if (createResult.data) {
             setUserProfile({
               name: defaultProfile.name,
-              title: defaultProfile.title
+              title: defaultProfile.title,
             })
             setTempProfile({
               name: defaultProfile.name,
-              title: defaultProfile.title
+              title: defaultProfile.title,
             })
             setAboutText(defaultProfile.about)
             setLocation({
               city: defaultProfile.city,
               country: defaultProfile.country,
-              memberSince: "Recently"
+              memberSince: "Recently",
             })
             setTempLocation({
               city: defaultProfile.city,
               country: defaultProfile.country,
-              memberSince: "Recently"
+              memberSince: "Recently",
             })
           }
         }
-        
+
         // Fetch user statistics
         const statsResult = await getUserStatistics(user.id)
         if (statsResult.data) {
           setUserStats({
             carbonSaved: statsResult.data.carbon_saved || 0,
             volunteerHours: statsResult.data.volunteer_hours || 0,
-            cleanupsParticipated: statsResult.data.cleanups_participated || 0
+            cleanupsParticipated: statsResult.data.cleanups_participated || 0,
           })
         } else {
           // Create default stats if none exist
@@ -142,31 +184,32 @@ export default function Component() {
             user_id: user.id,
             carbon_saved: 0,
             volunteer_hours: 0,
-            cleanups_participated: 0
+            cleanups_participated: 0,
           }
-          
+
           await createUserStatistics(defaultStats)
         }
-        
+
         // Fetch user badges
         try {
           const badgesResult = await fetchBadgesByUserId(user.id)
           const allBadgesResult = await fetchAllBadges()
-          
+
           if (allBadgesResult.data) {
             const userBadgeIds = badgesResult.data ? [badgesResult.data.badge_id] : []
-            const badgesWithStatus = allBadgesResult.data.slice(0, 4).map((badge: {id: number, name?: string, title?: string}) => ({
-              id: badge.id,
-              name: badge.name || badge.title || "Badge",
-              icon: Award, // Default icon, you can map specific icons based on badge type
-              earned: userBadgeIds.includes(badge.id)
-            }))
+            const badgesWithStatus = allBadgesResult.data
+              .slice(0, 4)
+              .map((badge: { id: number; name?: string; title?: string }) => ({
+                id: badge.id,
+                name: badge.name || badge.title || "Badge",
+                icon: Award, // Default icon, you can map specific icons based on badge type
+                earned: userBadgeIds.includes(badge.id),
+              }))
             setRecentBadges(badgesWithStatus)
           }
         } catch (error) {
           console.error("Error fetching badges:", error)
         }
-        
       } catch (error) {
         console.error("Error fetching user data:", error)
       } finally {
@@ -207,7 +250,7 @@ export default function Component() {
 
   const handleSaveAbout = async () => {
     if (!currentUserId) return
-    
+
     try {
       const updates: UserProfileUpdate = { about: aboutText }
       const result = await updateUserProfile(currentUserId, updates)
@@ -228,11 +271,11 @@ export default function Component() {
 
   const handleSaveName = async () => {
     if (!currentUserId) return
-    
+
     try {
-      const updates: UserProfileUpdate = { 
-        name: tempProfile.name, 
-        title: tempProfile.title 
+      const updates: UserProfileUpdate = {
+        name: tempProfile.name,
+        title: tempProfile.title,
       }
       const result = await updateUserProfile(currentUserId, updates)
       if (result.data) {
@@ -254,11 +297,11 @@ export default function Component() {
 
   const handleSaveLocation = async () => {
     if (!currentUserId) return
-    
+
     try {
-      const updates: UserProfileUpdate = { 
-        city: tempLocation.city, 
-        country: tempLocation.country 
+      const updates: UserProfileUpdate = {
+        city: tempLocation.city,
+        country: tempLocation.country,
       }
       const result = await updateUserProfile(currentUserId, updates)
       if (result.data) {
@@ -307,9 +350,7 @@ export default function Component() {
     <div className="h-screen bg-gray-50 flex flex-col overflow-hidden">
       {/* Header - Fully responsive */}
       {/* Header */}
-      <Header 
-        title="Profile"
-      />
+      <Header title="Profile" />
       <div className="flex-1 p-3 sm:p-4 md:p-6 overflow-y-auto">
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
@@ -377,15 +418,25 @@ export default function Component() {
                               onClick={handleCancelNameEdit}
                               className="flex items-center gap-1 sm:gap-2 border-2 bg-transparent px-3 sm:px-4"
                             >
-                      <X className="w-3 h-3 sm:w-4 sm:h-4 text-black" />
+                              <X className="w-3 h-3 sm:w-4 sm:h-4 text-black" />
                               <span className="text-xs sm:text-sm text-black">Cancel</span>
                             </Button>
                           </div>
                         </div>
                       ) : (
                         <div className="relative group w-full">
-                          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-1 sm:mb-2">{userProfile.name}</h1>
-                          <p className="text-base sm:text-lg md:text-xl text-gray-600">{userProfile.title}</p>
+                          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-1 sm:mb-2">
+                            {userProfile.name}
+                          </h1>
+                          <p className="text-base sm:text-lg md:text-xl text-gray-600 mb-2">{userProfile.title}</p>
+                          <div className="space-y-1">
+                            <p className={`text-sm sm:text-base md:text-lg font-semibold ${userLevel.color}`}>
+                              Level {userLevel.level} - {userLevel.name}
+                            </p>
+                            <p className="text-xs sm:text-sm md:text-base text-gray-500 font-medium">
+                              {totalEcoPoints.toLocaleString()} Eco Points
+                            </p>
+                          </div>
                           <Button
                             variant="ghost"
                             size="sm"
@@ -457,7 +508,7 @@ export default function Component() {
                           onClick={handleCancelLocationEdit}
                           className="flex items-center gap-1 sm:gap-2 border-2 bg-transparent px-3 sm:px-4"
                         >
-                      <X className="w-3 h-3 sm:w-4 sm:h-4 text-black" />
+                          <X className="w-3 h-3 sm:w-4 sm:h-4 text-black" />
                           <span className="text-xs sm:text-sm text-black">Cancel</span>
                         </Button>
                       </div>
@@ -466,7 +517,9 @@ export default function Component() {
                     <div className="space-y-2 sm:space-y-3">
                       <p className="font-medium text-base sm:text-lg md:text-xl text-gray-900">{location.city}</p>
                       <p className="text-sm sm:text-base md:text-lg text-gray-600">{location.country}</p>
-                      <p className="text-xs sm:text-sm md:text-base text-gray-500">Member since {location.memberSince}</p>
+                      <p className="text-xs sm:text-sm md:text-base text-gray-500">
+                        Member since {location.memberSince}
+                      </p>
                     </div>
                   )}
                 </CardContent>
@@ -513,7 +566,7 @@ export default function Component() {
                           onClick={handleCancelAboutEdit}
                           className="flex items-center gap-1 sm:gap-2 border-2 bg-transparent px-3 sm:px-4"
                         >
-                      <X className="w-3 h-3 sm:w-4 sm:h-4 text-black" />
+                          <X className="w-3 h-3 sm:w-4 sm:h-4 text-black" />
                           <span className="text-xs sm:text-sm text-black">Cancel</span>
                         </Button>
                       </div>
@@ -541,8 +594,12 @@ export default function Component() {
                       <CardContent className="p-4 sm:p-6 md:p-8">
                         <div className="flex items-center justify-between">
                           <div>
-                            <p className="text-green-100 text-xs sm:text-sm md:text-base font-medium mb-1 sm:mb-2">Carbon Saved</p>
-                            <p className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-1">{userStats.carbonSaved}</p>
+                            <p className="text-green-100 text-xs sm:text-sm md:text-base font-medium mb-1 sm:mb-2">
+                              Carbon Saved
+                            </p>
+                            <p className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-1">
+                              {userStats.carbonSaved}
+                            </p>
                             <p className="text-green-100 text-xs sm:text-sm">kg CO₂ equivalent</p>
                           </div>
                           <Leaf className="w-8 h-8 sm:w-12 sm:h-12 md:w-16 md:h-16 text-green-200" />
@@ -554,8 +611,12 @@ export default function Component() {
                       <CardContent className="p-4 sm:p-6 md:p-8">
                         <div className="flex items-center justify-between">
                           <div>
-                            <p className="text-gray-600 text-xs sm:text-sm md:text-base font-medium mb-1 sm:mb-2">Volunteer Hours</p>
-                            <p className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-1">{userStats.volunteerHours}</p>
+                            <p className="text-gray-600 text-xs sm:text-sm md:text-base font-medium mb-1 sm:mb-2">
+                              Volunteer Hours
+                            </p>
+                            <p className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-1">
+                              {userStats.volunteerHours}
+                            </p>
                             <p className="text-gray-500 text-xs sm:text-sm">hours logged</p>
                           </div>
                           <div className="p-2 sm:p-3 md:p-4 bg-blue-100 rounded-lg">
@@ -569,8 +630,12 @@ export default function Component() {
                       <CardContent className="p-4 sm:p-6 md:p-8">
                         <div className="flex items-center justify-between">
                           <div>
-                            <p className="text-gray-600 text-xs sm:text-sm md:text-base font-medium mb-1 sm:mb-2">Cleanups</p>
-                            <p className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-1">{userStats.cleanupsParticipated}</p>
+                            <p className="text-gray-600 text-xs sm:text-sm md:text-base font-medium mb-1 sm:mb-2">
+                              Cleanups
+                            </p>
+                            <p className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-1">
+                              {userStats.cleanupsParticipated}
+                            </p>
                             <p className="text-gray-500 text-xs sm:text-sm">events joined</p>
                           </div>
                           <div className="p-2 sm:p-3 md:p-4 bg-orange-100 rounded-lg">
@@ -588,7 +653,7 @@ export default function Component() {
                 <CardHeader className="pb-4 sm:pb-5 md:pb-6">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-xl sm:text-2xl md:text-3xl text-gray-900">Recent Achievements</CardTitle>
-                    <AchievementsModal />
+                    <AchievementsModal userStats={userStats} ecoPoints={totalEcoPoints} />
                   </div>
                 </CardHeader>
                 <CardContent className="pb-4 sm:pb-6 md:pb-8">
@@ -604,7 +669,9 @@ export default function Component() {
                               : "bg-gray-50 border border-gray-200 opacity-60"
                           }`}
                         >
-                          <div className={`p-2 sm:p-3 md:p-4 rounded-full mb-2 sm:mb-3 md:mb-4 ${badge.earned ? "bg-green-100" : "bg-gray-100"}`}>
+                          <div
+                            className={`p-2 sm:p-3 md:p-4 rounded-full mb-2 sm:mb-3 md:mb-4 ${badge.earned ? "bg-green-100" : "bg-gray-100"}`}
+                          >
                             <IconComponent
                               className={`w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 ${badge.earned ? "text-green-600" : "text-gray-400"}`}
                             />
@@ -629,9 +696,15 @@ export default function Component() {
               {/* Motivational Card */}
               <Card className="shadow-md bg-gradient-to-r from-blue-500 to-green-500 text-white border-0">
                 <CardContent className="p-4 sm:p-6 md:p-8 text-center">
-                  <p className="text-xs sm:text-sm md:text-base font-medium text-blue-100 mb-2 sm:mb-3">Keep up the great work!</p>
-                  <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold mb-2 sm:mb-3">Every action makes a difference 🌍</p>
-                  <p className="text-xs sm:text-sm md:text-base text-blue-100">You are making a real impact on our planet</p>
+                  <p className="text-xs sm:text-sm md:text-base font-medium text-blue-100 mb-2 sm:mb-3">
+                    Keep up the great work!
+                  </p>
+                  <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold mb-2 sm:mb-3">
+                    Every action makes a difference 🌍
+                  </p>
+                  <p className="text-xs sm:text-sm md:text-base text-blue-100">
+                    You are making a real impact on our planet
+                  </p>
                 </CardContent>
               </Card>
             </div>
