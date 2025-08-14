@@ -18,7 +18,7 @@ import { useEffect } from "react"
 
 export default function Component() {
   const checking = useRequireAuth();
-  const [selectedMetric, setSelectedMetric] = useState<"carbon" | "events" | "hours">("carbon")
+  const [selectedMetric, setSelectedMetric] = useState<"carbon" | "events" | "hours" | "points">("carbon")
   const [hoveredEntry, setHoveredEntry] = useState<string | null>(null)
   const [selectedEntry, setSelectedEntry] = useState<string | null>(null)
 
@@ -78,6 +78,8 @@ export default function Component() {
         return entry.events_joined || 0
       case "hours":
         return entry.volunteer_hours || 0
+      case "points":
+        return entry.eco_points || 0
       default:
         return entry.carbon_saved || 0
     }
@@ -91,6 +93,8 @@ export default function Component() {
         return `${entry.events_joined || 0} events joined`
       case "hours":
         return `${entry.volunteer_hours || 0} volunteer hours`
+      case "points":
+        return `${entry.eco_points || 0} eco points`
       default:
         return `${entry.carbon_saved || 0} kg CO₂ saved`
     }
@@ -230,6 +234,14 @@ export default function Component() {
                   >
                     <Clock className="h-5 w-5" />
                     Volunteer Hours
+                  </Button>
+                  <Button
+                    onClick={() => setSelectedMetric("points")}
+                    active={selectedMetric === "points"}
+                    className="flex-1"
+                  >
+                    <Star className="h-5 w-5" />
+                    Eco Points
                   </Button>
                 </div>
 

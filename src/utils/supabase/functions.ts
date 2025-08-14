@@ -13,6 +13,7 @@ export interface Leaderboard {
   carbon_saved?: number | null;
   events_joined?: number | null;
   volunteer_hours?: number | null;
+  eco_points?: number | null;
   type?: string | null;
   streak?: number | null;
   level?: number | null;
@@ -28,6 +29,7 @@ export interface LeaderboardInsert {
   carbon_saved?: number | null;
   events_joined?: number | null;
   volunteer_hours?: number | null;
+  eco_points?: number | null;
   type?: string | null;
   streak?: number | null;
   level?: number | null;
@@ -41,6 +43,7 @@ export interface LeaderboardUpdate {
   carbon_saved?: number | null;
   events_joined?: number | null;
   volunteer_hours?: number | null;
+  eco_points?: number | null;
   type?: string | null;
   streak?: number | null;
   level?: number | null;
