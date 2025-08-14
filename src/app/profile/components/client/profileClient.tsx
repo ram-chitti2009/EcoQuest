@@ -1,7 +1,19 @@
 "use client"
 
-import { Award, Calendar, Camera, Clock, Edit3, Leaf, MapPin, Save, TreePine, User, Users, X } from "lucide-react"
-import { useEffect, useRef, useState } from "react"
+import Header from "@/app/components/Header"
+import { createClient } from "@/utils/supabase/client"
+import {
+  createUserProfile,
+  createUserStatistics,
+  fetchAllBadges,
+  fetchBadgesByUserId,
+  getUserProfileByUserId,
+  getUserStatistics,
+  updateUserProfile,
+  type UserProfileUpdate
+} from "@/utils/supabase/functions"
+import { Award, Camera, Clock, Edit3, Leaf, MapPin, Save, TreePine, Users, X } from "lucide-react"
+import React, { useEffect, useRef, useState } from "react"
 import { AchievementsModal } from "../achievments"
 import { ImpactModal } from "../impactModel"
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar"
@@ -10,55 +22,229 @@ import { Button } from "../ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card"
 import { Input } from "../ui/Input"
 import { Textarea } from "../ui/textArea"
-import Header from "@/app/components/Header"
 
 export default function Component() {
   const [isEditingAbout, setIsEditingAbout] = useState(false)
   const [isEditingLocation, setIsEditingLocation] = useState(false)
   const [isEditingName, setIsEditingName] = useState(false)
   const [profileImage, setProfileImage] = useState("/placeholder.svg?height=192&width=192")
-  const [aboutText, setAboutText] = useState(
-    "Passionate about environmental conservation and making a positive impact in my community. I love participating in cleanup events and finding new ways to reduce my carbon footprint. Always looking for opportunities to learn and help others on their sustainability journey!",
-  )
+  const [aboutText, setAboutText] = useState("")
   const [userProfile, setUserProfile] = useState({
-    name: "Alex Johnson",
-    title: "Environmental Enthusiast",
+    name: "",
+    title: "",
   })
   const [tempProfile, setTempProfile] = useState(userProfile)
   const [location, setLocation] = useState({
-    city: "San Francisco, CA",
-    country: "United States",
-    memberSince: "March 2024",
+    city: "",
+    country: "",
+    memberSince: "",
   })
   const [tempLocation, setTempLocation] = useState(location)
+  const [userStats, setUserStats] = useState({
+    carbonSaved: 0,
+    volunteerHours: 0,
+    cleanupsParticipated: 0,
+  })
+  const [recentBadges, setRecentBadges] = useState<{id: number, name: string, icon: React.ComponentType<{className?: string}>, earned: boolean}[]>([])
+  const [loading, setLoading] = useState(true)
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const userStats = {
-    carbonSaved: 127.5,
-    volunteerHours: 24,
-    cleanupsParticipated: 8,
+  // Fetch current user and all data
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const supabase = createClient()
+        
+        // Get current user
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+          console.error("No user found")
+          return
+        }
+        
+        setCurrentUserId(user.id)
+        
+        // Fetch user profile
+        const profileResult = await getUserProfileByUserId(user.id)
+        if (profileResult.data) {
+          const profile = profileResult.data
+          setUserProfile({
+            name: profile.name || "",
+            title: profile.title || "Environmental Enthusiast"
+          })
+          setTempProfile({
+            name: profile.name || "",
+            title: profile.title || "Environmental Enthusiast"
+          })
+          setAboutText(profile.about || "")
+          setLocation({
+            city: profile.city || "",
+            country: profile.country || "",
+            memberSince: profile.member_since ? new Date(profile.member_since).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : "Recently"
+          })
+          setTempLocation({
+            city: profile.city || "",
+            country: profile.country || "",
+            memberSince: profile.member_since ? new Date(profile.member_since).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : "Recently"
+          })
+          if (profile.profile_image_url) {
+            setProfileImage(profile.profile_image_url)
+          }
+        } else {
+          // Create default profile if none exists
+          console.log("No profile found, creating default")
+          const defaultProfile = {
+            id: user.id,
+            name: user.user_metadata?.name || user.email?.split('@')[0] || "User",
+            title: "Environmental Enthusiast",
+            about: "Passionate about environmental conservation and making a positive impact in my community.",
+            city: "",
+            country: "",
+            member_since: new Date().toISOString()
+          }
+          
+          const createResult = await createUserProfile(defaultProfile)
+          if (createResult.data) {
+            setUserProfile({
+              name: defaultProfile.name,
+              title: defaultProfile.title
+            })
+            setTempProfile({
+              name: defaultProfile.name,
+              title: defaultProfile.title
+            })
+            setAboutText(defaultProfile.about)
+            setLocation({
+              city: defaultProfile.city,
+              country: defaultProfile.country,
+              memberSince: "Recently"
+            })
+            setTempLocation({
+              city: defaultProfile.city,
+              country: defaultProfile.country,
+              memberSince: "Recently"
+            })
+          }
+        }
+        
+        // Fetch user statistics
+        const statsResult = await getUserStatistics(user.id)
+        if (statsResult.data) {
+          setUserStats({
+            carbonSaved: statsResult.data.carbon_saved || 0,
+            volunteerHours: statsResult.data.volunteer_hours || 0,
+            cleanupsParticipated: statsResult.data.cleanups_participated || 0
+          })
+        } else {
+          // Create default stats if none exist
+          const defaultStats = {
+            user_id: user.id,
+            carbon_saved: 0,
+            volunteer_hours: 0,
+            cleanups_participated: 0
+          }
+          
+          await createUserStatistics(defaultStats)
+        }
+        
+        // Fetch user badges
+        try {
+          const badgesResult = await fetchBadgesByUserId(user.id)
+          const allBadgesResult = await fetchAllBadges()
+          
+          if (allBadgesResult.data) {
+            const userBadgeIds = badgesResult.data ? [badgesResult.data.badge_id] : []
+            const badgesWithStatus = allBadgesResult.data.slice(0, 4).map((badge: {id: number, name?: string, title?: string}) => ({
+              id: badge.id,
+              name: badge.name || badge.title || "Badge",
+              icon: Award, // Default icon, you can map specific icons based on badge type
+              earned: userBadgeIds.includes(badge.id)
+            }))
+            setRecentBadges(badgesWithStatus)
+          }
+        } catch (error) {
+          console.error("Error fetching badges:", error)
+        }
+        
+      } catch (error) {
+        console.error("Error fetching user data:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchUserData()
+  }, []) // Fixed dependency array - we only want this to run once on mount
+
+  // Update default badges based on user stats
+  useEffect(() => {
+    if (recentBadges.length === 0 && !loading) {
+      // Set default badges if there's an error or no badges loaded
+      setRecentBadges([
+        { id: 1, name: "First Cleanup", icon: Users, earned: true },
+        { id: 2, name: "50 kg CO₂ Saved", icon: Leaf, earned: userStats.carbonSaved >= 50 },
+        { id: 3, name: "Eco Warrior", icon: Award, earned: userStats.volunteerHours >= 10 },
+        { id: 4, name: "Tree Hugger", icon: TreePine, earned: false },
+      ])
+    }
+  }, [userStats.carbonSaved, userStats.volunteerHours, recentBadges.length, loading])
+
+  // Show loading screen while fetching data
+  if (loading) {
+    return (
+      <div className="h-screen bg-gray-50 flex flex-col overflow-hidden">
+        <Header title="Profile" />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading your profile...</p>
+          </div>
+        </div>
+      </div>
+    )
   }
 
-  const recentBadges = [
-    { id: 1, name: "First Cleanup", icon: Users, earned: true },
-    { id: 2, name: "50 kg CO₂ Saved", icon: Leaf, earned: true },
-    { id: 3, name: "Eco Warrior", icon: Award, earned: true },
-    { id: 4, name: "Tree Hugger", icon: TreePine, earned: false },
-  ]
-
-  const handleSaveAbout = () => {
-    setIsEditingAbout(false)
-    console.log("Saving about text:", aboutText)
+  const handleSaveAbout = async () => {
+    if (!currentUserId) return
+    
+    try {
+      const updates: UserProfileUpdate = { about: aboutText }
+      const result = await updateUserProfile(currentUserId, updates)
+      if (result.data) {
+        setIsEditingAbout(false)
+        console.log("About text saved successfully")
+      } else {
+        console.error("Failed to save about text:", result.error)
+      }
+    } catch (error) {
+      console.error("Error saving about text:", error)
+    }
   }
 
   const handleCancelAboutEdit = () => {
     setIsEditingAbout(false)
   }
 
-  const handleSaveName = () => {
-    setUserProfile(tempProfile)
-    setIsEditingName(false)
-    console.log("Saving profile:", tempProfile)
+  const handleSaveName = async () => {
+    if (!currentUserId) return
+    
+    try {
+      const updates: UserProfileUpdate = { 
+        name: tempProfile.name, 
+        title: tempProfile.title 
+      }
+      const result = await updateUserProfile(currentUserId, updates)
+      if (result.data) {
+        setUserProfile(tempProfile)
+        setIsEditingName(false)
+        console.log("Profile saved successfully")
+      } else {
+        console.error("Failed to save profile:", result.error)
+      }
+    } catch (error) {
+      console.error("Error saving profile:", error)
+    }
   }
 
   const handleCancelNameEdit = () => {
@@ -66,10 +252,25 @@ export default function Component() {
     setIsEditingName(false)
   }
 
-  const handleSaveLocation = () => {
-    setLocation(tempLocation)
-    setIsEditingLocation(false)
-    console.log("Saving location:", tempLocation)
+  const handleSaveLocation = async () => {
+    if (!currentUserId) return
+    
+    try {
+      const updates: UserProfileUpdate = { 
+        city: tempLocation.city, 
+        country: tempLocation.country 
+      }
+      const result = await updateUserProfile(currentUserId, updates)
+      if (result.data) {
+        setLocation(tempLocation)
+        setIsEditingLocation(false)
+        console.log("Location saved successfully")
+      } else {
+        console.error("Failed to save location:", result.error)
+      }
+    } catch (error) {
+      console.error("Error saving location:", error)
+    }
   }
 
   const handleCancelLocationEdit = () => {

@@ -1,19 +1,23 @@
 "use client"
 
+import Header from "@/app/components/Header"
+import SidebarWrapper from "@/app/components/SidebarWrapper"
+import LoadingScreen from "@/components/LoadingScreen"
+import { useRequireAuth } from "@/hooks/useRequireAuth"
 import { Atom } from "lucide-react"
 import { useState } from "react"
-import { Avatar } from "../ui/avatar"
-import { Badge } from "../ui/badge"
-import { Button } from "../ui/button"
-import { Card, CardContent, CardHeader } from "../ui/card"
-import { Clock, Crown, Star, Trophy, Users } from "../ui/icons"
-import { Progress } from "../ui/progress"
-import Header from "@/app/components/Header"
+import { Avatar } from "./components/ui/avatar"
+import { Badge } from "./components/ui/badge"
+import { Button } from "./components/ui/button"
+import { Card, CardContent, CardHeader } from "./components/ui/card"
+import { Clock, Crown, Star, Trophy, Users } from "./components/ui/icons"
+import { Progress } from "./components/ui/progress"
 
+import { getAllLeaderboardEntries, getCommunityStats, Leaderboard } from "@/utils/supabase/functions"
 import { useEffect } from "react"
-import {getAllLeaderboardEntries, Leaderboard, getCommunityStats} from "@/utils/supabase/functions"
 
 export default function Component() {
+  const checking = useRequireAuth();
   const [selectedMetric, setSelectedMetric] = useState<"carbon" | "events" | "hours">("carbon")
   const [hoveredEntry, setHoveredEntry] = useState<string | null>(null)
   const [selectedEntry, setSelectedEntry] = useState<string | null>(null)
@@ -59,6 +63,10 @@ export default function Component() {
 
     fetchData()
   }, [])
+
+  if (checking) {
+    return <LoadingScreen />;
+  }
 
   // Mock data with more colorful variety
 
@@ -134,51 +142,64 @@ export default function Component() {
 
   if (loading) {
     return (
-      <div className="h-screen bg-gray-50 flex flex-col overflow-hidden">
-        <Header 
-          title="EcoQuest Leaderboard"
-          centerMessage="🌍 Loading Community Heroes 🌱"
-        />
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading leaderboard data...</p>
+      <div className="flex">
+        <SidebarWrapper loading={false} />
+        <main className="flex-1">
+          <div className="h-screen bg-gray-50 flex flex-col overflow-hidden">
+            <Header 
+              title="EcoQuest Leaderboard"
+              centerMessage="🌍 Loading Community Heroes 🌱"
+            />
+            <div className="flex-1 flex items-center justify-center">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto mb-4"></div>
+                <p className="text-gray-600">Loading leaderboard data...</p>
+              </div>
+            </div>
           </div>
-        </div>
+        </main>
       </div>
     )
   }
 
   if (leaderboardData.length === 0) {
     return (
-      <div className="h-screen bg-gray-50 flex flex-col overflow-hidden">
-        <Header 
-          title="EcoQuest Leaderboard"
-          centerMessage="🌍 Top Local Heroes This Month 🌱"
-        />
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <div className="text-6xl mb-4">🌱</div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">No Heroes Yet!</h2>
-            <p className="text-gray-600">Be the first to make an environmental impact!</p>
-            <button className="mt-4 px-6 py-2 bg-green-500 text-white rounded-lg font-medium hover:bg-green-600 transition-colors">
-              Start Your Journey
-            </button>
+      <div className="flex">
+        <SidebarWrapper loading={false} />
+        <main className="flex-1">
+          <div className="h-screen bg-gray-50 flex flex-col overflow-hidden">
+            <Header 
+              title="EcoQuest Leaderboard"
+              centerMessage="🌍 Top Local Heroes This Month 🌱"
+            />
+            <div className="flex-1 flex items-center justify-center">
+              <div className="text-center">
+                <div className="text-6xl mb-4">🌱</div>
+                <h2 className="text-2xl font-bold text-gray-800 mb-2">No Heroes Yet!</h2>
+                <p className="text-gray-600">Be the first to make an environmental impact!</p>
+                <button className="mt-4 px-6 py-2 bg-green-500 text-white rounded-lg font-medium hover:bg-green-600 transition-colors">
+                  Start Your Journey
+                </button>
+              </div>
+            </div>
           </div>
-        </div>
+        </main>
       </div>
     )
   }
 
   return (
-    <div className="h-screen bg-gray-50 flex flex-col overflow-hidden">
-      {/* Header */}
-      <Header 
-        title="EcoQuest Leaderboard"
-        centerMessage="🌍 Top Local Heroes This Month 🌱"
-      />
+    <div className="flex">
+      <SidebarWrapper loading={false} />
+      <main className="flex-1">
+        <div className="h-screen bg-gray-50 flex flex-col overflow-hidden">
+          {/* Header */}
+          <Header 
+            title="EcoQuest Leaderboard"
+            centerMessage="🌍 Top Local Heroes This Month 🌱"
+          />
 
-      <div className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-6">
+          <div className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-6">
         <div className="min-h-full grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
           {/* Main Leaderboard Section */}
           <div className="lg:col-span-2 h-[760px]">
@@ -228,7 +249,7 @@ export default function Component() {
                     >
                       <div className="flex justify-center mb-2">{getRankIcon(entry.rank)}</div>
                       <Avatar
-                        src={entry.avatar}
+                        src={entry.avatar || undefined}
                         fallback={entry.name
                           ?.split(" ")
                           .map((n) => n[0])
@@ -275,7 +296,7 @@ export default function Component() {
 
                       {/* Avatar */}
                       <Avatar
-                        src={entry.avatar}
+                        src={entry.avatar || undefined}
                         fallback={entry.name
                           ?.split(" ")
                           .map((n) => n[0])
@@ -436,7 +457,9 @@ export default function Component() {
             </Card>
           </div>
         </div>
-      </div>
+          </div>
+        </div>
+      </main>
     </div>
   )
 }

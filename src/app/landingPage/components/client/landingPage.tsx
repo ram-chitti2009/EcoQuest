@@ -90,7 +90,7 @@ export default function LandingPage() {
           <div className="flex items-center space-x-2 -ml-4 md:-ml-20">
             <div className="w-12 h-12 md:w-16 md:h-16 relative bg-white rounded-full shadow-lg flex items-center justify-center p-2 transition-transform duration-300 hover:scale-110">
               <Image
-                src="/Screenshot%202025-07-12%20172658.png"
+                src="/Screenshot 2025-07-12 172658.png"
                 alt="EcoQuest Logo"
                 layout="fill"
                 objectFit="contain"
