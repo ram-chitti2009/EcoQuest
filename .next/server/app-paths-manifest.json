@@ -1,11 +1,6 @@
 {
   "/_not-found/page": "app/_not-found/page.js",
-  "/community-cleanup/page": "app/community-cleanup/page.js",
   "/dashboard/page": "app/dashboard/page.js",
   "/favicon.ico/route": "app/favicon.ico/route.js",
-  "/landingPage/page": "app/landingPage/page.js",
-  "/login/page": "app/login/page.js",
-  "/page": "app/page.js",
-  "/profile/page": "app/profile/page.js",
-  "/signup/page": "app/signup/page.js"
+  "/profile/page": "app/profile/page.js"
 }
