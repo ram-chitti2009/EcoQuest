@@ -10,10 +10,6 @@ export interface Leaderboard {
   rank: number;
   name: string;
   avatar?: string | null;
-  carbon_saved?: number | null;
-  events_joined?: number | null;
-  volunteer_hours?: number | null;
-  eco_points?: number | null;
   type?: string | null;
   streak?: number | null;
   level?: number | null;
@@ -26,10 +22,6 @@ export interface LeaderboardInsert {
   rank: number;
   name: string;
   avatar?: string | null;
-  carbon_saved?: number | null;
-  events_joined?: number | null;
-  volunteer_hours?: number | null;
-  eco_points?: number | null;
   type?: string | null;
   streak?: number | null;
   level?: number | null;
@@ -40,10 +32,6 @@ export interface LeaderboardUpdate {
   rank?: number;
   name?: string;
   avatar?: string | null;
-  carbon_saved?: number | null;
-  events_joined?: number | null;
-  volunteer_hours?: number | null;
-  eco_points?: number | null;
   type?: string | null;
   streak?: number | null;
   level?: number | null;
@@ -854,12 +842,63 @@ export async function getLeaderboardWithUserData() {
                 profile_image_url,
                 city,
                 country
+            ),
+            user_statistics (
+                carbon_saved,
+                volunteer_hours,
+                cleanups_participated
             )
         `)
         .order('rank', { ascending: true });
 
     if (error) {
         console.error("Error fetching leaderboard with user data:", error);
+        return { data: [], error };
+    }
+
+    return { data, error: null };
+}
+
+// Get leaderboard sorted by specific metric(Arpit to work on the computation of points logic)
+export async function getLeaderboardByMetric(metric: 'carbon' | 'hours' | 'cleanups' | 'points') {
+    let orderColumn = 'carbon_saved';
+    
+    switch (metric) {
+        case 'carbon':
+            orderColumn = 'carbon_saved';
+            break;
+        case 'hours':
+            orderColumn = 'volunteer_hours';
+            break;
+        case 'cleanups':
+            orderColumn = 'cleanups_participated';
+            break;
+        case 'points':
+            // For points, we'll need to calculate on the client side since it's computed
+            orderColumn = 'carbon_saved'; // Default to carbon for now
+            break;
+    }
+
+    const { data, error } = await supabase
+        .from('leaderboard')
+        .select(`
+            *,
+            user_profiles (
+                name,
+                profile_image_url,
+                city,
+                country
+            ),
+            user_statistics (
+                carbon_saved,
+                volunteer_hours,
+                cleanups_participated
+            )
+        `)
+        .order(`user_statistics(${orderColumn})`, { ascending: false });
+
+    if (error) {
+        console.error("Error fetching leaderboard by metric:", error);
         return { data: [], error };
     }
 

@@ -13,8 +13,23 @@ import { Card, CardContent, CardHeader } from "./components/ui/card"
 import { Clock, Crown, Star, Trophy, Users } from "./components/ui/icons"
 import { Progress } from "./components/ui/progress"
 
-import { getAllLeaderboardEntries, getCommunityStats, Leaderboard } from "@/utils/supabase/functions"
+import { getLeaderboardWithUserData, getCommunityStats, Leaderboard } from "@/utils/supabase/functions"
 import { useEffect } from "react"
+
+// Extended interface for leaderboard with joined data
+interface LeaderboardWithStats extends Leaderboard {
+  user_profiles?: {
+    name: string;
+    profile_image_url?: string;
+    city?: string;
+    country?: string;
+  };
+  user_statistics?: {
+    carbon_saved?: number;
+    volunteer_hours?: number;
+    cleanups_participated?: number;
+  };
+}
 
 export default function Component() {
   const checking = useRequireAuth();
@@ -22,7 +37,7 @@ export default function Component() {
   const [hoveredEntry, setHoveredEntry] = useState<string | null>(null)
   const [selectedEntry, setSelectedEntry] = useState<string | null>(null)
 
-  const [leaderboardData, setLeaderboardData] = useState<Leaderboard[]>([])
+  const [leaderboardData, setLeaderboardData] = useState<LeaderboardWithStats[]>([])
   const [communityStats, setCommunityStats] = useState({
     total_carbon_saved: 1247,
     total_volunteer_hours: 156,
@@ -36,12 +51,12 @@ export default function Component() {
       setLoading(true)
       try {
         // Fetch leaderboard data
-        const leaderboardResult = await getAllLeaderboardEntries()
+        const leaderboardResult = await getLeaderboardWithUserData()
         if (leaderboardResult.error) {
           console.error("Error fetching leaderboard data:", leaderboardResult.error)
           setLeaderboardData([])
         } else {
-          setLeaderboardData(leaderboardResult.data as Leaderboard[])
+          setLeaderboardData(leaderboardResult.data as LeaderboardWithStats[])
           console.log("Fetched leaderboard data:", leaderboardResult.data)
         }
 
@@ -70,33 +85,41 @@ export default function Component() {
 
   // Mock data with more colorful variety
 
-  const getMetricValue = (entry: Leaderboard) => {
+  const getMetricValue = (entry: LeaderboardWithStats) => {
     switch (selectedMetric) {
       case "carbon":
-        return entry.carbon_saved || 0
+        return entry.user_statistics?.carbon_saved || 0
       case "events":
-        return entry.events_joined || 0
+        return entry.user_statistics?.cleanups_participated || 0  // Using cleanups as events
       case "hours":
-        return entry.volunteer_hours || 0
+        return entry.user_statistics?.volunteer_hours || 0
       case "points":
-        return entry.eco_points || 0
+        // Calculate points based on available statistics
+        const carbon = entry.user_statistics?.carbon_saved || 0
+        const hours = entry.user_statistics?.volunteer_hours || 0
+        const cleanups = entry.user_statistics?.cleanups_participated || 0
+        return carbon + (hours * 10) + (cleanups * 5)  // Simple point calculation
       default:
-        return entry.carbon_saved || 0
+        return entry.user_statistics?.carbon_saved || 0
     }
   }
 
-  const getMetricLabel = (entry: Leaderboard) => {
+  const getMetricLabel = (entry: LeaderboardWithStats) => {
     switch (selectedMetric) {
       case "carbon":
-        return `${entry.carbon_saved || 0} kg CO₂ saved`
+        return `${entry.user_statistics?.carbon_saved || 0} kg CO₂ saved`
       case "events":
-        return `${entry.events_joined || 0} events joined`
+        return `${entry.user_statistics?.cleanups_participated || 0} events joined`
       case "hours":
-        return `${entry.volunteer_hours || 0} volunteer hours`
+        return `${entry.user_statistics?.volunteer_hours || 0} volunteer hours`
       case "points":
-        return `${entry.eco_points || 0} eco points`
+        const carbon = entry.user_statistics?.carbon_saved || 0
+        const hours = entry.user_statistics?.volunteer_hours || 0
+        const cleanups = entry.user_statistics?.cleanups_participated || 0
+        const points = carbon + (hours * 10) + (cleanups * 5)
+        return `${points} eco points`
       default:
-        return `${entry.carbon_saved || 0} kg CO₂ saved`
+        return `${entry.user_statistics?.carbon_saved || 0} kg CO₂ saved`
     }
   }
 
@@ -261,8 +284,8 @@ export default function Component() {
                     >
                       <div className="flex justify-center mb-2">{getRankIcon(entry.rank)}</div>
                       <Avatar
-                        src={entry.avatar || undefined}
-                        fallback={entry.name
+                        src={entry.user_profiles?.profile_image_url || entry.avatar || undefined}
+                        fallback={(entry.user_profiles?.name || entry.name)
                           ?.split(" ")
                           .map((n) => n[0])
                           .join("")
@@ -270,7 +293,7 @@ export default function Component() {
                         size="lg"
                         className="mx-auto mb-2"
                       />
-                      <h3 className="font-bold text-gray-800 truncate">{entry.name}</h3>
+                      <h3 className="font-bold text-gray-800 truncate">{entry.user_profiles?.name || entry.name}</h3>
                       <p className="text-sm text-gray-600">{getMetricLabel(entry)}</p>
                       {getRankBadge(entry.rank)}
                     </div>
@@ -308,8 +331,8 @@ export default function Component() {
 
                       {/* Avatar */}
                       <Avatar
-                        src={entry.avatar || undefined}
-                        fallback={entry.name
+                        src={entry.user_profiles?.profile_image_url || entry.avatar || undefined}
+                        fallback={(entry.user_profiles?.name || entry.name)
                           ?.split(" ")
                           .map((n) => n[0])
                           .join("")
@@ -325,7 +348,7 @@ export default function Component() {
                               entry.user_id ? "text-green-700" : "text-gray-800"
                             }`}
                           >
-                            {entry.name}
+                            {entry.user_profiles?.name || entry.name}
                           </h3>
                           {getTypeIcon(entry.type || "user")}
                           {entry.user_id && <Badge variant="user">✨ You</Badge>}
