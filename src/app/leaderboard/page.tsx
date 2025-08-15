@@ -13,8 +13,9 @@ import { Card, CardContent, CardHeader } from "./components/ui/card"
 import { Clock, Crown, Star, Trophy, Users } from "./components/ui/icons"
 import { Progress } from "./components/ui/progress"
 
-import { getLeaderboardWithUserData, getCommunityStats, Leaderboard } from "@/utils/supabase/functions"
-import { useEffect } from "react"
+import { createClient } from "@/utils/supabase/client"
+import { getCommunityStats, getLeaderboardWithUserData, Leaderboard } from "@/utils/supabase/functions"
+import { useCallback, useEffect } from "react"
 
 // Extended interface for leaderboard with joined data
 interface LeaderboardWithStats extends Leaderboard {
@@ -25,6 +26,51 @@ interface LeaderboardWithStats extends Leaderboard {
   };
 }
 
+// Function to calculate metric value for ranking
+const calculateMetricValue = (entry: LeaderboardWithStats, metric: "carbon" | "events" | "hours" | "points") => {
+  switch (metric) {
+    case "carbon":
+      return entry.user_statistics?.carbon_saved || 0
+    case "events":
+      return entry.user_statistics?.cleanups_participated || 0
+    case "hours":
+      return entry.user_statistics?.volunteer_hours || 0
+    case "points":
+      // Calculate points based on available statistics
+      const carbon = entry.user_statistics?.carbon_saved || 0
+      const hours = entry.user_statistics?.volunteer_hours || 0
+      const cleanups = entry.user_statistics?.cleanups_participated || 0
+      return (carbon * 2) + (hours * 10) + (cleanups * 25)  // Updated point calculation to match getMetricLabel
+    default:
+      return entry.user_statistics?.carbon_saved || 0
+  }
+}
+
+// Function to rank users by selected metric
+const rankUsersByMetric = (users: LeaderboardWithStats[], metric: "carbon" | "events" | "hours" | "points"): LeaderboardWithStats[] => {
+  console.log("Ranking users by metric:", metric)
+  console.log("Input users:", users)
+  
+  // Sort users by their metric value (descending order - highest first)
+  const sortedUsers = [...users].sort((a, b) => {
+    const aValue = calculateMetricValue(a, metric)
+    const bValue = calculateMetricValue(b, metric)
+    console.log(`${a.name}: ${aValue}, ${b.name}: ${bValue}`)
+    return bValue - aValue // Descending order
+  })
+
+  console.log("Sorted users:", sortedUsers)
+
+  // Assign ranks based on sorted positions
+  const rankedUsers = sortedUsers.map((user, index) => ({
+    ...user,
+    rank: index + 1
+  }))
+  
+  console.log("Final ranked users:", rankedUsers)
+  return rankedUsers
+}
+
 export default function Component() {
   const checking = useRequireAuth();
   const [selectedMetric, setSelectedMetric] = useState<"carbon" | "events" | "hours" | "points">("carbon")
@@ -32,6 +78,8 @@ export default function Component() {
   const [selectedEntry, setSelectedEntry] = useState<string | null>(null)
 
   const [leaderboardData, setLeaderboardData] = useState<LeaderboardWithStats[]>([])
+  const [rawLeaderboardData, setRawLeaderboardData] = useState<LeaderboardWithStats[]>([])
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [communityStats, setCommunityStats] = useState({
     total_carbon_saved: 1247,
     total_volunteer_hours: 156,
@@ -40,18 +88,44 @@ export default function Component() {
   })
   const [loading, setLoading] = useState(true)
 
+  // Function to update rankings when metric changes
+  const updateRankingsForMetric = useCallback((metric: "carbon" | "events" | "hours" | "points") => {
+    if (rawLeaderboardData.length > 0) {
+      const rankedData = rankUsersByMetric(rawLeaderboardData, metric)
+      setLeaderboardData(rankedData)
+    }
+  }, [rawLeaderboardData])
+
+  // Handle metric change
+  const handleMetricChange = useCallback((newMetric: "carbon" | "events" | "hours" | "points") => {
+    setSelectedMetric(newMetric)
+  }, [])
+
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true)
       try {
+        // Get current user
+        const supabase = createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+        setCurrentUserId(user?.id || null)
+        console.log("Current user ID:", user?.id)
+
         // Fetch leaderboard data
         const leaderboardResult = await getLeaderboardWithUserData()
         if (leaderboardResult.error) {
           console.error("Error fetching leaderboard data:", leaderboardResult.error)
           setLeaderboardData([])
+          setRawLeaderboardData([])
         } else {
-          setLeaderboardData(leaderboardResult.data as LeaderboardWithStats[])
-          console.log("Fetched leaderboard data:", leaderboardResult.data)
+          // Store raw data and rank users based on the selected metric
+          const rawData = leaderboardResult.data as LeaderboardWithStats[]
+          console.log("Raw leaderboard data fetched:", rawData)
+          setRawLeaderboardData(rawData)
+          const rankedData = rankUsersByMetric(rawData, selectedMetric)
+          console.log("Ranked data for metric", selectedMetric, ":", rankedData)
+          setLeaderboardData(rankedData)
+          console.log("Fetched and ranked leaderboard data:", rankedData)
         }
 
         // Fetch community stats
@@ -65,13 +139,21 @@ export default function Component() {
       } catch (error) {
         console.error("Error in fetchData:", error)
         setLeaderboardData([])
+        setRawLeaderboardData([])
       } finally {
         setLoading(false)
       }
     }
 
     fetchData()
-  }, [])
+  }, [selectedMetric]) // Include selectedMetric as we use it in the initial ranking
+
+  // Separate effect to handle metric changes without re-fetching
+  useEffect(() => {
+    if (rawLeaderboardData.length > 0) {
+      updateRankingsForMetric(selectedMetric)
+    }
+  }, [selectedMetric, rawLeaderboardData, updateRankingsForMetric])
 
   if (checking) {
     return <LoadingScreen />;
@@ -80,22 +162,7 @@ export default function Component() {
   // Mock data with more colorful variety
 
   const getMetricValue = (entry: LeaderboardWithStats) => {
-    switch (selectedMetric) {
-      case "carbon":
-        return entry.user_statistics?.carbon_saved || 0
-      case "events":
-        return entry.user_statistics?.cleanups_participated || 0  // Using cleanups as events
-      case "hours":
-        return entry.user_statistics?.volunteer_hours || 0
-      case "points":
-        // Calculate points based on available statistics
-        const carbon = entry.user_statistics?.carbon_saved || 0
-        const hours = entry.user_statistics?.volunteer_hours || 0
-        const cleanups = entry.user_statistics?.cleanups_participated || 0
-        return carbon + (hours * 10) + (cleanups * 5)  // Simple point calculation
-      default:
-        return entry.user_statistics?.carbon_saved || 0
-    }
+    return calculateMetricValue(entry, selectedMetric)
   }
 
   const getMetricLabel = (entry: LeaderboardWithStats) => {
@@ -110,7 +177,7 @@ export default function Component() {
         const carbon = entry.user_statistics?.carbon_saved || 0
         const hours = entry.user_statistics?.volunteer_hours || 0
         const cleanups = entry.user_statistics?.cleanups_participated || 0
-        const points = (carbon*2) + (hours * 10) + (cleanups * 25)
+        const points = (carbon * 2) + (hours * 10) + (cleanups * 25)
         return `${points} eco points`
       default:
         return `${entry.user_statistics?.carbon_saved || 0} kg CO₂ saved`
@@ -229,7 +296,7 @@ export default function Component() {
                 {/* Metric Selection */}
                 <div className="flex gap-3 p-2 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl">
                   <Button
-                    onClick={() => setSelectedMetric("carbon")}
+                    onClick={() => handleMetricChange("carbon")}
                     active={selectedMetric === "carbon"}
                     className="flex-1"
                   >
@@ -237,7 +304,7 @@ export default function Component() {
                     Carbon Impact
                   </Button>
                   <Button
-                    onClick={() => setSelectedMetric("events")}
+                    onClick={() => handleMetricChange("events")}
                     active={selectedMetric === "events"}
                     className="flex-1"
                   >
@@ -245,7 +312,7 @@ export default function Component() {
                     Events Joined
                   </Button>
                   <Button
-                    onClick={() => setSelectedMetric("hours")}
+                    onClick={() => handleMetricChange("hours")}
                     active={selectedMetric === "hours"}
                     className="flex-1"
                   >
@@ -253,7 +320,7 @@ export default function Component() {
                     Volunteer Hours
                   </Button>
                   <Button
-                    onClick={() => setSelectedMetric("points")}
+                    onClick={() => handleMetricChange("points")}
                     active={selectedMetric === "points"}
                     className="flex-1"
                   >
@@ -300,7 +367,7 @@ export default function Component() {
                     <div
                       key={entry.id}
                       className={`relative flex items-center gap-4 p-4 rounded-xl border-2 transition-all duration-300 cursor-pointer ${
-                        entry.user_id
+                        entry.user_id === currentUserId
                           ? "bg-gradient-to-r from-green-50 via-emerald-50 to-teal-50 border-green-300 shadow-lg ring-2 ring-green-200"
                           : selectedEntry === entry.id
                             ? "bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-300 shadow-lg"
@@ -339,13 +406,13 @@ export default function Component() {
                         <div className="flex items-center gap-2 mb-1">
                           <h3
                             className={`font-bold text-lg truncate ${
-                              entry.user_id ? "text-green-700" : "text-gray-800"
+                              entry.user_id === currentUserId ? "text-green-700" : "text-gray-800"
                             }`}
                           >
                             {entry.name}
                           </h3>
                           {getTypeIcon(entry.type || "user")}
-                          {entry.user_id && <Badge variant="user">✨ You</Badge>}
+                          {entry.user_id === currentUserId && <Badge variant="user">✨ You</Badge>}
                           {entry.type === "team" && <Badge variant="team">Team</Badge>}
                         </div>
                         <p className="text-sm font-medium text-gray-600 mb-2">{getMetricLabel(entry)}</p>
