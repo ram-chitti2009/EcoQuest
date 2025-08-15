@@ -18,12 +18,6 @@ import { useEffect } from "react"
 
 // Extended interface for leaderboard with joined data
 interface LeaderboardWithStats extends Leaderboard {
-  user_profiles?: {
-    name: string;
-    profile_image_url?: string;
-    city?: string;
-    country?: string;
-  };
   user_statistics?: {
     carbon_saved?: number;
     volunteer_hours?: number;
@@ -116,7 +110,7 @@ export default function Component() {
         const carbon = entry.user_statistics?.carbon_saved || 0
         const hours = entry.user_statistics?.volunteer_hours || 0
         const cleanups = entry.user_statistics?.cleanups_participated || 0
-        const points = carbon + (hours * 10) + (cleanups * 5)
+        const points = (carbon*2) + (hours * 10) + (cleanups * 25)
         return `${points} eco points`
       default:
         return `${entry.user_statistics?.carbon_saved || 0} kg CO₂ saved`
@@ -284,8 +278,8 @@ export default function Component() {
                     >
                       <div className="flex justify-center mb-2">{getRankIcon(entry.rank)}</div>
                       <Avatar
-                        src={entry.user_profiles?.profile_image_url || entry.avatar || undefined}
-                        fallback={(entry.user_profiles?.name || entry.name)
+                        src={entry.avatar || undefined}
+                        fallback={entry.name
                           ?.split(" ")
                           .map((n) => n[0])
                           .join("")
@@ -293,7 +287,7 @@ export default function Component() {
                         size="lg"
                         className="mx-auto mb-2"
                       />
-                      <h3 className="font-bold text-gray-800 truncate">{entry.user_profiles?.name || entry.name}</h3>
+                      <h3 className="font-bold text-gray-800 truncate">{entry.name}</h3>
                       <p className="text-sm text-gray-600">{getMetricLabel(entry)}</p>
                       {getRankBadge(entry.rank)}
                     </div>
@@ -331,8 +325,8 @@ export default function Component() {
 
                       {/* Avatar */}
                       <Avatar
-                        src={entry.user_profiles?.profile_image_url || entry.avatar || undefined}
-                        fallback={(entry.user_profiles?.name || entry.name)
+                        src={entry.avatar || undefined}
+                        fallback={entry.name
                           ?.split(" ")
                           .map((n) => n[0])
                           .join("")
@@ -348,7 +342,7 @@ export default function Component() {
                               entry.user_id ? "text-green-700" : "text-gray-800"
                             }`}
                           >
-                            {entry.user_profiles?.name || entry.name}
+                            {entry.name}
                           </h3>
                           {getTypeIcon(entry.type || "user")}
                           {entry.user_id && <Badge variant="user">✨ You</Badge>}

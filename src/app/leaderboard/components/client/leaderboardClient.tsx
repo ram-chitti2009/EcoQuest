@@ -1,186 +1,95 @@
 "use client"
 
-import { Atom, Calendar, User } from "lucide-react"
-import Image from "next/image"
+import { Atom } from "lucide-react"
 import { useState } from "react"
 import { Avatar } from "../ui/avatar"
 import { Badge } from "../ui/badge"
 import { Button } from "../ui/button"
 import { Card, CardContent, CardHeader } from "../ui/card"
-import { Clock, Crown, Leaf, Star, Trophy, Users } from "../ui/icons"
+import { Clock, Crown, Star, Trophy, Users } from "../ui/icons"
 import { Progress } from "../ui/progress"
 import Header from "@/app/components/Header"
-
-interface LeaderboardEntry {
-  id: string
-  rank: number
-  name: string
-  avatar?: string
-  carbonSaved: number
-  eventsJoined: number
-  volunteerHours: number
-  isCurrentUser?: boolean
-  type: "user" | "team" | "school"
-  streak?: number
-  level?: number
-}
-
+import { getLeaderboardWithUserData, getCommunityStats, Leaderboard } from "@/utils/supabase/functions"
 import { useEffect } from "react"
+
+// Extended interface for leaderboard with joined data
+interface LeaderboardWithStats extends Leaderboard {
+  user_statistics?: {
+    carbon_saved?: number;
+    volunteer_hours?: number;
+    cleanups_participated?: number;
+  };
+}
 
 export default function Component() {
   const [selectedMetric, setSelectedMetric] = useState<"carbon" | "events" | "hours">("carbon")
   const [hoveredEntry, setHoveredEntry] = useState<string | null>(null)
   const [selectedEntry, setSelectedEntry] = useState<string | null>(null)
-  const [currentTime, setCurrentTime] = useState<Date>(new Date())
+  const [leaderboardData, setLeaderboardData] = useState<LeaderboardWithStats[]>([])
+  const [communityStats, setCommunityStats] = useState({
+    total_carbon_saved: 0,
+    total_volunteer_hours: 0,
+    total_cleanups: 0,
+    active_users: 0
+  })
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const interval = setInterval(() => setCurrentTime(new Date()), 1000)
-    return () => clearInterval(interval)
+    const fetchData = async () => {
+      setLoading(true)
+      try {
+        // Fetch leaderboard data
+        const leaderboardResult = await getLeaderboardWithUserData()
+        if (leaderboardResult.error) {
+          console.error("Error fetching leaderboard data:", leaderboardResult.error)
+          setLeaderboardData([])
+        } else {
+          setLeaderboardData(leaderboardResult.data as LeaderboardWithStats[])
+          console.log("Fetched leaderboard data:", leaderboardResult.data)
+        }
+
+        // Fetch community stats
+        const statsResult = await getCommunityStats()
+        if (statsResult.error) {
+          console.error("Error fetching community stats:", statsResult.error)
+        } else {
+          setCommunityStats(statsResult.data)
+          console.log("Fetched community stats:", statsResult.data)
+        }
+      } catch (error) {
+        console.error("Error in fetchData:", error)
+        setLeaderboardData([])
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchData()
   }, [])
 
-  // Mock data with more colorful variety
-  const leaderboardData: LeaderboardEntry[] = [
-    {
-      id: "1",
-      rank: 1,
-      name: "Sarah Chen",
-      avatar: "/placeholder.svg?height=40&width=40",
-      carbonSaved: 156.8,
-      eventsJoined: 12,
-      volunteerHours: 24,
-      type: "user",
-      streak: 15,
-      level: 8,
-    },
-    {
-      id: "2",
-      rank: 2,
-      name: "Green Warriors Team",
-      avatar: "/placeholder.svg?height=40&width=40",
-      carbonSaved: 142.3,
-      eventsJoined: 15,
-      volunteerHours: 32,
-      type: "team",
-      streak: 12,
-      level: 7,
-    },
-    {
-      id: "3",
-      rank: 3,
-      name: "Alex Rodriguez",
-      avatar: "/placeholder.svg?height=40&width=40",
-      carbonSaved: 128.9,
-      eventsJoined: 9,
-      volunteerHours: 18,
-      type: "user",
-      streak: 8,
-      level: 6,
-    },
-    {
-      id: "4",
-      rank: 4,
-      name: "Maya Patel",
-      carbonSaved: 115.2,
-      eventsJoined: 11,
-      volunteerHours: 22,
-      type: "user",
-      streak: 10,
-      level: 5,
-    },
-    {
-      id: "5",
-      rank: 5,
-      name: "EcoClub Central High",
-      avatar: "/placeholder.svg?height=40&width=40",
-      carbonSaved: 98.7,
-      eventsJoined: 8,
-      volunteerHours: 16,
-      type: "school",
-      streak: 6,
-      level: 4,
-    },
-    {
-      id: "6",
-      rank: 6,
-      name: "Jordan Kim",
-      carbonSaved: 89.4,
-      eventsJoined: 7,
-      volunteerHours: 14,
-      type: "user",
-      streak: 5,
-      level: 4,
-    },
-    {
-      id: "7",
-      rank: 7,
-      name: "You",
-      isCurrentUser: true,
-      carbonSaved: 82.4,
-      eventsJoined: 6,
-      volunteerHours: 12,
-      type: "user",
-      streak: 4,
-      level: 3,
-    },
-    {
-      id: "8",
-      rank: 8,
-      name: "Lisa Thompson",
-      carbonSaved: 76.1,
-      eventsJoined: 5,
-      volunteerHours: 10,
-      type: "user",
-      streak: 3,
-      level: 3,
-    },
-    {
-      id: "9",
-      rank: 9,
-      name: "Climate Action Club",
-      avatar: "/placeholder.svg?height=40&width=40",
-      carbonSaved: 71.8,
-      eventsJoined: 4,
-      volunteerHours: 8,
-      type: "team",
-      streak: 2,
-      level: 2,
-    },
-    {
-      id: "10",
-      rank: 10,
-      name: "David Park",
-      carbonSaved: 65.3,
-      eventsJoined: 4,
-      volunteerHours: 7,
-      type: "user",
-      streak: 1,
-      level: 2,
-    },
-  ]
-
-  const getMetricValue = (entry: LeaderboardEntry) => {
+  const getMetricValue = (entry: LeaderboardWithStats) => {
     switch (selectedMetric) {
       case "carbon":
-        return entry.carbonSaved
+        return entry.user_statistics?.carbon_saved || 0
       case "events":
-        return entry.eventsJoined
+        return entry.user_statistics?.cleanups_participated || 0
       case "hours":
-        return entry.volunteerHours
+        return entry.user_statistics?.volunteer_hours || 0
       default:
-        return entry.carbonSaved
+        return entry.user_statistics?.carbon_saved || 0
     }
   }
 
-  const getMetricLabel = (entry: LeaderboardEntry) => {
+  const getMetricLabel = (entry: LeaderboardWithStats) => {
     switch (selectedMetric) {
       case "carbon":
-        return `${entry.carbonSaved} kg CO₂ saved`
+        return `${entry.user_statistics?.carbon_saved || 0} kg CO₂ saved`
       case "events":
-        return `${entry.eventsJoined} events joined`
+        return `${entry.user_statistics?.cleanups_participated || 0} events joined`
       case "hours":
-        return `${entry.volunteerHours} volunteer hours`
+        return `${entry.user_statistics?.volunteer_hours || 0} volunteer hours`
       default:
-        return `${entry.carbonSaved} kg CO₂ saved`
+        return `${entry.user_statistics?.carbon_saved || 0} kg CO₂ saved`
     }
   }
 
@@ -222,10 +131,48 @@ export default function Component() {
     }
   }
 
-  const maxValue = Math.max(...leaderboardData.map(getMetricValue))
+  const maxValue = Math.max(...leaderboardData.map(getMetricValue), 1)
 
   const handleEntryClick = (entryId: string) => {
     setSelectedEntry(selectedEntry === entryId ? null : entryId)
+  }
+
+  if (loading) {
+    return (
+      <div className="h-screen bg-gray-50 flex flex-col overflow-hidden">
+        <Header 
+          title="EcoQuest Leaderboard"
+          centerMessage="🌍 Loading Community Heroes 🌱"
+        />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading leaderboard data...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (leaderboardData.length === 0) {
+    return (
+      <div className="h-screen bg-gray-50 flex flex-col overflow-hidden">
+        <Header 
+          title="EcoQuest Leaderboard"
+          centerMessage="🌍 Top Local Heroes This Month 🌱"
+        />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="text-6xl mb-4">🌱</div>
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">No Heroes Yet!</h2>
+            <p className="text-gray-600">Be the first to make an environmental impact!</p>
+            <button className="mt-4 px-6 py-2 bg-green-500 text-white rounded-lg font-medium hover:bg-green-600 transition-colors">
+              Start Your Journey
+            </button>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -286,12 +233,12 @@ export default function Component() {
                     >
                       <div className="flex justify-center mb-2">{getRankIcon(entry.rank)}</div>
                       <Avatar
-                        src={entry.avatar}
+                        src={entry.avatar || undefined}
                         fallback={entry.name
-                          .split(" ")
+                          ?.split(" ")
                           .map((n) => n[0])
                           .join("")
-                          .slice(0, 2)}
+                          .slice(0, 2) || "??"}
                         size="lg"
                         className="mx-auto mb-2"
                       />
@@ -308,7 +255,7 @@ export default function Component() {
                     <div
                       key={entry.id}
                       className={`relative flex items-center gap-4 p-4 rounded-xl border-2 transition-all duration-300 cursor-pointer ${
-                        entry.isCurrentUser
+                        entry.user_id
                           ? "bg-gradient-to-r from-green-50 via-emerald-50 to-teal-50 border-green-300 shadow-lg ring-2 ring-green-200"
                           : selectedEntry === entry.id
                             ? "bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-300 shadow-lg"
@@ -333,12 +280,12 @@ export default function Component() {
 
                       {/* Avatar */}
                       <Avatar
-                        src={entry.avatar}
+                        src={entry.avatar || undefined}
                         fallback={entry.name
-                          .split(" ")
+                          ?.split(" ")
                           .map((n) => n[0])
                           .join("")
-                          .slice(0, 2)}
+                          .slice(0, 2) || "??"}
                         size="lg"
                       />
 
@@ -347,20 +294,20 @@ export default function Component() {
                         <div className="flex items-center gap-2 mb-1">
                           <h3
                             className={`font-bold text-lg truncate ${
-                              entry.isCurrentUser ? "text-green-700" : "text-gray-800"
+                              entry.user_id ? "text-green-700" : "text-gray-800"
                             }`}
                           >
                             {entry.name}
                           </h3>
-                          {getTypeIcon(entry.type)}
-                          {entry.isCurrentUser && <Badge variant="user">✨ You</Badge>}
+                          {getTypeIcon(entry.type || "user")}
+                          {entry.user_id && <Badge variant="user">✨ You</Badge>}
                           {entry.type === "team" && <Badge variant="team">Team</Badge>}
                         </div>
                         <p className="text-sm font-medium text-gray-600 mb-2">{getMetricLabel(entry)}</p>
                         {/* Progress Bar */}
                         <Progress
                           value={(getMetricValue(entry) / maxValue) * 100}
-                          color={getTypeColor(entry.type) as any}
+                          color={getTypeColor(entry.type || "user") as "green" | "blue" | "purple"}
                           className="mb-2"
                         />
                         {/* Additional Stats */}
@@ -405,7 +352,7 @@ export default function Component() {
                 <h3 className="text-2xl font-bold text-center bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
                   🌟 Community Impact
                 </h3>
-                <p className="text-sm text-gray-600 text-center">This Month's Achievements</p>
+                <p className="text-sm text-gray-600 text-center">This Month&apos;s Achievements</p>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="space-y-4">
@@ -414,7 +361,7 @@ export default function Component() {
                       <div className="text-3xl">🌱</div>
                       <div className="text-right">
                         <div className="text-2xl font-bold bg-gradient-to-r from-green-500 to-emerald-600 bg-clip-text text-transparent">
-                          1,247
+                          {communityStats.total_carbon_saved}
                         </div>
                         <p className="text-xs text-gray-600 font-medium">kg CO₂ Saved</p>
                       </div>
@@ -428,7 +375,7 @@ export default function Component() {
                       <div className="text-3xl">👥</div>
                       <div className="text-right">
                         <div className="text-2xl font-bold bg-gradient-to-r from-blue-500 to-indigo-600 bg-clip-text text-transparent">
-                          89
+                          {communityStats.active_users}
                         </div>
                         <p className="text-xs text-gray-600 font-medium">Active Heroes</p>
                       </div>
@@ -442,7 +389,7 @@ export default function Component() {
                       <div className="text-3xl">⏰</div>
                       <div className="text-right">
                         <div className="text-2xl font-bold bg-gradient-to-r from-purple-500 to-pink-600 bg-clip-text text-transparent">
-                          156
+                          {communityStats.total_volunteer_hours}
                         </div>
                         <p className="text-xs text-gray-600 font-medium">Volunteer Hours</p>
                       </div>
@@ -454,7 +401,7 @@ export default function Component() {
 
                 {/* Additional Stats */}
                 <div className="pt-4 border-t border-gray-200">
-                  <h4 className="font-semibold text-gray-800 mb-3 text-center">🏆 This Week's Highlights</h4>
+                  <h4 className="font-semibold text-gray-800 mb-3 text-center">🏆 This Week&apos;s Highlights</h4>
                   <div className="space-y-3">
                     <div className="flex items-center gap-3 p-2 bg-yellow-50 rounded-lg">
                       <div className="text-lg">🎯</div>

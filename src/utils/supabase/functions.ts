@@ -833,24 +833,19 @@ export async function deleteUsersMonthlyGoal(id: number) {
 
 // Enhanced leaderboard function with user profiles and statistics
 export async function getLeaderboardWithUserData() {
-    const { data, error } = await supabase
-        .from('leaderboard')
-        .select(`
-            *,
-            user_profiles (
-                name,
-                profile_image_url,
-                city,
-                country
-            ),
-            user_statistics (
-                carbon_saved,
-                volunteer_hours,
-                cleanups_participated
-            )
-        `)
-        .order('rank', { ascending: true });
+  const { data, error } = await supabase
+  .from('leaderboard')
+  .select(`
+    *,
+    user_statistics:user_statistics_id(
+      carbon_saved,
+      volunteer_hours,
+      cleanups_participated
+    )
+  `)
+  .order('rank', { ascending: true });
 
+console.log("Leaderboard with stats:", data);
     if (error) {
         console.error("Error fetching leaderboard with user data:", error);
         return { data: [], error };
@@ -883,12 +878,6 @@ export async function getLeaderboardByMetric(metric: 'carbon' | 'hours' | 'clean
         .from('leaderboard')
         .select(`
             *,
-            user_profiles (
-                name,
-                profile_image_url,
-                city,
-                country
-            ),
             user_statistics (
                 carbon_saved,
                 volunteer_hours,
