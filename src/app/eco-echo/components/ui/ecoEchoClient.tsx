@@ -1,6 +1,7 @@
 "use client"
 
 import type React from "react"
+import { createClient } from "@/utils/supabase/client"
 
 import {
   Check,
@@ -29,6 +30,12 @@ interface Message {
   isEditing?: boolean
 }
 
+const supabase = createClient()
+const getSupabaseToken = async () => {
+  const { data: { session } } = await supabase.auth.getSession()
+  console.log(session)
+  return session?.access_token
+}
 const quickStartButtons = [
   {
     label: "Sustainable tips",
@@ -179,11 +186,36 @@ export function EcoEchoChat() {
     setIsLoading(true)
 
     try {
-      // Simulate API call with random response
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      // Get the token from Supabase
+      const token = await getSupabaseToken()
+      console.log(token)
+      
+      // Get user session to extract user_id
+      const { data: { session } } = await supabase.auth.getSession()
+      const userId = session?.user?.id
 
-      const randomResponse = mockResponses[Math.floor(Math.random() * mockResponses.length)]
-      await typeMessage(randomResponse)
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+
+      // Only add Authorization header if token exists
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+
+      const response = await fetch("http://localhost:8000/ask", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ 
+          query: content,
+          user_id: userId  // Add user_id to the request body
+        }),
+      })
+
+ 
+
+      const data = await response.json()
+      await typeMessage(data.answer)
     } catch (error) {
       console.error("Error sending message:", error)
       const errorMessage: Message = {
