@@ -11,13 +11,12 @@ import {
 import { useEffect, useState } from "react"
 import { ActionCards } from "../action-cards"
 import { CommunityStatsCard } from "../community-stats-card"
-import { Leaf, Recycle, TreePine } from "../icons"
 import { ImpactHeader } from "../impact-header"
 import { ImpactMetrics } from "../impact-metrics"
 import { LeaderboardCard } from "../leaderboard-card"
-import { MyQuestsCard } from "../my-quests-card"
 import { QuestCalendar } from "../quest-calendar"
 import { UpcomingEventsCard } from "../upcoming-events-card"
+import { EcoChatbot } from "../eco-chatbot"
 
 // Extended interface for leaderboard with joined user statistics
 interface LeaderboardWithStats extends Leaderboard {
@@ -83,8 +82,7 @@ export default function Dashboard() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   
   // User data state
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [userProfile, setUserProfile] = useState({ name: "User" }) // For future use
+  const [userProfile, setUserProfile] = useState({ name: "User" })
   const [userStats, setUserStats] = useState({
     carbonSaved: 0,
     volunteerHours: 0,
@@ -215,7 +213,11 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
-        <ImpactHeader totalCarbonSaved={impactData.totalCarbonSaved} currentRank={impactData.currentRank} />
+        <ImpactHeader 
+          totalCarbonSaved={impactData.totalCarbonSaved} 
+          currentRank={impactData.currentRank} 
+          userName={userProfile.name}
+        />
         <ImpactMetrics
           cleanupEvents={impactData.cleanupEvents}
           bagsCollected={impactData.bagsCollected}
@@ -225,8 +227,9 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Left Column */}
           <div className="space-y-6">
-            <MyQuestsCard />
+            <UpcomingEventsCard />
             <LeaderboardCard topUsers={topUsers} />
+            
           </div>
 
           {/* Center Column - Chart */}
@@ -237,7 +240,7 @@ export default function Dashboard() {
           {/* Right Column - Community Stats */}
           <div className="space-y-6">
             <CommunityStatsCard stats={communityStats} />
-            <UpcomingEventsCard />
+            <EcoChatbot />
           </div>
         </div>
 

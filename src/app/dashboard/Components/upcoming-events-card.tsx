@@ -5,7 +5,7 @@ export const UpcomingEventsCard = () => {
   return (
     <Card>
       <CardHeader>
-        <h3 className="text-lg font-semibold flex items-center gap-2">
+        <h3 className="text-lg font-semibold flex items-center gap-2 text-black">
           <Calendar className="w-5 h-5 text-emerald-600" />
           Upcoming Events
         </h3>
