@@ -1,10 +1,10 @@
-import { Card, CardHeader, CardContent } from "./ui/card"
-import { Button } from "./ui/button"
 import { Crown } from "./icons"
+import { Button } from "./ui/button"
+import { Card, CardContent, CardHeader } from "./ui/card"
 
 interface User {
   name: string
-  carbonSaved: number
+  carbonSaved: number // This will now represent eco points
   rank: number
   avatar: string | null
   isCurrentUser?: boolean
@@ -46,7 +46,7 @@ export const LeaderboardCard = ({ topUsers }: LeaderboardCardProps) => {
               <p className={`font-medium text-sm ${user.isCurrentUser ? "text-emerald-700" : "text-gray-800"}`}>
                 {user.name}
               </p>
-              <p className="text-xs text-gray-600">{user.carbonSaved} kg CO₂</p>
+              <p className="text-xs text-gray-600">{user.carbonSaved} eco points</p>
             </div>
           </div>
         ))}

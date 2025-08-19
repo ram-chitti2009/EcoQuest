@@ -2,8 +2,8 @@
 
 import { createClient } from '@/utils/supabase/client'
 import {
-  getAllLeaderboardEntries,
   getCommunityStats,
+  getLeaderboardWithUserData,
   getUserProfileByUserId,
   getUserStatistics,
   type Leaderboard
@@ -11,7 +11,6 @@ import {
 import { useEffect, useState } from "react"
 import { ActionCards } from "../action-cards"
 import { CommunityStatsCard } from "../community-stats-card"
-import { CompletedQuests } from "../completed-quests"
 import { Leaf, Recycle, TreePine } from "../icons"
 import { ImpactHeader } from "../impact-header"
 import { ImpactMetrics } from "../impact-metrics"
@@ -20,19 +19,63 @@ import { MyQuestsCard } from "../my-quests-card"
 import { QuestCalendar } from "../quest-calendar"
 import { UpcomingEventsCard } from "../upcoming-events-card"
 
+// Extended interface for leaderboard with joined user statistics
+interface LeaderboardWithStats extends Leaderboard {
+  user_statistics?: {
+    carbon_saved?: number;
+    volunteer_hours?: number;
+    cleanups_participated?: number;
+  };
+}
+
+// Function to calculate metric value for ranking (same as leaderboard page)
+const calculateMetricValue = (entry: LeaderboardWithStats, metric: "carbon" | "events" | "hours" | "points") => {
+  switch (metric) {
+    case "carbon":
+      return entry.user_statistics?.carbon_saved || 0
+    case "events":
+      return entry.user_statistics?.cleanups_participated || 0
+    case "hours":
+      return entry.user_statistics?.volunteer_hours || 0
+    case "points":
+      // Calculate points based on available statistics
+      const carbon = entry.user_statistics?.carbon_saved || 0
+      const hours = entry.user_statistics?.volunteer_hours || 0
+      const cleanups = entry.user_statistics?.cleanups_participated || 0
+      return (carbon * 2) + (hours * 10) + (cleanups * 25)
+    default:
+      return entry.user_statistics?.carbon_saved || 0
+  }
+}
+
+// Function to rank users by selected metric (same as leaderboard page)
+const rankUsersByMetric = (users: LeaderboardWithStats[], metric: "carbon" | "events" | "hours" | "points"): LeaderboardWithStats[] => {
+  // Sort users by their metric value (descending order - highest first)
+  const sortedUsers = [...users].sort((a, b) => {
+    const aValue = calculateMetricValue(a, metric)
+    const bValue = calculateMetricValue(b, metric)
+    return bValue - aValue // Descending order
+  })
+
+  // Assign ranks based on sorted positions
+  const rankedUsers = sortedUsers.map((user, index) => ({
+    ...user,
+    rank: index + 1
+  }))
+  
+  return rankedUsers
+}
+
 // Calculate eco points from user statistics
 const calculateEcoPoints = (stats: { carbonSaved: number; volunteerHours: number; cleanupsParticipated: number }) => {
   return stats.carbonSaved * 2 + stats.volunteerHours * 10 + stats.cleanupsParticipated * 25
 }
 
-// Get user rank from leaderboard data
-const getUserRank = (leaderboardData: Leaderboard[], currentUserId: string) => {
-  const sortedByEcoPoints = leaderboardData
-    .filter(entry => entry.eco_points !== null)
-    .sort((a, b) => (b.eco_points || 0) - (a.eco_points || 0))
-  
-  const userEntry = sortedByEcoPoints.find(entry => entry.user_id === currentUserId)
-  return userEntry ? sortedByEcoPoints.indexOf(userEntry) + 1 : null
+// Get user rank from leaderboard data using real-time ranking
+const getUserRank = (leaderboardData: LeaderboardWithStats[], currentUserId: string) => {
+  const rankedUsers = rankUsersByMetric(leaderboardData, "points")
+  const userEntry = rankedUsers.find(entry => entry.user_id === currentUserId)
+  return userEntry ? userEntry.rank : null
 }
 
 export default function Dashboard() {
@@ -53,7 +96,7 @@ export default function Dashboard() {
     total_cleanups: 0,
     active_users: 0,
   })
-  const [leaderboardData, setLeaderboardData] = useState<Leaderboard[]>([])
+  const [leaderboardData, setLeaderboardData] = useState<LeaderboardWithStats[]>([])
 
   // Derived values
   const totalEcoPoints = calculateEcoPoints(userStats)
@@ -97,10 +140,18 @@ export default function Dashboard() {
           setCommunityStats(communityResult.data)
         }
 
-        // Fetch leaderboard data
-        const leaderboardResult = await getAllLeaderboardEntries()
-        if (leaderboardResult.data) {
-          setLeaderboardData(leaderboardResult.data)
+        // Fetch real-time leaderboard data with user statistics
+        const leaderboardResult = await getLeaderboardWithUserData()
+        if (leaderboardResult.error) {
+          console.error("Error fetching leaderboard data:", leaderboardResult.error)
+          setLeaderboardData([])
+        } else {
+          const rawData = leaderboardResult.data as LeaderboardWithStats[]
+          console.log("Raw leaderboard data fetched:", rawData)
+          // Rank users by points (eco points) for dashboard display
+          const rankedData = rankUsersByMetric(rawData, "points")
+          console.log("Ranked leaderboard data:", rankedData)
+          setLeaderboardData(rankedData)
         }
 
       } catch (error) {
@@ -113,36 +164,22 @@ export default function Dashboard() {
     fetchUserData()
   }, [])
 
-  // Generate chart data based on user's actual progress
-  const generateChartData = () => {
-    const monthlyProgress = userStats.carbonSaved / 8 // Distribute evenly across 8 months
-    return [
-      { month: "Jan", savings: Math.round(monthlyProgress * 1) },
-      { month: "Feb", savings: Math.round(monthlyProgress * 2) },
-      { month: "Mar", savings: Math.round(monthlyProgress * 3) },
-      { month: "Apr", savings: Math.round(monthlyProgress * 4) },
-      { month: "May", savings: Math.round(monthlyProgress * 5) },
-      { month: "Jun", savings: Math.round(monthlyProgress * 6) },
-      { month: "Jul", savings: Math.round(monthlyProgress * 7) },
-      { month: "Aug", savings: userStats.carbonSaved },
-    ]
-  }
-
-  // Generate top users for leaderboard card from real data
+  // Generate top users for leaderboard card from real-time data
   const getTopUsers = () => {
-    const sortedUsers = leaderboardData
-      .filter(entry => entry.eco_points !== null)
-      .sort((a, b) => (b.eco_points || 0) - (a.eco_points || 0))
-      .slice(0, 3)
-      .map((entry, index) => ({
-        name: entry.name || "User",
-        carbonSaved: entry.eco_points || 0,
-        rank: index + 1,
-        avatar: entry.avatar || null,
-        isCurrentUser: entry.user_id === currentUserId
-      }))
+    const topThree = leaderboardData
+      .slice(0, 3) // Already ranked, so take top 3
+      .map((entry, index) => {
+        const ecoPoints = calculateMetricValue(entry, "points")
+        return {
+          name: entry.name || "User",
+          carbonSaved: ecoPoints, // Using eco points as the main metric
+          rank: index + 1,
+          avatar: entry.avatar || null,
+          isCurrentUser: entry.user_id === currentUserId
+        }
+      })
 
-    return sortedUsers
+    return topThree
   }
 
   if (loading) {
@@ -166,29 +203,7 @@ export default function Dashboard() {
     totalUsers: leaderboardData.length,
   }
 
-  const chartData = generateChartData()
   const topUsers = getTopUsers()
-
-  const completedQuests = [
-    {
-      title: "PLASTIC-FREE WEEK CHALLENGE",
-      date: "Aug 10, 2025",
-      description: "Complete 7 days without single-use plastics.",
-      icon: <Recycle className="h-4 w-4" />,
-    },
-    {
-      title: "SUBMIT CARBON FOOTPRINT REPORT",
-      date: "Aug 15, 2025", 
-      description: "Calculate and submit monthly carbon footprint.",
-      icon: <Leaf className="h-4 w-4" />,
-    },
-    {
-      title: "COMMUNITY GARDEN PROJECT",
-      date: "Aug 20, 2025",
-      description: "Plant 10 native species in local garden.",
-      icon: <TreePine className="h-4 w-4" />,
-    },
-  ]
 
   const calendarEvents = [
     { date: 10, title: "Beach Cleanup", type: "cleanup" as const, participants: 24 },
@@ -206,8 +221,6 @@ export default function Dashboard() {
           bagsCollected={impactData.bagsCollected}
           quizzesCompleted={impactData.quizzesCompleted}
         />
-
-        <CompletedQuests quests={completedQuests} />
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Left Column */}

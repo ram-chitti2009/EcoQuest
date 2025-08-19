@@ -1,3 +1,8 @@
 {
-  "/login/page": "app/login/page.js"
+  "/_not-found/page": "app/_not-found/page.js",
+  "/community-cleanup/page": "app/community-cleanup/page.js",
+  "/dashboard/page": "app/dashboard/page.js",
+  "/favicon.ico/route": "app/favicon.ico/route.js",
+  "/landingPage/page": "app/landingPage/page.js",
+  "/page": "app/page.js"
 }

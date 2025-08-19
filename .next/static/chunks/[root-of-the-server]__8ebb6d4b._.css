@@ -4858,6 +4858,14 @@ body {
     margin-bottom: 1rem;
   }
 
+  .md\:mb-2 {
+    margin-bottom: .5rem;
+  }
+
+  .md\:mb-8 {
+    margin-bottom: 2rem;
+  }
+
   .md\:block {
     display: block;
   }
@@ -4951,12 +4959,20 @@ body {
     align-items: center;
   }
 
+  .md\:justify-between {
+    justify-content: space-between;
+  }
+
   .md\:gap-6 {
     gap: 1.5rem;
   }
 
   .md\:gap-8 {
     gap: 2rem;
+  }
+
+  .md\:gap-0 {
+    gap: 0;
   }
 
   .md\:space-y-6 > :not([hidden]) ~ :not([hidden]) {
@@ -5012,6 +5028,14 @@ body {
     padding-top: 2rem;
   }
 
+  .md\:text-left {
+    text-align: left;
+  }
+
+  .md\:text-right {
+    text-align: right;
+  }
+
   .md\:text-2xl {
     font-size: 1.5rem;
     line-height: 2rem;
@@ -5055,6 +5079,11 @@ body {
   .md\:text-xl {
     font-size: 1.25rem;
     line-height: 1.75rem;
+  }
+
+  .md\:text-6xl {
+    font-size: 3.75rem;
+    line-height: 1;
   }
 }
 
