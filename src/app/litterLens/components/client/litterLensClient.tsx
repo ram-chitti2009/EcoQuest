@@ -1,20 +1,48 @@
 "use client"
 
+import Header from "@/app/components/Header"
+import { createClient } from "@/utils/supabase/client"
+import { getUserProfileByUserId } from "@/utils/supabase/functions"
 import { BarChart3, Camera, Leaf, MapPin, Target, Upload, Users } from "lucide-react"
 import { useRouter } from "next/navigation"
-import React, { useRef, useState } from "react"
+import type React from "react"
+import { useEffect, useRef, useState } from "react"
 import { Button } from "../ui/Button"
 import { Card, CardContent } from "../ui/Card"
-import Header from "@/app/components/Header"
 
 export default function LitterLensHome() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [isCapturing, setIsCapturing] = useState(false)
+  const [userName, setUserName] = useState<string>("User")
+  const [autoAnalyzeAfterCapture, setAutoAnalyzeAfterCapture] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const router = useRouter()
+
+  // Fetch user profile data
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const supabase = createClient()
+        const {
+          data: { user },
+        } = await supabase.auth.getUser()
+
+        if (user) {
+          const profileResult = await getUserProfileByUserId(user.id)
+          if (profileResult.data) {
+            setUserName(profileResult.data.name || "User")
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching user data:", error)
+      }
+    }
+
+    fetchUserData()
+  }, [])
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -25,19 +53,28 @@ export default function LitterLensHome() {
     }
   }
 
+  const startNewReport = async () => {
+    setAutoAnalyzeAfterCapture(true)
+    await startCamera()
+  }
+
   const startCamera = async () => {
     try {
+      console.log("Starting camera...")
       setIsCapturing(true)
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: "environment" }, // Use back camera on mobile
       })
+      console.log("Camera stream obtained:", stream)
       if (videoRef.current) {
         videoRef.current.srcObject = stream
-        videoRef.current.play()
+        await videoRef.current.play()
+        console.log("Video is playing")
       }
     } catch (error) {
       console.error("Error accessing camera:", error)
       setIsCapturing(false)
+      alert("Camera access denied or not available. Please allow camera permissions.")
     }
   }
 
@@ -60,6 +97,19 @@ export default function LitterLensHome() {
               const url = URL.createObjectURL(file)
               setPreviewUrl(url)
               stopCamera()
+
+              // If this came from "Start New Report", automatically proceed to analysis
+              if (autoAnalyzeAfterCapture) {
+                setAutoAnalyzeAfterCapture(false)
+                // Store the file and navigate to analysis
+                const reader = new FileReader()
+                reader.onload = () => {
+                  sessionStorage.setItem("litterImage", reader.result as string)
+                  sessionStorage.setItem("litterImageName", file.name)
+                  router.push("/litterAnalysis")
+                }
+                reader.readAsDataURL(file)
+              }
             }
           },
           "image/jpeg",
@@ -92,29 +142,65 @@ export default function LitterLensHome() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50">
       {/* Header */}
-      <Header 
-        title="Litter Lens"
-        centerMessage="🌍 Help clean our environment 🧹"
-      />
+      <Header title="Litter Lens" centerMessage="🌍 Help clean our environment 🧹" />
       <main className="max-w-7xl mx-auto px-6 py-8">
         {/* Title Section */}
         <div className="mb-8">
           <h2 className="text-3xl font-bold text-gray-900 mb-2">
-            {"User's"} <span className="text-green-600">Litter Lens</span>
+            {userName}&apos;s <span className="text-green-600">Litter Lens</span>
           </h2>
           <p className="text-gray-600">
             Identify and report litter through AI-powered image recognition. Help build a cleaner environment.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Camera View - Full Width When Active */}
+        {isCapturing && (
+          <div className="mb-8">
+            <Card>
+              <CardContent className="p-6">
+                <h3 className="text-lg font-semibold mb-4 text-gray-900 text-center">
+                  📸 Position your camera to capture litter
+                </h3>
+                <div className="max-w-2xl mx-auto">
+                  <div className="space-y-4">
+                    <div className="relative bg-black rounded-lg overflow-hidden">
+                      <video
+                        ref={videoRef}
+                        className="w-full h-96 object-cover rounded-lg"
+                        autoPlay
+                        playsInline
+                        muted
+                      />
+                    </div>
+                    <div className="flex space-x-2">
+                      <Button onClick={capturePhoto} className="flex-1 bg-green-600 hover:bg-green-700 text-white">
+                        📸 Capture Photo
+                      </Button>
+                      <Button onClick={stopCamera} variant="outline" className="flex-1 bg-transparent">
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        <div className={`grid grid-cols-1 lg:grid-cols-3 gap-8 ${isCapturing ? "hidden" : ""}`}>
           {/* Left Column - Main Actions */}
           <div className="lg:col-span-2 space-y-6">
             {/* Action Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card className="bg-green-600 text-white border-0 hover:bg-green-700 transition-colors cursor-pointer">
+              <Card
+                className="bg-green-600 text-white border-0 hover:bg-green-700 transition-colors cursor-pointer"
+                onClick={startNewReport}
+                role="button"
+                tabIndex={0}
+              >
                 <CardContent className="p-8 text-center">
                   <Camera className="w-12 h-12 mx-auto mb-4" />
                   <h3 className="text-xl font-semibold mb-2">Start New Report</h3>
@@ -122,7 +208,7 @@ export default function LitterLensHome() {
                 </CardContent>
               </Card>
 
-              <Card 
+              <Card
                 className="bg-white border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer"
                 onClick={() => router.push("/community-cleanup")}
                 role="button"
@@ -142,7 +228,11 @@ export default function LitterLensHome() {
                 <h3 className="text-lg font-semibold mb-6 text-gray-900">Environmental Impact</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                   {[
-                    { label: "Items Reported", value: "0", icon: Target },
+                    {
+                      label: "Items Reported",
+                      value: "0",
+                      icon: Target,
+                    },
                     { label: "Accuracy Rate", value: "0%", icon: BarChart3 },
                     { label: "Community Reports", value: "0", icon: Users },
                     { label: "Areas Cleaned", value: "0", icon: Leaf },
@@ -207,14 +297,9 @@ export default function LitterLensHome() {
                 {/* Camera View */}
                 {isCapturing && (
                   <div className="space-y-4">
-                    <video ref={videoRef} className="w-full rounded-lg" autoPlay playsInline muted />
-                    <div className="flex space-x-2">
-                      <Button onClick={capturePhoto} className="flex-1 bg-green-600 hover:bg-green-700 text-white">
-                        Capture
-                      </Button>
-                      <Button onClick={stopCamera} variant="outline" className="flex-1 bg-transparent">
-                        Cancel
-                      </Button>
+                    <div className="text-center p-4 bg-green-50 rounded-lg">
+                      <Camera className="w-8 h-8 mx-auto mb-2 text-green-600" />
+                      <p className="text-sm text-green-700">Camera is active above</p>
                     </div>
                   </div>
                 )}
