@@ -1,19 +1,90 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { ArrowLeft, MapPin, Calendar, Trash2, Recycle, AlertTriangle, CheckCircle } from "lucide-react"
 import { Button } from "../litterLens/components/ui/Button"
 import { Card, CardContent, CardHeader, CardTitle } from "../litterLens/components/ui/Card"
 import { Badge } from "../litterLens/components/ui/badge"
 import { Separator } from "../litterLens/components/ui/separator"
 import { useRouter } from "next/navigation"
+import { createClient } from "@/utils/supabase/client"
+
+interface AnalysisData {
+  litterType: string
+  confidence: number
+  quantity: string
+  recyclable: boolean
+  hazardLevel: string
+  recommendations: string[]
+  environmentalImpact: {
+    decompositionTime: string
+    carbonFootprint: string
+    wildlifeRisk: string
+  }
+}
+
+const supabase = createClient()
+const getSupabaseToken = async () => {
+  const { data: { session } } = await supabase.auth.getSession()
+
+  console.log(session)
+  return session?.access_token
+}
 
 export default function AnalyzePage() {
   const [imageUrl, setImageUrl] = useState<string | null>(null)
   const [imageName, setImageName] = useState<string>("")
   const [isAnalyzing, setIsAnalyzing] = useState(true)
   const [analysisComplete, setAnalysisComplete] = useState(false)
+  const [analysisData, setAnalysisData] = useState<AnalysisData | null>(null)
+  const [error, setError] = useState<string | null>(null)
   const router = useRouter()
+
+  // Function to call the classify-trash API
+  const classifyTrash = useCallback(async (imageFile: string) => {
+    try {
+      const token = await getSupabaseToken()
+      console.log(token)
+      
+      // Get user session to extract user_id
+      const { data: { session } } = await supabase.auth.getSession()
+      const userId = session?.user?.id
+
+      const headers: Record<string, string> = {
+        
+      };
+
+      // Only add Authorization header if token exists
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+      // Convert base64 to blob for form data
+      const response = await fetch(imageFile)
+      const blob = await response.blob()
+      
+      const formData = new FormData()
+      formData.append('file', blob, imageName)
+
+      const apiResponse = await fetch('http://localhost:8000/classify-trash', {
+        headers, 
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!apiResponse.ok) {
+        throw new Error('Failed to classify trash')
+      }
+
+      const result = await apiResponse.json()
+      setAnalysisData(result)
+      setIsAnalyzing(false)
+      setAnalysisComplete(true)
+    } catch (err) {
+      console.error('Error classifying trash:', err)
+      setError('Failed to analyze image. Please try again.')
+      setIsAnalyzing(false)
+    }
+  }, [imageName])
 
   useEffect(() => {
     // Get image from sessionStorage
@@ -24,35 +95,27 @@ export default function AnalyzePage() {
       setImageUrl(storedImage)
       setImageName(storedName || "uploaded-image.jpg")
 
-      // Simulate AI analysis delay
-      setTimeout(() => {
-        setIsAnalyzing(false)
-        setAnalysisComplete(true)
-      }, 3000)
+      // Call the API to classify the trash
+      classifyTrash(storedImage)
     } else {
       // Redirect back if no image
       router.push("/")
     }
-  }, [router])
+  }, [router, classifyTrash])
 
-  const mockAnalysisData = {
-    litterType: "Plastic Bottle",
-    confidence: 94,
-    quantity: "1 item",
-    recyclable: true,
-    hazardLevel: "Low",
-    location: "Detected via GPS",
-    recommendations: [
-      "Remove the plastic bottle and place it in a recycling bin",
-      "Check for recycling symbol (usually #1 PET) on the bottom",
-      "Rinse the bottle if it contained sugary drinks before recycling",
-      "Consider reporting this location as a frequent littering spot",
-    ],
+  // Use analysisData if available, otherwise show loading or error
+  const displayData = analysisData || {
+    litterType: "Unknown",
+    confidence: 0,
+    quantity: "Unknown",
+    recyclable: false,
+    hazardLevel: "Unknown",
+    recommendations: [],
     environmentalImpact: {
-      decompositionTime: "450 years",
-      carbonFootprint: "82g CO2 equivalent",
-      wildlifeRisk: "Medium - can harm marine life if reaches waterways",
-    },
+      decompositionTime: "Unknown",
+      carbonFootprint: "Unknown",
+      wildlifeRisk: "Unknown"
+    }
   }
 
   if (!imageUrl) {
@@ -156,6 +219,19 @@ export default function AnalyzePage() {
                   </p>
                 </CardContent>
               </Card>
+            ) : error ? (
+              <Card>
+                <CardContent className="p-8 text-center">
+                  <div className="text-red-500 mb-4">
+                    <AlertTriangle className="w-12 h-12 mx-auto mb-2" />
+                    <h3 className="text-lg font-semibold mb-2">Analysis Failed</h3>
+                    <p className="text-gray-600">{error}</p>
+                  </div>
+                  <Button onClick={() => window.location.reload()} className="mt-4">
+                    Try Again
+                  </Button>
+                </CardContent>
+              </Card>
             ) : (
               <>
                 {/* Analysis Results */}
@@ -169,34 +245,34 @@ export default function AnalyzePage() {
                   <CardContent className="space-y-4">
                     <div className="flex items-center justify-between">
                       <span className="font-medium text-black">Type:</span>
-                      <Badge className="bg-blue-100 text-blue-800 border-blue-200">{mockAnalysisData.litterType}</Badge>
+                      <Badge className="bg-blue-100 text-blue-800 border-blue-200">{displayData.litterType}</Badge>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="font-medium text-black">Confidence:</span>
-                      <span className="text-green-600 font-semibold">{mockAnalysisData.confidence}%</span>
+                      <span className="text-green-600 font-semibold">{displayData.confidence}%</span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="font-medium text-black">Quantity:</span>
-                      <span className="text-green-600">{mockAnalysisData.quantity}</span>
+                      <span className="text-green-600">{displayData.quantity}</span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="font-medium text-black">Recyclable:</span>
                       <Badge
                         className={
-                          mockAnalysisData.recyclable
+                          displayData.recyclable
                             ? "bg-green-100 text-green-800 border-green-200"
                             : "bg-red-100 text-red-800 border-red-200"
                         }
                       >
                         <Recycle className="w-3 h-3 mr-1" />
-                        {mockAnalysisData.recyclable ? "Yes" : "No"}
+                        {displayData.recyclable ? "Yes" : "No"}
                       </Badge>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="font-medium text-black">Hazard Level:</span>
                       <Badge variant="outline" className="text-yellow-600 border-yellow-600">
                         <AlertTriangle className="w-3 h-3 mr-1" />
-                        {mockAnalysisData.hazardLevel}
+                        {displayData.hazardLevel}
                       </Badge>
                     </div>
                   </CardContent>
@@ -212,7 +288,7 @@ export default function AnalyzePage() {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-3">
-                      {mockAnalysisData.recommendations.map((recommendation, index) => (
+                      {displayData.recommendations.map((recommendation: string, index: number) => (
                         <div key={index} className="flex items-start space-x-3">
                           <div className="w-6 h-6 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-sm font-medium flex-shrink-0 mt-0.5">
                             {index + 1}
@@ -236,16 +312,16 @@ export default function AnalyzePage() {
                     <div>
                       <span className="font-medium text-gray-700">Decomposition Time:</span>
                       <p className="text-red-600 font-semibold">
-                        {mockAnalysisData.environmentalImpact.decompositionTime}
+                        {displayData.environmentalImpact.decompositionTime}
                       </p>
                     </div>
                     <div>
                       <span className="font-medium text-gray-700">Carbon Footprint:</span>
-                      <p className="text-gray-900">{mockAnalysisData.environmentalImpact.carbonFootprint}</p>
+                      <p className="text-gray-900">{displayData.environmentalImpact.carbonFootprint}</p>
                     </div>
                     <div>
                       <span className="font-medium text-gray-700">Wildlife Risk:</span>
-                      <p className="text-orange-600">{mockAnalysisData.environmentalImpact.wildlifeRisk}</p>
+                      <p className="text-orange-600">{displayData.environmentalImpact.wildlifeRisk}</p>
                     </div>
                   </CardContent>
                 </Card>
