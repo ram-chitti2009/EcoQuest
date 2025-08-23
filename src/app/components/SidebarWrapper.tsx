@@ -6,7 +6,7 @@ const sidebarRoutes = [
   "/dashboard",
   "/profile",
   "/litterLens",
-  "/scholarship-db",
+  "/carbon-clash",
   "/eco-echo",
   "/community",
   "/interview-ai",
