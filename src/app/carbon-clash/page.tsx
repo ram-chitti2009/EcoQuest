@@ -1,11 +1,11 @@
 "use client";
 import SidebarWrapper from "../components/SidebarWrapper";
-import ScholarshipDbClient from "./components/client/ScholarshipDbClient";
+import CarbonClashClient from "./components/client/carbonClashClient";
 
 import { useRequireAuth } from "@/hooks/useRequireAuth";
 import LoadingScreen from "@/components/LoadingScreen";
 
-export default function ScholarshipDBPage() {
+export default function CarbonClashPage() {
   const checking = useRequireAuth();
   if (checking) {
     return (
@@ -16,7 +16,7 @@ export default function ScholarshipDBPage() {
     <div className="flex">
       <SidebarWrapper loading={false} />
       <main className="flex-1">
-        <ScholarshipDbClient />
+        <CarbonClashClient />
       </main>
     </div>
   );

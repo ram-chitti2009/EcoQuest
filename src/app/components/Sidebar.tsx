@@ -375,7 +375,7 @@ export const SideBar = () => {
               <NavItem
                 icon={CircleArrowUp}
                 label="Carbon Clash"
-                href="/scholarship-db"
+                href="/carbon-clash"
                 isCollapsed={isCollapsed}
               />
             </div>
