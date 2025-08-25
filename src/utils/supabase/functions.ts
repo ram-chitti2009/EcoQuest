@@ -1104,7 +1104,7 @@ export async function deleteUserLitterReport(id: string) {
 //crud ops for litter summary
 
 export interface UserLitterSummary {
-  id: string;
+  id?: string;
   user_id: string;
   total_items: number;
   average_accuracy: number;
@@ -1161,47 +1161,24 @@ export async function upsertUserLitterSummary(data: UserLitterSummaryUpdate) {
 }
 
 
-// CREATE OR UPDATE - Upsert litter summary (since user_id is unique)
-export async function upsertUserLitterSummary(data: UserLitterSummaryInsert) {
-  const { data: result, error } = await supabase
-    .from('user_litter_summary')
-    .upsert({
-      ...data,
-      last_updated: new Date().toISOString()
-    }, {
-      onConflict: 'user_id'
-    })
-    .select()
-    .single();
 
-  if (error) {
-    console.error("Error upserting user litter summary:", error);
-    return { data: null, error };
-  }
-
-  return { data: result, error: null };
-}
 
 
 // CREATE OR UPDATE - Upsert litter summary (since user_id is unique)
-export async function upsertUserLitterSummary(data: UserLitterSummaryInsert) {
-  const { data: result, error } = await supabase
+
+//get litter summaries for the specific user
+export async function getUserLitterSummaries(userId:string){
+    const { data, error } = await supabase
     .from('user_litter_summary')
-    .upsert({
-      ...data,
-      last_updated: new Date().toISOString()
-    }, {
-      onConflict: 'user_id'
-    })
-    .select()
-    .single();
+    .select('*')
+    .eq('user_id', userId);
 
-  if (error) {
-    console.error("Error upserting user litter summary:", error);
-    return { data: null, error };
-  }
+    if (error) {
+        console.error("Error fetching user litter summaries:", error);
+        return { data: null, error };
+    }
 
-  return { data: result, error: null };
+    return { data, error: null };
 }
 
 // READ - Get all litter summaries (for admin purposes)
