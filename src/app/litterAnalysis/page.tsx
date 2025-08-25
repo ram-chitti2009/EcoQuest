@@ -8,6 +8,7 @@ import { Badge } from "../litterLens/components/ui/badge"
 import { Separator } from "../litterLens/components/ui/separator"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/utils/supabase/client"
+import { createUserLitterReport, calculateAndUpdateLitterSummary } from "@/utils/supabase/functions"
 
 interface AnalysisData {
   litterType: string
@@ -77,6 +78,34 @@ export default function AnalyzePage() {
 
       const result = await apiResponse.json()
       setAnalysisData(result)
+      
+      // Save the analysis result to the database
+      if (userId && result) {
+        try {
+          const reportData = {
+            user_id: userId,
+            litter_type: result.litterType,
+            confidence: result.confidence,
+            quantity: result.quantity,
+            recyclable: result.recyclable,
+            hazard_level: result.hazardLevel,
+            recommendations: result.recommendations,
+            environmental_impact: result.environmentalImpact
+          };
+
+          const { data: savedReport, error: saveError } = await createUserLitterReport(reportData);
+          
+          if (saveError) {
+            console.error('Error saving litter report:', saveError);
+          } else {
+            console.log('Litter report saved successfully:', savedReport);
+          
+          }
+        } catch (saveErr) {
+          console.error('Error in saving process:', saveErr);
+        }
+      }
+      
       setIsAnalyzing(false)
       setAnalysisComplete(true)
     } catch (err) {
@@ -245,15 +274,15 @@ export default function AnalyzePage() {
                   <CardContent className="space-y-4">
                     <div className="flex items-center justify-between">
                       <span className="font-medium text-black">Type:</span>
-                      <Badge className="bg-blue-100 text-blue-800 border-blue-200">{displayData.litterType}</Badge>
+                      <Badge className="bg-blue-100 text-blue-800 border-blue-200">{analysisData?.litterType}</Badge>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="font-medium text-black">Confidence:</span>
-                      <span className="text-green-600 font-semibold">{displayData.confidence}%</span>
+                      <span className="text-green-600 font-semibold">{analysisData?.confidence}%</span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="font-medium text-black">Quantity:</span>
-                      <span className="text-green-600">{displayData.quantity}</span>
+                      <span className="text-green-600">{analysisData?.quantity}</span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="font-medium text-black">Recyclable:</span>
