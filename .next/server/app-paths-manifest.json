@@ -1,6 +1,5 @@
 {
-  "/dashboard/page": "app/dashboard/page.js",
-  "/landingPage/page": "app/landingPage/page.js",
-  "/litterLens/page": "app/litterLens/page.js",
-  "/page": "app/page.js"
+  "/favicon.ico/route": "app/favicon.ico/route.js",
+  "/litterAnalysis/page": "app/litterAnalysis/page.js",
+  "/litterLens/page": "app/litterLens/page.js"
 }
