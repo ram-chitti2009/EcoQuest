@@ -1229,3 +1229,90 @@ export async function deleteUserLitterSummary(userId:string){
         return {data:null, error};
     }
 }
+
+
+//postgREST for user_quiz_report
+export interface UserQuizReport{
+    id:string;
+    created_at : string;
+    user_id : string | null;
+    correct_answers: number|null
+}
+
+export interface UserQuizReportInsert{
+    user_id? : string | null;
+    correct_answers? : number|null;
+}
+
+export interface UserQuizReportUpdate{
+    correct_answers? : number | null
+}
+
+//CREATE - Insert a new quiz report
+
+export async function createUserQuizReport(data:UserQuizReportInsert){
+    const { data: result, error } = await supabase
+    .from('user_quiz_report')
+    .insert({
+        ...data,
+    })
+    .select()
+    .single();
+
+    if (error) {
+        console.error("Error creating user quiz report:", error);
+        return { data: null, error };
+    }
+
+    return { data: result, error: null };
+}
+
+//Read - get all quiz reports for a specific user
+
+export async function getUserQuizReports(userId:string){
+    const {data, error} = await supabase
+    .from('user_quiz_report')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', {ascending:false})
+
+    if(error){
+        console.error("Error fetching user quiz reports", error)
+        return {data:[], error}
+    }
+
+    return {data, error:null}
+}
+
+
+export async function updateUserQuizReport(id:string, updates:UserQuizReportUpdate){
+    const {data, error} = await supabase
+    .from('user_quiz_report')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single()
+
+    if(error){
+        console.error("Error updating user quiz report:", error)
+        return {data:null, error};
+    }
+
+    return {data, error:null}
+
+}
+
+//Delete - delete a quiz report by id
+export async function deleteUserQuizReport(id:string){
+    const {error} = await supabase
+    .from('user_quiz_report')
+    .delete()
+    .eq('id', id)
+
+    if(error){
+        console.error("Error deleting user quiz report:", error)
+        return {data:null, error};
+    }
+
+    return {data: true, error:null};
+}
