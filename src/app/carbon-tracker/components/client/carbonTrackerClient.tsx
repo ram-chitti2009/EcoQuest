@@ -76,7 +76,7 @@ const Input: React.FC<InputProps> = ({ type = "text", placeholder, value, onChan
     placeholder={placeholder}
     value={value}
     onChange={onChange}
-    className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent ${className}`}
+    className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-gray-900 ${className}`}
     {...props}
   />
 )
@@ -93,7 +93,7 @@ const Select: React.FC<SelectProps> = ({ value, onChange, children, className = 
   <select
     value={value}
     onChange={onChange}
-    className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white ${className}`}
+    className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white text-gray-900 ${className}`}
     {...props}
   >
     {children}
@@ -230,7 +230,7 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({ activities }) => {
   }
 
   return (
-    <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+    <div className="space-y-4">
       {activities.map((activity) => (
         <Card
           key={activity.id}
