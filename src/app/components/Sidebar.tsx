@@ -8,11 +8,11 @@ import {
   ChevronRight,
   CircleArrowUp,
   Home,
+  Leaf,
   type LucideIcon,
   Menu,
   MessageCircleMore,
   Mic,
-  Search,
   Settings,
   Trash2,
   Trophy,
@@ -384,6 +384,14 @@ export const SideBar = () => {
                 icon={BookOpen} 
                 label="Learning Patch" 
                 href="/test-prep" 
+                isCollapsed={isCollapsed} 
+              />
+            </div>
+            <div className="mb-2">
+              <NavItem 
+                icon={Leaf} 
+                label="Carbon Tracker" 
+                href="/carbon-tracker" 
                 isCollapsed={isCollapsed} 
               />
             </div>
