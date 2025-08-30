@@ -1,10 +1,21 @@
+
+// CarbonTrackerClient: Main client component for the Carbon Tracker feature
+// Allows users to log eco-friendly activities, track monthly/yearly progress, and view activity history
 "use client"
 
+
+// Icon imports for activity types and UI
 import { Bike, Plus, Recycle, Trash2, TreePine, X, Zap } from "lucide-react"
 import Head from "next/head"
 import type React from "react"
 import { useState } from "react"
+// App-wide header component
+import Header from "../../../components/Header"
 
+
+// --- UI Utility Components ---
+
+// Button: Reusable button with variants and sizes
 interface ButtonProps {
   children: React.ReactNode
   onClick?: () => void
@@ -22,21 +33,19 @@ const Button: React.FC<ButtonProps> = ({
   className = "",
   type = "button",
 }) => {
+  // Utility for consistent button styling
   const baseClasses =
     "inline-flex items-center justify-center rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2"
-
   const variantClasses = {
     primary: "bg-emerald-600 text-white hover:bg-emerald-700 focus:ring-emerald-500",
     secondary: "bg-gray-100 text-gray-900 hover:bg-gray-200 focus:ring-gray-500",
     outline: "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus:ring-gray-500",
   }
-
   const sizeClasses = {
     sm: "px-3 py-1.5 text-sm",
     md: "px-4 py-2 text-sm",
     lg: "px-6 py-3 text-base",
   }
-
   return (
     <button
       type={type}
@@ -53,10 +62,12 @@ interface CardProps {
   className?: string
 }
 
+// Card: Container for sections and metrics
 const Card: React.FC<CardProps> = ({ children, className = "" }) => (
   <div className={`bg-white rounded-xl shadow-sm border border-gray-200 ${className}`}>{children}</div>
 )
 
+// CardContent: Padding and layout for card content
 const CardContent: React.FC<CardProps> = ({ children, className = "" }) => <div className={className}>{children}</div>
 
 interface InputProps {
@@ -70,6 +81,7 @@ interface InputProps {
   step?: string | number
 }
 
+// Input: Styled input for forms
 const Input: React.FC<InputProps> = ({ type = "text", placeholder, value, onChange, className = "", ...props }) => (
   <input
     type={type}
@@ -89,6 +101,7 @@ interface SelectProps {
   required?: boolean
 }
 
+// Select: Styled select dropdown for forms
 const Select: React.FC<SelectProps> = ({ value, onChange, children, className = "", ...props }) => (
   <select
     value={value}
@@ -106,8 +119,10 @@ interface TabsProps {
   children: React.ReactNode
 }
 
+// Tabs: Container for tabbed content
 const Tabs: React.FC<TabsProps> = ({ children }) => <div className="w-full">{children}</div>
 
+// TabsList: Row of tab triggers
 const TabsList: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <div className="flex bg-gray-100 rounded-lg p-1 mb-4">{children}</div>
 )
@@ -119,6 +134,7 @@ interface TabsTriggerProps {
   children: React.ReactNode
 }
 
+// TabsTrigger: Button for switching tabs
 const TabsTrigger: React.FC<TabsTriggerProps> = ({ value, activeTab, onTabChange, children }) => (
   <button
     onClick={() => onTabChange(value)}
@@ -136,6 +152,7 @@ interface TabsContentProps {
   children: React.ReactNode
 }
 
+// TabsContent: Shows content for the active tab
 const TabsContent: React.FC<TabsContentProps> = ({ value, activeTab, children }) => (
   <div className={activeTab === value ? "block" : "hidden"}>{children}</div>
 )
@@ -146,6 +163,7 @@ interface ProgressRingProps {
   size?: number
 }
 
+// ProgressRing: Circular progress indicator for goals
 const ProgressRing: React.FC<ProgressRingProps> = ({ value, max, size = 160 }) => {
   const percentage = Math.min((value / max) * 100, 100)
   const circumference = 2 * Math.PI * 60
@@ -155,7 +173,9 @@ const ProgressRing: React.FC<ProgressRingProps> = ({ value, max, size = 160 }) =
   return (
     <div className="relative hover:scale-105 transition-transform duration-300" style={{ width: size, height: size }}>
       <svg className="transform -rotate-90" width={size} height={size}>
+        {/* Background ring */}
         <circle cx={size / 2} cy={size / 2} r="60" stroke="#e5e7eb" strokeWidth="12" fill="transparent" />
+        {/* Foreground progress ring */}
         <circle
           cx={size / 2}
           cy={size / 2}
@@ -176,6 +196,7 @@ const ProgressRing: React.FC<ProgressRingProps> = ({ value, max, size = 160 }) =
           </linearGradient>
         </defs>
       </svg>
+      {/* Center value display */}
       <div className="absolute inset-0 flex items-center justify-center">
         <div className="text-center">
           <div className="text-3xl font-bold text-gray-900">{Math.round(value)}</div>
@@ -191,6 +212,7 @@ interface StatsCardProps {
   period: string
 }
 
+// StatsCard: (Unused) Card for displaying a single stat
 const StatsCard: React.FC<StatsCardProps> = ({ carbonSaved, period }) => (
   <Card className="mb-6">
     <CardContent className="p-6 text-center">
@@ -214,8 +236,10 @@ interface ActivityFeedProps {
   activities: Activity[]
 }
 
+// ActivityFeed: List of logged activities, grouped by month or total
 const ActivityFeed: React.FC<ActivityFeedProps> = ({ activities }) => {
   if (activities.length === 0) {
+    // Show empty state if no activities
     return (
       <Card className="hover:shadow-md transition-shadow duration-300">
         <CardContent className="p-12 text-center">
@@ -229,6 +253,7 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({ activities }) => {
     )
   }
 
+  // Render each activity as a card
   return (
     <div className="space-y-4">
       {activities.map((activity) => (
@@ -267,11 +292,14 @@ interface ActivityModalProps {
   onSubmit: (data: { type: string; quantity: number; date: string; carbonSaved: number }) => void
 }
 
+// ActivityModal: Modal dialog for logging a new activity
 const ActivityModal: React.FC<ActivityModalProps> = ({ isOpen, onClose, onSubmit }) => {
+  // Form state
   const [activityType, setActivityType] = useState("")
   const [quantity, setQuantity] = useState("")
   const [date, setDate] = useState(new Date().toISOString().split("T")[0])
 
+  // Available activity types and their carbon savings per unit
   const activityOptions = [
     { value: "Cycling (km)", label: "Cycling (km)", carbonPerUnit: 0.5 },
     { value: "Recycling (kg)", label: "Recycling (kg)", carbonPerUnit: 2.0 },
@@ -280,6 +308,7 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ isOpen, onClose, onSubmit
     { value: "Tree planting (trees)", label: "Tree planting (trees)", carbonPerUnit: 22.0 },
   ]
 
+  // Handle form submission
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!activityType || !quantity) return
@@ -294,6 +323,7 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ isOpen, onClose, onSubmit
       carbonSaved,
     })
 
+    // Reset form and close modal
     setActivityType("")
     setQuantity("")
     setDate(new Date().toISOString().split("T")[0])
@@ -302,6 +332,7 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ isOpen, onClose, onSubmit
 
   if (!isOpen) return null
 
+  // Modal UI
   return (
     <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
       <div className="bg-white rounded-2xl max-w-lg w-full p-8 shadow-2xl transform transition-all duration-300 scale-100">
@@ -316,6 +347,7 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ isOpen, onClose, onSubmit
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Activity type dropdown */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-3">Activity Type</label>
             <Select
@@ -324,7 +356,7 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ isOpen, onClose, onSubmit
               required
               className="text-base py-3"
             >
-              <option value="">Select an activity</option>
+              {!activityType && <option value="" disabled hidden>Select an activity</option>}
               {activityOptions.map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}
@@ -333,6 +365,7 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ isOpen, onClose, onSubmit
             </Select>
           </div>
 
+          {/* Quantity input */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-3">Quantity</label>
             <Input
@@ -347,6 +380,7 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ isOpen, onClose, onSubmit
             />
           </div>
 
+          {/* Date input */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-3">Date</label>
             <Input
@@ -358,6 +392,7 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ isOpen, onClose, onSubmit
             />
           </div>
 
+          {/* Action buttons */}
           <div className="flex space-x-4 pt-6">
             <Button type="button" variant="outline" onClick={onClose} className="flex-1 py-3 text-base bg-transparent">
               Cancel
@@ -376,6 +411,8 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ isOpen, onClose, onSubmit
   )
 }
 
+
+// Mapping of activity types to icons
 const activityIcons = {
   "Cycling (km)": <Bike className="w-4 h-4" />,
   "Recycling (kg)": <Recycle className="w-4 h-4" />,
@@ -384,17 +421,23 @@ const activityIcons = {
   "Tree planting (trees)": <TreePine className="w-4 h-4" />,
 }
 
+
+// --- Main Carbon Tracker Component ---
 export default function CarbonTracker() {
+  // State for activities, modal, celebration animation, and active tab
   const [activities, setActivities] = useState<Activity[]>([])
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [showCelebration, setShowCelebration] = useState(false)
   const [activeTab, setActiveTab] = useState("monthly")
 
+  // Goal targets
   const monthlyTarget = 50 // kg CO₂
   const totalTarget = 600 // kg CO₂ (yearly goal)
 
+  // Calculate total carbon saved
   const totalCarbonSaved = activities.reduce((sum, activity) => sum + activity.carbonSaved, 0)
 
+  // Filter activities for the current month
   const currentMonth = new Date().getMonth()
   const currentYear = new Date().getFullYear()
   const monthlyActivities = activities.filter((activity) => {
@@ -403,6 +446,7 @@ export default function CarbonTracker() {
   })
   const monthlyCarbonSaved = monthlyActivities.reduce((sum, activity) => sum + activity.carbonSaved, 0)
 
+  // Handle logging a new activity
   const handleLogActivity = (activityData: {
     type: string
     quantity: number
@@ -428,26 +472,26 @@ export default function CarbonTracker() {
   return (
     <>
       <Head>
-        <title>Carbon Impact Tracker</title>
+        <title>Carbon Tracker</title>
         <meta name="description" content="Track and measure your environmental contributions" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
 
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 antialiased">
+        <Header 
+          title="Carbon Tracker"
+          centerMessage="Track Your Carbon Footprint!"
+          showTimeDate={true}
+          showUserAvatar={true}
+        />
+        
         <div className="max-w-7xl mx-auto px-6 py-8 pb-32">
-          <div className="text-center mb-12">
-            <h1 className="text-5xl font-bold text-gray-900 mb-4 bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
-              Carbon Impact Tracker
-            </h1>
-            <p className="text-xl text-gray-600">Track and measure your environmental contributions</p>
-          </div>
-
           <Tabs activeTab={activeTab} onTabChange={setActiveTab}>
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-12">
               {/* Left Column - Metrics and Progress */}
               <div className="space-y-8">
                 <TabsContent value="monthly" activeTab={activeTab}>
-                  <Card className="mb-8 hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-white to-emerald-50">
+                  <Card className="mb-8 hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-white to-teal-50">
                     <CardContent className="p-10 text-center">
                       <div className="text-6xl font-bold text-emerald-600 mb-4">{monthlyCarbonSaved.toFixed(1)} kg</div>
                       <div className="text-gray-600 text-lg mb-6">CO₂ Saved • This Month</div>
@@ -458,14 +502,62 @@ export default function CarbonTracker() {
                   </Card>
 
                   <Card className="hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-white to-teal-50">
-                    <CardContent className="p-10 text-center">
-                      <div className="flex flex-col items-center space-y-8">
+                    <CardContent className="p-8 text-center">
+                      <div className="flex flex-col items-center space-y-6">
                         <ProgressRing value={monthlyCarbonSaved} max={monthlyTarget} />
-                        <div>
-                          <h3 className="text-xl font-semibold text-gray-900 mb-2">Monthly Goal Progress</h3>
-                          <p className="text-gray-600 text-lg">
-                            {Math.round((monthlyCarbonSaved / monthlyTarget) * 100)}% of your {monthlyTarget} kg target
+                        <div className="w-full">
+                          <h3 className="font-semibold text-gray-900 mb-2">Monthly Goal Progress</h3>
+                          <p className="text-lg font-bold text-emerald-600 mb-1">
+                            {Math.round((monthlyCarbonSaved / monthlyTarget) * 100)}% Complete
                           </p>
+                          <p className="text-sm text-gray-600 mb-4">
+                            {monthlyCarbonSaved.toFixed(1)} / {monthlyTarget} kg monthly target
+                          </p>
+                          
+                          {/* Progress Bar */}
+                          <div className="w-full bg-gray-200 rounded-full h-3 mb-4">
+                            <div 
+                              className="bg-gradient-to-r from-emerald-500 to-green-500 h-3 rounded-full transition-all duration-500 ease-out"
+                              style={{ width: `${Math.min((monthlyCarbonSaved / monthlyTarget) * 100, 100)}%` }}
+                            ></div>
+                          </div>
+
+                          {/* Remaining to goal */}
+                          <div className="flex justify-between text-xs text-gray-500">
+                            <span>Started</span>
+                            <span className="font-medium">
+                              {monthlyTarget - monthlyCarbonSaved > 0 
+                                ? `${(monthlyTarget - monthlyCarbonSaved).toFixed(1)} kg to go!` 
+                                : '🎉 Goal Achieved!'
+                              }
+                            </span>
+                            <span>Goal</span>
+                          </div>
+
+                          {/* Milestone indicators */}
+                          {monthlyCarbonSaved >= monthlyTarget && (
+                            <div className="mt-4 p-3 bg-emerald-50 rounded-lg border border-emerald-200">
+                              <p className="text-emerald-700 font-medium text-sm">
+                                🎊 Congratulations! You&apos;ve reached your monthly goal!
+                              </p>
+                            </div>
+                          )}
+                          
+                          {monthlyCarbonSaved >= monthlyTarget * 0.75 && monthlyCarbonSaved < monthlyTarget && (
+                            <div className="mt-4 p-3 bg-amber-50 rounded-lg border border-amber-200">
+                              <p className="text-amber-700 font-medium text-sm">
+                                🔥 You&apos;re in the final stretch! 75% complete!
+                              </p>
+                            </div>
+                          )}
+                          
+                          {monthlyCarbonSaved >= monthlyTarget * 0.5 && monthlyCarbonSaved < monthlyTarget * 0.75 && (
+                            <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                              <p className="text-blue-700 font-medium text-sm">
+                                💪 Halfway there! Keep up the great work!
+                              </p>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </CardContent>
@@ -473,7 +565,7 @@ export default function CarbonTracker() {
                 </TabsContent>
 
                 <TabsContent value="total" activeTab={activeTab}>
-                  <Card className="hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-white to-emerald-50 mb-8">
+                  <Card className="hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-white to-teal-50 mb-8 -mt-8">
                     <CardContent className="p-10 text-center">
                       <div className="text-6xl font-bold text-emerald-600 mb-4">{totalCarbonSaved.toFixed(1)} kg</div>
                       <div className="text-gray-600 text-lg mb-6">CO₂ Saved • Total</div>
@@ -483,7 +575,8 @@ export default function CarbonTracker() {
                     </CardContent>
                   </Card>
 
-                  <Card className="hover:shadow-xl transition-all duration-300">
+                  {/* Progress Ring */}
+                  <Card className="hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-white to-teal-50">
                     <CardContent className="p-8 text-center">
                       <div className="flex flex-col items-center space-y-6">
                         <ProgressRing value={totalCarbonSaved} max={totalTarget} />
@@ -560,7 +653,7 @@ export default function CarbonTracker() {
 
                 <TabsContent value="monthly" activeTab={activeTab}>
                   <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-2xl font-bold text-gray-900">This Month's Activities</h2>
+                    <h2 className="text-2xl font-bold text-gray-900">This Month&#39;s Activities</h2>
                     <div className="text-gray-500 bg-gray-100 px-3 py-1 rounded-full text-sm font-medium">
                       {monthlyActivities.length} activities
                     </div>
