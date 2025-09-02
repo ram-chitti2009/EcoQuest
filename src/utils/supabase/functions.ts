@@ -311,6 +311,8 @@ export interface UserStatistics{
     carbon_saved? : number | null;
     volunteer_hours? : number|null;
     cleanups_participated? : number|null;
+    quiz_correct_answers? : number|null;
+    xp? : number|null;
     created_at? : string|null;
     updated_at? : string | null
 }
@@ -320,12 +322,14 @@ export interface UserStatisticsInsert {
     carbon_saved?: number|null;
     volunteer_hours?: number | null;
     cleanups_participated? : number | null;
+    quiz_correct_answers?: number | null;
 }
 
 export interface UserStatisticsUpdate {
   carbon_saved?: number | null;
   volunteer_hours?: number | null;
   cleanups_participated?: number | null;
+  quiz_correct_answers?: number | null;
 }
 
 export async function createUserStatistics(data:UserStatisticsInsert){
@@ -840,12 +844,37 @@ export async function getLeaderboardWithUserData() {
     user_statistics:user_statistics_id(
       carbon_saved,
       volunteer_hours,
-      cleanups_participated
+      cleanups_participated,
+      quiz_correct_answers,
+      xp
     )
   `)
   .order('rank', { ascending: true });
 
 console.log("Leaderboard with stats:", data);
+    if (error) {
+        console.error("Error fetching leaderboard with user data:", error);
+        return { data: [], error };
+    }
+
+    return { data, error: null };
+}
+
+export async function getLeaderboardWithXp(){
+    const { data, error } = await supabase
+        .from('leaderboard')
+        .select(`
+            *,
+            user_statistics:user_statistics_id(
+                carbon_saved,
+                volunteer_hours,
+                cleanups_participated,
+                xp
+            )
+        `)
+        .order('rank', { ascending: true });
+
+    console.log("Leaderboard with stats:", data);
     if (error) {
         console.error("Error fetching leaderboard with user data:", error);
         return { data: [], error };
@@ -1316,3 +1345,50 @@ export async function deleteUserQuizReport(id:string){
 
     return {data: true, error:null};
 }
+
+//postgREST for CarbonClash
+export async function persistQuizReport(userId: string, quiz_correct_answers: number){
+    // First, check if user statistics record exists
+    const { data: existingRecord, error: fetchError } = await supabase
+        .from('user_statistics')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+
+    if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 is "no rows returned"
+        console.error("Error checking existing user statistics:", fetchError);
+        return { data: null, error: fetchError };
+    }
+
+    let result;
+    if (existingRecord) {
+        // Update existing record - ADD to existing quiz_correct_answers
+        const newTotal = (existingRecord.quiz_correct_answers || 0) + quiz_correct_answers;
+        result = await supabase
+            .from('user_statistics')
+            .update({ 
+                quiz_correct_answers: newTotal,
+                updated_at: new Date().toISOString()
+            })
+            .eq('user_id', userId)
+            .select();
+    } else {
+        // Create new record with just the required fields
+        result = await supabase
+            .from('user_statistics')
+            .insert({ 
+                user_id: userId,
+                quiz_correct_answers: quiz_correct_answers,
+                updated_at: new Date().toISOString()
+            })
+            .select();
+    }
+
+    if (result.error) {
+        console.error("Error persisting quiz report:", result.error);
+        return { data: null, error: result.error };
+    }
+
+    return { data: result.data, error: null };
+}
+

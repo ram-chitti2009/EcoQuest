@@ -18,6 +18,8 @@ interface LeaderboardWithStats extends Leaderboard {
     carbon_saved?: number;
     volunteer_hours?: number;
     cleanups_participated?: number;
+    quiz_correct_answers?:number;
+    xp?:number; 
   };
 }
 

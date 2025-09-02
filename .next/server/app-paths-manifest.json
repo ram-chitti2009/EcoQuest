@@ -1,10 +1,9 @@
 {
-  "/_not-found/page": "app/_not-found/page.js",
-  "/carbon-clash/page": "app/carbon-clash/page.js",
-  "/carbon-tracker/page": "app/carbon-tracker/page.js",
-  "/community-cleanup/page": "app/community-cleanup/page.js",
-  "/eco-echo/page": "app/eco-echo/page.js",
-  "/favicon.ico/route": "app/favicon.ico/route.js",
-  "/litterLens/page": "app/litterLens/page.js",
-  "/test-prep/page": "app/test-prep/page.js"
+  "/leaderboard/page": "app/leaderboard/page.js",
+  "/login/page": "app/login/page.js",
+  "/dashboard/page": "app/dashboard/page.js",
+  "/profile/page": "app/profile/page.js",
+  "/landingPage/page": "app/landingPage/page.js",
+  "/page": "app/page.js",
+  "/carbon-clash/page": "app/carbon-clash/page.js"
 }

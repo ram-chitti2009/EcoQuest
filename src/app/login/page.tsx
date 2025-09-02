@@ -20,12 +20,19 @@ export default function SignInPage() {
 
   const handleGoogle = async () => {
     console.log("Google login attempted");
-    await supabase.auth.signInWithOAuth({
+    const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
         redirectTo: `${window.location.origin}/dashboard`
       }
     });
+
+    if (error) {
+      console.error("Google login error:", error);
+      setMessage({ type: 'error', text: error.message });
+    } else {
+      console.log("Google login successful:", data);
+    }
   };
 
   const handleApple = async () => {
