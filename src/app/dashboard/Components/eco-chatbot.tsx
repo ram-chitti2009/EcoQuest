@@ -18,6 +18,8 @@ const supabase = createClient()
 
 const getSupabaseToken = async () => {
   const { data: { session } } = await supabase.auth.getSession()
+    console.log("Supabase token retrieved:", session?.access_token)
+
   return session?.access_token
 }
 

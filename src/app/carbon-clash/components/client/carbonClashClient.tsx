@@ -43,80 +43,6 @@ interface MockLeaderboardEntry {
   xp: number;
 }
 
-// Main quiz questions array
-const quizQuestions: Question[] = [
-  {
-    id: 1,
-    question: "What percentage of the world's electricity comes from renewable sources?",
-    options: ["15%", "28%", "42%", "55%"],
-    correctAnswer: 1,
-    ecoFact: "Renewable energy now accounts for 28% of global electricity generation!",
-  },
-  {
-    id: 2,
-    question: "How much energy does recycling aluminum save compared to producing new aluminum?",
-    options: ["50%", "75%", "95%", "99%"],
-    correctAnswer: 2,
-    ecoFact: "Recycling aluminum saves 95% of the energy compared to producing new aluminum!",
-  },
-  {
-    id: 3,
-    question: "What is the most effective way to reduce your carbon footprint?",
-    options: ["Recycling more", "Using LED bulbs", "Eating less meat", "Taking shorter showers"],
-    correctAnswer: 2,
-    ecoFact: "Reducing meat consumption can cut your carbon footprint by up to 73%!",
-  },
-  {
-    id: 4,
-    question: "How long does it take for a plastic bottle to decompose?",
-    options: ["50 years", "100 years", "450 years", "1000 years"],
-    correctAnswer: 2,
-    ecoFact: "Plastic bottles take up to 450 years to decompose in landfills!",
-  },
-  {
-    id: 5,
-    question: "What percentage of ocean plastic pollution comes from land-based sources?",
-    options: ["40%", "60%", "80%", "95%"],
-    correctAnswer: 2,
-    ecoFact: "About 80% of ocean plastic pollution originates from land-based sources!",
-  },
-  {
-    id: 6,
-    question: "Which transportation method has the lowest carbon emissions per mile?",
-    options: ["Electric car", "Bus", "Train", "Bicycle"],
-    correctAnswer: 3,
-    ecoFact: "Bicycles produce zero emissions and are the most eco-friendly transport option!",
-  },
-  {
-    id: 7,
-    question: "How much water can a single dripping faucet waste per year?",
-    options: ["100 gallons", "500 gallons", "1,000 gallons", "3,000 gallons"],
-    correctAnswer: 2,
-    ecoFact: "A single dripping faucet can waste over 3,000 gallons of water per year!",
-  },
-  {
-    id: 8,
-    question: "What percentage of food produced globally is wasted?",
-    options: ["10%", "20%", "33%", "50%"],
-    correctAnswer: 2,
-    ecoFact: "About one-third of all food produced globally is wasted, contributing to climate change!",
-  },
-  {
-    id: 9,
-    question: "Which renewable energy source is growing the fastest worldwide?",
-    options: ["Wind", "Solar", "Hydroelectric", "Geothermal"],
-    correctAnswer: 1,
-    ecoFact: "Solar energy is the fastest-growing renewable energy source globally!",
-  },
-  {
-    id: 10,
-    question: "How many trees does it take to offset the CO2 from one car per year?",
-    options: ["5 trees", "15 trees", "31 trees", "50 trees"],
-    correctAnswer: 2,
-    ecoFact: "It takes about 31 trees to offset the CO2 emissions from one car per year!",
-  },
-]
-
 // Remove top-level useEffect and move it inside the component below
 // Mock leaderboard data for results screen
 const mockLeaderboard = [
@@ -174,42 +100,124 @@ export default function CarbonClashQuiz() {
   const [showStreakBonus, setShowStreakBonus] = useState(false) // Show streak bonus animation
   const [questionTransition, setQuestionTransition] = useState(false) // Animate question change
   const [progressAnimation, setProgressAnimation] = useState(0) // Progress bar animation
-  
+  const [quizQuestions, setQuizQuestions] = useState<Question[]>([])
+  const [questionsLoading, setQuestionsLoading] = useState(true)
+  const [questionsError, setQuestionsError] = useState<string | null>(null)
+
   // Leaderboard state management
   const [leaderboardData, setLeaderboardData] = useState<LeaderboardWithStats[]>([])
   const [userRank, setUserRank] = useState<number>(0)
   const [loading, setLoading] = useState(false)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
 
+
   // Supabase client for data fetching
   const supabase = createClient()
-
-  useEffect(()=>{
-
-  })
+    const fetchLeaderboardData = useCallback(async () => {
+    try {
+      setLoading(true)
+      const result = await getLeaderboardWithUserData()
+      
+      if (result.error) {
+        console.error("Error fetching leaderboard data:", result.error)
+      } else {
+        // Sort users by eco points and get current user
+        const rankedUsers = rankUsersByEcoPoints(result.data)
+        setLeaderboardData(rankedUsers)
+        
+        // Find current user's rank
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user) {
+          setCurrentUserId(user.id)
+          const currentUserIndex = rankedUsers.findIndex(u => u.user_id === user.id)
+          setUserRank(currentUserIndex + 1)
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching leaderboard data:", error)
+    } finally {
+      setLoading(false)
+    }
+  }, [supabase])
+  useEffect(() => {
+    const fetchQuizQuestions = async () => {
+      try {
+        setQuestionsLoading(true)
+        setQuestionsError(null)
+        
+        // Get Supabase session token
+        const { data: { session } } = await supabase.auth.getSession()
+        const token = session?.access_token
+        
+        const headers: HeadersInit = {
+          'Content-Type': 'application/json',
+        }
+        
+        // Include authorization header if token exists
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`
+        }
+        
+        const response = await fetch("http://localhost:8000/quiz-bot", {
+          method: 'POST',
+          headers: headers
+        })
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`)
+        }
+        
+        let text = await response.text()
+        
+        // Remove code block markers if present (handle both raw and escaped versions)
+        text = text.replace(/^```json\s*/, '').replace(/\s*```$/, '').trim()
+        
+        // Also handle escaped versions that might come from JSON responses
+        text = text.replace(/^"```json\\n/, '').replace(/\\n```"$/, '').trim()
+        
+        // Handle case where the entire response is wrapped in quotes
+        if (text.startsWith('"') && text.endsWith('"')) {
+          text = text.slice(1, -1)
+        }
+        
+        // Replace escaped newlines with actual newlines for proper JSON parsing
+        text = text.replace(/\\n/g, '\n').replace(/\\"/g, '"')
+        
+        if (!text) {
+          throw new Error('Empty response from server')
+        }
+        
+        console.log("Cleaned text:", text)
+        const data = JSON.parse(text)
+        
+        if (!Array.isArray(data) || data.length === 0) {
+          throw new Error('Invalid or empty questions data')
+        }
+        
+        setQuizQuestions(data)
+      } catch (error) {
+        console.error("Error fetching quiz questions:", error)
+        setQuestionsError(error instanceof Error ? error.message : 'Failed to load questions')
+      } finally {
+        setQuestionsLoading(false)
+      }
+    }
+    fetchQuizQuestions()
+  }, [supabase])
+  
   // Animate progress bar when question changes
   useEffect(() => {
-    if (gameState === "quiz") {
+    if (gameState === "quiz" && quizQuestions.length > 0) {
       const targetProgress = ((currentQuestionIndex + 1) / quizQuestions.length) * 100
       const timer = setTimeout(() => setProgressAnimation(targetProgress), 100)
       return () => clearTimeout(timer)
     }
-  })
-  // Animate progress bar when question changes
-  useEffect(() => {
-    if (gameState === "quiz") {
-      const targetProgress = ((currentQuestionIndex + 1) / quizQuestions.length) * 100
-      const timer = setTimeout(() => setProgressAnimation(targetProgress), 100)
-      return () => clearTimeout(timer)
-    }
-  }, [currentQuestionIndex, gameState])
+  }, [currentQuestionIndex, gameState, quizQuestions.length])
 
  
 
   useEffect(() => {
     if (gameState === "results") {
-
-
     const fetchAndCreateReport = async () => {
       try {
         setXpLoading(true)
@@ -242,10 +250,16 @@ export default function CarbonClashQuiz() {
     }
     fetchAndCreateReport()
     }
-  }, [gameState, score, supabase.auth])
+  }, [gameState, score, supabase.auth, fetchLeaderboardData])
 
   // Start/restart the quiz
   const startQuiz = () => {
+    // Don't start quiz if questions aren't loaded yet
+    if (quizQuestions.length === 0) {
+      console.log("Quiz questions not loaded yet")
+      return
+    }
+    
     setCurrentQuestionIndex(0)
     setSelectedAnswer(null)
     setScore(0)
@@ -263,6 +277,7 @@ export default function CarbonClashQuiz() {
   // Share functionality for quiz results
   const handleShare = async () => {
     const earnedXP = calculateXP(score, quizQuestions.length)
+    const streakBonus = maxStreak >= 3 ? maxStreak * 10 : 0
     const totalXP = earnedXP + streakBonus
     const performance = getPerformanceLevel(score, quizQuestions.length)
     const percentage = Math.round((score / quizQuestions.length) * 100)
@@ -367,32 +382,7 @@ export default function CarbonClashQuiz() {
   
 
   // Fetch real leaderboard data with user statistics
-  const fetchLeaderboardData = useCallback(async () => {
-    try {
-      setLoading(true)
-      const result = await getLeaderboardWithUserData()
-      
-      if (result.error) {
-        console.error("Error fetching leaderboard data:", result.error)
-      } else {
-        // Sort users by eco points and get current user
-        const rankedUsers = rankUsersByEcoPoints(result.data)
-        setLeaderboardData(rankedUsers)
-        
-        // Find current user's rank
-        const { data: { user } } = await supabase.auth.getUser()
-        if (user) {
-          setCurrentUserId(user.id)
-          const currentUserIndex = rankedUsers.findIndex(u => u.user_id === user.id)
-          setUserRank(currentUserIndex + 1)
-        }
-      }
-    } catch (error) {
-      console.error("Error fetching leaderboard data:", error)
-    } finally {
-      setLoading(false)
-    }
-  }, [supabase])
+
 
   // Fetch leaderboard data when results screen is reached
   useEffect(() => {
@@ -405,20 +395,27 @@ export default function CarbonClashQuiz() {
   // Handle when a user selects an answer
   // Shows feedback, updates score/streak, and moves to next question or results
   const handleAnswerSelect = (answerIndex: number) => {
+    if (selectedAnswer !== null) return // Prevent double selection
+    
     setSelectedAnswer(answerIndex)
 
     setTimeout(() => {
       const currentQuestion = quizQuestions[currentQuestionIndex]
+      if (!currentQuestion) {
+        console.error("Current question is undefined")
+        return
+      }
+      
       const newUserAnswers = [...userAnswers, answerIndex]
       setUserAnswers(newUserAnswers)
 
       const isCorrect = answerIndex === currentQuestion.correctAnswer
 
       if (isCorrect) {
-        setScore(score + 1)
+        setScore(prevScore => prevScore + 1)
         const newStreak = streak + 1
         setStreak(newStreak)
-        setMaxStreak(Math.max(maxStreak, newStreak))
+        setMaxStreak(prevMax => Math.max(prevMax, newStreak))
 
         // Show streak bonus animation if streak >= 3
         if (newStreak >= 3) {
@@ -433,12 +430,14 @@ export default function CarbonClashQuiz() {
       if (currentQuestionIndex < quizQuestions.length - 1) {
         setQuestionTransition(true)
         setTimeout(() => {
-          setCurrentQuestionIndex(currentQuestionIndex + 1)
+          setCurrentQuestionIndex(prevIndex => prevIndex + 1)
           setSelectedAnswer(null)
           setQuestionTransition(false)
         }, 300)
       } else {
-        setGameState("results")
+        setTimeout(() => {
+          setGameState("results")
+        }, 1000)
       }
     }, 1500)
   }
@@ -446,6 +445,51 @@ export default function CarbonClashQuiz() {
 
   // Get the current question object
   const currentQuestion = quizQuestions[currentQuestionIndex]
+
+  // Show loading state when questions are being fetched
+  if (questionsLoading) {
+    return (
+      <div className="flex flex-col h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50">
+        <Header 
+          title="Carbon Clash"
+          centerMessage="🌍 Loading Quiz Questions... 🌱"
+        />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-emerald-600 mx-auto mb-4"></div>
+            <p className="text-xl font-bold text-gray-700">Loading your eco-quiz...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Show error state if no questions loaded
+  if (!questionsLoading && (quizQuestions.length === 0 || questionsError)) {
+    return (
+      <div className="flex flex-col h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50">
+        <Header 
+          title="Carbon Clash"
+          centerMessage="🌍 Unable to Load Quiz 🌱"
+        />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <p className="text-xl font-bold text-gray-700 mb-4">Unable to load quiz questions.</p>
+            <p className="text-lg text-gray-600 mb-2">Please check your connection and try again.</p>
+            {questionsError && (
+              <p className="text-sm text-red-600 mb-6">Error: {questionsError}</p>
+            )}
+            <Button
+              onClick={() => window.location.reload()}
+              className="px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
+            >
+              Retry
+            </Button>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <>
@@ -476,7 +520,7 @@ export default function CarbonClashQuiz() {
                   <div className="w-16 h-16 bg-emerald-100 border-2 border-emerald-300 rounded-full flex items-center justify-center hover:bg-emerald-200 transition-all duration-200 hover:scale-110 transform">
                     <Zap className="w-8 h-8 text-emerald-700" />
                   </div>
-                  <span className="text-lg font-bold text-gray-800">10 Questions</span>
+                  <span className="text-lg font-bold text-gray-800">{quizQuestions.length} Questions</span>
                 </div>
                 <div className="flex flex-col items-center gap-3 animate-in slide-in-from-bottom-4 duration-500 delay-600">
                   <div className="w-16 h-16 bg-emerald-100 border-2 border-emerald-300 rounded-full flex items-center justify-center hover:bg-emerald-200 transition-all duration-200 hover:scale-110 transform">
@@ -496,8 +540,9 @@ export default function CarbonClashQuiz() {
                 onClick={startQuiz}
                 size="lg"
                 className="w-full h-20 text-2xl font-black bg-emerald-600 text-white hover:bg-emerald-700 shadow-2xl hover:shadow-3xl transition-all hover:scale-[1.05] active:scale-[0.95] animate-in slide-in-from-bottom-4 duration-500 delay-800 rounded-2xl"
+                disabled={questionsLoading || quizQuestions.length === 0}
               >
-                START QUIZ
+                {questionsLoading ? "LOADING..." : "START QUIZ"}
               </Button>
 
               <p className="text-center text-lg text-gray-600 font-bold animate-in fade-in-50 duration-500 delay-1000">
@@ -509,7 +554,7 @@ export default function CarbonClashQuiz() {
         </div>
       )}
 
-      {gameState === "quiz" && (
+      {gameState === "quiz" && currentQuestion && (
         <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 flex flex-col">
           <div className="p-6 text-center">
             <div className="flex justify-between items-center mb-4 max-w-4xl mx-auto">
@@ -553,7 +598,7 @@ export default function CarbonClashQuiz() {
                 }`}
               >
                 <h2 className="text-4xl md:text-5xl font-black text-gray-900 mb-8 leading-tight drop-shadow-sm px-4">
-                  {currentQuestion.question}
+                  {currentQuestion?.question || "Loading question..."}
                 </h2>
               </div>
 
@@ -563,7 +608,7 @@ export default function CarbonClashQuiz() {
                 }`}
               >
                 {/* Render answer choices as nature-themed buttons */}
-                {currentQuestion.options.map((option, index) => {
+                {currentQuestion && currentQuestion.options && currentQuestion.options.map((option, index) => {
                   const kahootColors = [
                     "bg-red-500 hover:bg-red-600", // Red
                     "bg-blue-500 hover:bg-blue-600", // Blue
@@ -586,7 +631,7 @@ export default function CarbonClashQuiz() {
                   // - Green for correct
                   // - Red for user's wrong selection
                   // - Gray for others
-                  if (selectedAnswer !== null) {
+                  if (selectedAnswer !== null && currentQuestion) {
                     if (index === selectedAnswer) {
                       if (selectedAnswer === currentQuestion.correctAnswer) {
                         // User selected correct answer
@@ -626,12 +671,12 @@ export default function CarbonClashQuiz() {
           </div>
 
           {/* Show eco fact after answering */}
-          {selectedAnswer !== null && (
+          {selectedAnswer !== null && currentQuestion && (
             <div className="p-6">
               <div className="max-w-4xl mx-auto bg-white/95 backdrop-blur-sm p-6 rounded-2xl shadow-2xl animate-in slide-in-from-bottom-8 fade-in-0 duration-500 border border-emerald-200">
                 <div className="flex items-start gap-4">
                   <Leaf className="w-8 h-8 text-emerald-600 mt-1 flex-shrink-0 animate-bounce" />
-                  <p className="text-lg font-bold text-gray-800 leading-relaxed">{currentQuestion.ecoFact}</p>
+                  <p className="text-lg font-bold text-gray-800 leading-relaxed">{currentQuestion?.ecoFact || "Interesting eco fact!"}</p>
                 </div>
               </div>
             </div>
