@@ -383,7 +383,7 @@ export const SideBar = () => {
               <NavItem 
                 icon={BookOpen} 
                 label="Learning Patch" 
-                href="/test-prep" 
+                href="/learningPatch" 
                 isCollapsed={isCollapsed} 
               />
             </div>
