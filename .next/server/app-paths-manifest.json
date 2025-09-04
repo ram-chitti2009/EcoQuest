@@ -1,7 +1,4 @@
 {
-  "/_not-found/page": "app/_not-found/page.js",
   "/favicon.ico/route": "app/favicon.ico/route.js",
-  "/dashboard/page": "app/dashboard/page.js",
-  "/landingPage/page": "app/landingPage/page.js",
-  "/leaderboard/page": "app/leaderboard/page.js"
+  "/learningPatch/page": "app/learningPatch/page.js"
 }

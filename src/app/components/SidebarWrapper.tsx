@@ -14,6 +14,7 @@ const sidebarRoutes = [
   "/carbon-tracker",
   "/community-cleanup",
   "/test-prep",
+  "/learningPatch",
   "/leaderboard",
   "/calendar",
 ];
