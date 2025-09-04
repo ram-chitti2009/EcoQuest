@@ -24,7 +24,7 @@ interface LeaderboardWithStats extends Leaderboard {
 }
 
 export default function Component() {
-  const [selectedMetric, setSelectedMetric] = useState<"carbon" | "events" | "hours">("carbon")
+  const [selectedMetric, setSelectedMetric] = useState<"carbon" | "events" | "hours"|"points">("carbon")
   const [hoveredEntry, setHoveredEntry] = useState<string | null>(null)
   const [selectedEntry, setSelectedEntry] = useState<string | null>(null)
   const [leaderboardData, setLeaderboardData] = useState<LeaderboardWithStats[]>([])
@@ -32,6 +32,7 @@ export default function Component() {
     total_carbon_saved: 0,
     total_volunteer_hours: 0,
     total_cleanups: 0,
+    total_xp: 0,
     active_users: 0
   })
   const [loading, setLoading] = useState(true)
@@ -48,6 +49,8 @@ export default function Component() {
         } else {
           setLeaderboardData(leaderboardResult.data as LeaderboardWithStats[])
           console.log("Fetched leaderboard data:", leaderboardResult.data)
+          console.log("Leaderboard data length:", leaderboardResult.data?.length)
+          console.log("First entry user_statistics:", leaderboardResult.data?.[0]?.user_statistics)
         }
 
         // Fetch community stats
@@ -77,12 +80,15 @@ export default function Component() {
         return entry.user_statistics?.cleanups_participated || 0
       case "hours":
         return entry.user_statistics?.volunteer_hours || 0
+      case "points":
+        return entry.user_statistics?.xp || 0
       default:
         return entry.user_statistics?.carbon_saved || 0
     }
   }
 
   const getMetricLabel = (entry: LeaderboardWithStats) => {
+    console.log("Selected metric:", selectedMetric, "Entry user_statistics:", entry.user_statistics)
     switch (selectedMetric) {
       case "carbon":
         return `${entry.user_statistics?.carbon_saved || 0} kg CO₂ saved`
@@ -90,6 +96,9 @@ export default function Component() {
         return `${entry.user_statistics?.cleanups_participated || 0} events joined`
       case "hours":
         return `${entry.user_statistics?.volunteer_hours || 0} volunteer hours`
+      case "points":
+        console.log("XP value:", entry.user_statistics?.xp)
+        return `${entry.user_statistics?.xp || 0} eco points`
       default:
         return `${entry.user_statistics?.carbon_saved || 0} kg CO₂ saved`
     }
@@ -156,6 +165,7 @@ export default function Component() {
     )
   }
 
+  console.log("About to check leaderboardData.length:", leaderboardData.length, "Data:", leaderboardData)
   if (leaderboardData.length === 0) {
     return (
       <div className="h-screen bg-gray-50 flex flex-col overflow-hidden">
@@ -217,6 +227,15 @@ export default function Component() {
                     <Clock className="h-5 w-5" />
                     Volunteer Hours
                   </Button>
+                  <Button
+                  onClick={()=>setSelectedMetric("points")}
+                  active = {selectedMetric==="points"}
+                  className = "flex-1"
+                  >
+                    <Star className="h-5 w-5" />
+                    Eco Points
+                  </Button>
+
                 </div>
 
                 {/* Top 3 Podium */}
@@ -372,19 +391,7 @@ export default function Component() {
                     <p className="text-xs text-gray-500 mt-1">78% of monthly goal</p>
                   </div>
 
-                  <div className="p-4 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-xl border border-blue-200 hover:shadow-lg transition-all duration-300 hover:scale-105">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="text-3xl">👥</div>
-                      <div className="text-right">
-                        <div className="text-2xl font-bold bg-gradient-to-r from-blue-500 to-indigo-600 bg-clip-text text-transparent">
-                          {communityStats.active_users}
-                        </div>
-                        <p className="text-xs text-gray-600 font-medium">Active Heroes</p>
-                      </div>
-                    </div>
-                    <Progress value={89} color="blue" className="h-2" />
-                    <p className="text-xs text-gray-500 mt-1">+12 new this week</p>
-                  </div>
+                 
 
                   <div className="p-4 bg-gradient-to-br from-purple-100 to-pink-100 rounded-xl border border-purple-200 hover:shadow-lg transition-all duration-300 hover:scale-105">
                     <div className="flex items-center justify-between mb-2">
@@ -394,6 +401,22 @@ export default function Component() {
                           {communityStats.total_volunteer_hours}
                         </div>
                         <p className="text-xs text-gray-600 font-medium">Volunteer Hours</p>
+                      </div>
+                    </div>
+                    <Progress value={65} color="purple" className="h-2" />
+                    <p className="text-xs text-gray-500 mt-1">65% of monthly target</p>
+                  </div>
+
+
+                   <div className="p-4 bg-gradient-to-br from-purple-100 to-pink-100 rounded-xl border border-purple-200 hover:shadow-lg transition-all duration-300 hover:scale-105">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="text-3xl">⏰</div>
+                      <div className="text-right">
+                        <div className="text-2xl font-bold bg-gradient-to-r from-purple-500 to-pink-600 bg-clip-text text-transparent">
+                        
+                          {communityStats.total_xp}
+                        </div>
+                        <p className="text-xs text-gray-600 font-medium">Eco Points</p>
                       </div>
                     </div>
                     <Progress value={65} color="purple" className="h-2" />

@@ -841,7 +841,7 @@ export async function getLeaderboardWithUserData() {
   .from('leaderboard')
   .select(`
     *,
-    user_statistics:user_statistics_id(
+    user_statistics(
       carbon_saved,
       volunteer_hours,
       cleanups_participated,
@@ -941,33 +941,40 @@ export async function getCommunityStats() {
             .from('user_statistics')
             .select('cleanups_participated');
 
+        const { data: xpData, error: xpError } = await supabase
+            .from('user_statistics')
+            .select('xp');
+
         // Get active users count
         const { count: usersCount, error: usersError } = await supabase
             .from('user_profiles')
             .select('*', { count: 'exact', head: true });
 
-        if (carbonError || hoursError || cleanupsError || usersError) {
+        if (carbonError || hoursError || cleanupsError || xpError || usersError) {
             console.error("Error fetching community stats");
             return {
                 data: {
                     total_carbon_saved: 0,
                     total_volunteer_hours: 0,
                     total_cleanups: 0,
+                    total_xp: 0,
                     active_users: 0
                 },
-                error: carbonError || hoursError || cleanupsError || usersError
+                error: carbonError || hoursError || cleanupsError || xpError || usersError
             };
         }
 
         const totalCarbon = carbonData?.reduce((sum, item) => sum + (item.carbon_saved || 0), 0) || 0;
         const totalHours = hoursData?.reduce((sum, item) => sum + (item.volunteer_hours || 0), 0) || 0;
         const totalCleanups = cleanupsData?.reduce((sum, item) => sum + (item.cleanups_participated || 0), 0) || 0;
+        const totalXp = xpData?.reduce((sum, item) => sum + (item.xp || 0), 0) || 0;
 
         return {
             data: {
                 total_carbon_saved: totalCarbon,
                 total_volunteer_hours: totalHours,
                 total_cleanups: totalCleanups,
+                total_xp: totalXp,
                 active_users: usersCount || 0
             },
             error: null
@@ -979,6 +986,7 @@ export async function getCommunityStats() {
                 total_carbon_saved: 0,
                 total_volunteer_hours: 0,
                 total_cleanups: 0,
+                total_xp: 0,
                 active_users: 0
             },
             error

@@ -23,6 +23,7 @@ interface LeaderboardWithStats extends Leaderboard {
     carbon_saved?: number;
     volunteer_hours?: number;
     cleanups_participated?: number;
+    xp?: number;
   };
 }
 
@@ -36,11 +37,9 @@ const calculateMetricValue = (entry: LeaderboardWithStats, metric: "carbon" | "e
     case "hours":
       return entry.user_statistics?.volunteer_hours || 0
     case "points":
-      // Calculate points based on available statistics
-      const carbon = entry.user_statistics?.carbon_saved || 0
-      const hours = entry.user_statistics?.volunteer_hours || 0
-      const cleanups = entry.user_statistics?.cleanups_participated || 0
-      return (carbon * 2) + (hours * 10) + (cleanups * 25)  // Updated point calculation to match getMetricLabel
+      // Use the pre-calculated XP from the database instead of calculating manually
+      console.log("calculateMetricValue for points - entry:", entry.name, "xp:", entry.user_statistics?.xp)
+      return entry.user_statistics?.xp || 0
     default:
       return entry.user_statistics?.carbon_saved || 0
   }
@@ -98,7 +97,9 @@ export default function Component() {
 
   // Handle metric change
   const handleMetricChange = useCallback((newMetric: "carbon" | "events" | "hours" | "points") => {
+    console.log("handleMetricChange called with:", newMetric)
     setSelectedMetric(newMetric)
+    console.log("selectedMetric should now be:", newMetric)
   }, [])
 
   useEffect(() => {
@@ -166,6 +167,7 @@ export default function Component() {
   }
 
   const getMetricLabel = (entry: LeaderboardWithStats) => {
+    console.log("getMetricLabel called - selectedMetric:", selectedMetric, "entry:", entry.name, "user_statistics:", entry.user_statistics)
     switch (selectedMetric) {
       case "carbon":
         return `${entry.user_statistics?.carbon_saved || 0} kg CO₂ saved`
@@ -174,11 +176,9 @@ export default function Component() {
       case "hours":
         return `${entry.user_statistics?.volunteer_hours || 0} volunteer hours`
       case "points":
-        const carbon = entry.user_statistics?.carbon_saved || 0
-        const hours = entry.user_statistics?.volunteer_hours || 0
-        const cleanups = entry.user_statistics?.cleanups_participated || 0
-        const points = (carbon * 2) + (hours * 10) + (cleanups * 25)
-        return `${points} eco points`
+        console.log("Points case - entry.user_statistics:", entry.user_statistics)
+        console.log("XP value:", entry.user_statistics?.xp)
+        return `${entry.user_statistics?.xp || 0} eco points`
       default:
         return `${entry.user_statistics?.carbon_saved || 0} kg CO₂ saved`
     }
