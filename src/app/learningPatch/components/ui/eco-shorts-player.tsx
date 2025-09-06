@@ -6,12 +6,6 @@ import { VideoCard } from "./video-card"
 import { VideoControls } from "./video-controls"
 import { VideoInfo } from "./video-info"
 
-const videoUrls = [
-  "https://www.youtube.com/shorts/xtpTnLmBF0Q", // User's example video
-  "https://www.youtube.com/shorts/dQw4w9WgXcQ", // Rick Roll Short
-  "https://www.youtube.com/shorts/kJQP7kiw5Fk", // Despacito Short
-]
-
 interface VideoData {
   id: string
   title: string
@@ -83,6 +77,7 @@ export function EcoShortsPlayer() {
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0)
   const [videos, setVideos] = useState<VideoData[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [isTransitioning, setIsTransitioning] = useState(false)
   const [swipeProgress, setSwipeProgress] = useState(0)
   const [swipeDirection, setSwipeDirection] = useState<"up" | "down" | null>(null)
@@ -94,15 +89,35 @@ export function EcoShortsPlayer() {
   const animationFrameRef = useRef<number>(0)
 
   useEffect(() => {
-    const loadVideos = async () => {
-      setLoading(true)
-      const videoPromises = videoUrls.map(fetchVideoMetadata)
-      const videoData = await Promise.all(videoPromises)
-      setVideos(videoData as VideoData[])
-      setLoading(false)
+    const fetchAndLoadVideos = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        
+        // Fetch video URLs from our API
+        const response = await fetch('/api/learning-patch?q=eco%20sustainability&maxResults=10')
+        if (!response.ok) {
+          throw new Error('Failed to fetch videos from API')
+        }
+        
+        const fetchedVideoUrls = await response.json()
+        
+        // Load video metadata for each URL
+        const videoPromises = fetchedVideoUrls.map(fetchVideoMetadata)
+        const videoData = await Promise.all(videoPromises)
+        setVideos(videoData as VideoData[])
+      } catch (err) {
+        console.error('Error loading videos:', err)
+        setError(err instanceof Error ? err.message : 'Failed to load videos')
+        
+        // Fallback to empty array if API fails
+        setVideos([])
+      } finally {
+        setLoading(false)
+      }
     }
 
-    loadVideos()
+    fetchAndLoadVideos()
   }, [])
 
   useEffect(() => {
@@ -271,7 +286,9 @@ export function EcoShortsPlayer() {
   if (loading || !currentVideo) {
     return (
       <div className="relative h-full w-full flex items-center justify-center bg-black">
-        <div className="text-white text-lg animate-pulse">Loading videos...</div>
+        <div className="text-white text-lg animate-pulse">
+          {error ? `Error: ${error}` : 'Loading sustainability videos...'}
+        </div>
       </div>
     )
   }

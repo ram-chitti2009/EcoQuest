@@ -1,4 +1,7 @@
 {
-  "/favicon.ico/route": "app/favicon.ico/route.js",
+  "/page": "app/page.js",
+  "/landingPage/page": "app/landingPage/page.js",
+  "/dashboard/page": "app/dashboard/page.js",
+  "/carbon-tracker/page": "app/carbon-tracker/page.js",
   "/learningPatch/page": "app/learningPatch/page.js"
 }
