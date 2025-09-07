@@ -79,6 +79,7 @@ export function EcoShortsPlayer() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isTransitioning, setIsTransitioning] = useState(false)
+  const [lastFetchTime, setLastFetchTime] = useState(0)
   const [swipeProgress, setSwipeProgress] = useState(0)
   const [swipeDirection, setSwipeDirection] = useState<"up" | "down" | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -94,8 +95,9 @@ export function EcoShortsPlayer() {
         setLoading(true)
         setError(null)
         
-        // Fetch video URLs from our API
-        const response = await fetch('/api/learning-patch?q=eco%20sustainability&maxResults=10')
+        // Add timestamp to prevent caching and ensure fresh content
+        const timestamp = Date.now()
+        const response = await fetch(`/api/learning-patch?t=${timestamp}`)
         if (!response.ok) {
           throw new Error('Failed to fetch videos from API')
         }
@@ -106,6 +108,8 @@ export function EcoShortsPlayer() {
         const videoPromises = fetchedVideoUrls.map(fetchVideoMetadata)
         const videoData = await Promise.all(videoPromises)
         setVideos(videoData as VideoData[])
+        setCurrentVideoIndex(0) // Always start from the first video
+        setLastFetchTime(timestamp)
       } catch (err) {
         console.error('Error loading videos:', err)
         setError(err instanceof Error ? err.message : 'Failed to load videos')
@@ -119,6 +123,35 @@ export function EcoShortsPlayer() {
 
     fetchAndLoadVideos()
   }, [])
+
+  // Add effect to refresh videos when user comes back after some time
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && Date.now() - lastFetchTime > 300000) { // 5 minutes
+        const fetchFreshVideos = async () => {
+          try {
+            const timestamp = Date.now()
+            const response = await fetch(`/api/learning-patch?t=${timestamp}`)
+            if (response.ok) {
+              const freshVideoUrls = await response.json()
+              const videoPromises = freshVideoUrls.map(fetchVideoMetadata)
+              const freshVideoData = await Promise.all(videoPromises)
+              setVideos(freshVideoData as VideoData[])
+              setCurrentVideoIndex(0) // Reset to first video
+              setLastFetchTime(timestamp)
+            }
+          } catch (err) {
+            console.error('Error refreshing videos:', err)
+          }
+        }
+        
+        fetchFreshVideos()
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
+  }, [lastFetchTime])
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -168,6 +201,29 @@ export function EcoShortsPlayer() {
         setSwipeDirection(null)
         setSwipeProgress(0)
       }, 300)
+    } else if (currentVideoIndex === videos.length - 1 && !isTransitioning) {
+      // User reached the end, fetch new videos
+      fetchFreshVideos()
+    }
+  }
+
+  const fetchFreshVideos = async () => {
+    try {
+      setLoading(true)
+      const timestamp = Date.now()
+      const response = await fetch(`/api/learning-patch?t=${timestamp}`)
+      if (response.ok) {
+        const freshVideoUrls = await response.json()
+        const videoPromises = freshVideoUrls.map(fetchVideoMetadata)
+        const freshVideoData = await Promise.all(videoPromises)
+        setVideos(freshVideoData as VideoData[])
+        setCurrentVideoIndex(0) // Start from beginning with new videos
+        setLastFetchTime(timestamp)
+      }
+    } catch (err) {
+      console.error('Error fetching fresh videos:', err)
+    } finally {
+      setLoading(false)
     }
   }
 
