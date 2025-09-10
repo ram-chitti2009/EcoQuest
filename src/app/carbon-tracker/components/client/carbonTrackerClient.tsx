@@ -8,9 +8,11 @@
 import { Bike, Plus, Recycle, Trash2, TreePine, X, Zap } from "lucide-react"
 import Head from "next/head"
 import type React from "react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 // App-wide header component
 import Header from "../../../components/Header"
+import { createCarbonActivity, getUserCarbonActivities } from "@/utils/supabase/functions"
+import { createClient } from "@/utils/supabase/client"
 
 
 // --- UI Utility Components ---
@@ -224,11 +226,12 @@ const StatsCard: React.FC<StatsCardProps> = ({ carbonSaved, period }) => (
 )
 
 interface Activity {
+  user_id: string
   id: string
   type: string
   date: string
   quantity: number
-  carbonSaved: number
+  carbon_saved: number
   icon: React.ReactNode
 }
 
@@ -275,7 +278,7 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({ activities }) => {
                 </div>
               </div>
               <div className="text-right">
-                <div className="font-bold text-emerald-600 text-lg">+{activity.carbonSaved.toFixed(1)} kg</div>
+                <div className="font-bold text-emerald-600 text-lg">+{activity.carbon_saved.toFixed(1)} kg</div>
                 <div className="text-sm text-gray-500">CO₂ saved</div>
               </div>
             </div>
@@ -425,17 +428,42 @@ const activityIcons = {
 // --- Main Carbon Tracker Component ---
 export default function CarbonTracker() {
   // State for activities, modal, celebration animation, and active tab
+  const supabase = createClient()
   const [activities, setActivities] = useState<Activity[]>([])
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [showCelebration, setShowCelebration] = useState(false)
   const [activeTab, setActiveTab] = useState("monthly")
+
+  useEffect(() => {
+    // Fetch existing activities from Supabase on mount
+    const fetchActivities = async () => {
+      // get user_id from supabase
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      getUserCarbonActivities(user.id).then((result) => {
+        // Check for error and map only if data is present
+        if (result.error || !result.data) {
+          setActivities([])
+          return
+        }
+        const mappedActivities = result.data.map((activity: any) => ({
+          ...activity,
+          icon: activityIcons[activity.type as keyof typeof activityIcons] || <Bike className="w-4 h-4" />,
+        }))
+        setActivities(mappedActivities)
+      })
+    }
+
+    fetchActivities()
+  }, [supabase.auth])
 
   // Goal targets
   const monthlyTarget = 50 // kg CO₂
   const totalTarget = 600 // kg CO₂ (yearly goal)
 
   // Calculate total carbon saved
-  const totalCarbonSaved = activities.reduce((sum, activity) => sum + activity.carbonSaved, 0)
+  const totalCarbonSaved = activities.reduce((sum, activity) => sum + activity.carbon_saved, 0)
 
   // Filter activities for the current month
   const currentMonth = new Date().getMonth()
@@ -444,25 +472,44 @@ export default function CarbonTracker() {
     const activityDate = new Date(activity.date)
     return activityDate.getMonth() === currentMonth && activityDate.getFullYear() === currentYear
   })
-  const monthlyCarbonSaved = monthlyActivities.reduce((sum, activity) => sum + activity.carbonSaved, 0)
+  const monthlyCarbonSaved = monthlyActivities.reduce((sum, activity) => sum + activity.carbon_saved, 0)
 
   // Handle logging a new activity
-  const handleLogActivity = (activityData: {
+  const handleLogActivity = async (activityData: {
     type: string
     quantity: number
     date: string
-    carbonSaved: number
+    carbonSaved: number // Note: this comes from the modal calculation
   }) => {
-    const newActivity: Activity = {
-      id: Date.now().toString(),
+    // Get User
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    // Data for database (no icon field) - map carbonSaved to carbon_saved
+    const dbActivity = {
+      user_id: user.id,
       type: activityData.type,
       date: activityData.date,
       quantity: activityData.quantity,
-      carbonSaved: activityData.carbonSaved,
+      carbon_saved: activityData.carbonSaved, // Use the calculated value from the modal
+    }
+
+    // Save to backend
+    const result = await createCarbonActivity(dbActivity)
+    
+    if (result.error) {
+      console.error('Error creating activity:', result.error)
+      return
+    }
+
+    // Create activity with icon for frontend state
+    const newActivity: Activity = {
+      ...result.data!,
       icon: activityIcons[activityData.type as keyof typeof activityIcons] || <Bike className="w-4 h-4" />,
     }
 
     setActivities((prev) => [newActivity, ...prev])
+    
 
     // Show celebration animation
     setShowCelebration(true)

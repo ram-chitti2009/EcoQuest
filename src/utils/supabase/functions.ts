@@ -1400,3 +1400,129 @@ export async function persistQuizReport(userId: string, quiz_correct_answers: nu
     return { data: result.data, error: null };
 }
 
+
+//Carbon Tracker postgREST functions
+
+export interface CarbonActivity{
+    id:string;
+    user_id:string;
+    type:string;
+    date:string;
+    quantity:number;
+    carbon_saved:number;
+    created_at?:string|null;
+    updated_at?:string|null;
+}
+
+export interface CarbonActivityInsert{
+    user_id:string;
+    type:string;
+    date?:string;
+    quantity:number;
+    carbon_saved:number;
+
+}
+
+export interface CarbonActivityUpdate{
+    type?:string;
+    date?:string;
+    quantity?:number;
+    carbon_saved?:number;
+}
+
+//Create - insert a new carbon activity
+export async function createCarbonActivity(data:CarbonActivityInsert){
+    const {data:result, error} = await supabase
+    .from('carbon_activities')
+    .insert(data)
+    .select()
+    .single();
+    if(error){
+        console.error("Error creating carbon activity", error)
+        return {data:null, error}
+    }
+    return {data:result, error:null}
+}
+
+//Read - get all carbon activities for a specific user
+export async function getUserCarbonActivities(userId:string){
+    const {data, error} = await supabase
+    .from('carbon_activities')
+    .select('*')
+    .eq('user_id', userId )
+    .order('date', {ascending:false});
+    if(error){
+        console.error("Error fetching user carbon activities", error)
+        return {data:[], error}
+    }
+    return {data, error:null}
+}
+
+//Read-get Carbon activities by date range
+
+export async function getCarbonActivitiesByDateRange(userId:string, startDate:string, endDate:string){
+    const {data, error} = await supabase
+    .from('carbon_activities')
+    .select('*')
+    .eq('user_id', userId)
+    .gte('date', startDate)
+    .lte('date', endDate)
+    .order('date', {ascending:false});
+    if(error){
+        console.error("Error fetching carbon activities by date range", error)
+        return {data:[], error}
+    }
+    return {data, error:null}
+}
+
+
+//Read - get total carbon saved for user
+export async function getTotalCarbonSaved(userId: string) {
+  const { data, error } = await supabase
+    .from('carbon_activities')
+    .select('carbon_saved')
+    .eq('user_id', userId);
+
+  if (error) {
+    console.error("Error fetching total carbon saved:", error);
+    return { data: 0, error };
+  }
+
+  const total = data.reduce((sum, activity) => sum + activity.carbon_saved, 0);
+  return { data: total, error: null };
+}
+
+
+//Get monthly carbon savings
+export async function updateCarbonActivity(id: string, updates: CarbonActivityUpdate) {
+  const { data, error } = await supabase
+    .from('carbon_activities')
+    .update({
+      ...updates,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error updating carbon activity:", error);
+    return { data: null, error };
+  }
+
+  return { data, error: null };
+}
+
+export async function deleteCarbonActivity(id: string) {
+  const { error } = await supabase
+    .from('carbon_activities')
+    .delete()
+    .eq('id', id);
+
+  if (error) {
+    console.error("Error deleting carbon activity:", error);
+    return { data: null, error };
+  }
+
+  return { data: true, error: null };
+}
