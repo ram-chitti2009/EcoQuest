@@ -2,7 +2,7 @@
 
 import { useRequireAuth } from "@/hooks/useRequireAuth";
 import SidebarWrapper from "../components/SidebarWrapper";
-import RoadmapBuilderClient from "./components/client/RoadmapBuilder";
+import CommunityCleanupMap from "./components/client/community-map";
 import LoadingScreen from "../components/loading";
 
 export default function EcDbPage() {
@@ -14,7 +14,7 @@ export default function EcDbPage() {
     <div className="flex">
       <SidebarWrapper loading={false} />
       <main className="flex-1">
-        <RoadmapBuilderClient />
+        <CommunityCleanupMap />
       </main>
     </div>
   );
