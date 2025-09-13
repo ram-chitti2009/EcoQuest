@@ -1,7 +1,8 @@
 "use client"
 
-import { useState } from "react"
-import { Search, Heart, Share, Repeat, MessageCircle, Edit3 } from "lucide-react"
+import { Edit3, Heart, MessageCircle, Repeat, Search, Share } from "lucide-react";
+import { useState } from "react";
+import Header from "../../../app/components/Header";
 
 export default function CommunityClient() {
   const [showLikedOnly, setShowLikedOnly] = useState(false);
@@ -182,6 +183,10 @@ export default function CommunityClient() {
 
   return (
     <div className="min-h-screen bg-gray-100">
+      <Header 
+        title="Community Hub" 
+        centerMessage="Building a sustainable future together"
+      />
       <div className="max-w-6xl mx-auto flex gap-6 p-4">
         {/* Left Sidebar */}
         <div className="w-80 space-y-4">

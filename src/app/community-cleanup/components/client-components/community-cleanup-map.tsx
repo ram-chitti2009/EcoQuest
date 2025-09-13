@@ -1,6 +1,6 @@
 "use client"
 
-import { Calendar, Filter, Leaf, MapPin, Search, SlidersHorizontal, Trash2, UserPlus, Users } from "lucide-react"
+import { Calendar, Filter, Leaf, MapPin, Search, SlidersHorizontal, Trash2, UserPlus, Users, X } from "lucide-react"
 import dynamic from "next/dynamic"
 import { useState } from "react"
 import { Badge } from "../ui/badge"
@@ -163,6 +163,7 @@ export default function CommunityCleanupMap() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all")
   const [selectedDistance, setSelectedDistance] = useState<string>("all")
   const [selectedDate, setSelectedDate] = useState<string>("all")
+  const [isFilterPanelExpanded, setIsFilterPanelExpanded] = useState(false)
 
   const filteredEvents = events.filter((event) => {
     const matchesSearch =
@@ -217,89 +218,113 @@ export default function CommunityCleanupMap() {
       <div className="h-[70vh] w-full relative">
         <MapWrapper events={filteredEvents} categoryColors={categoryColors} onEventSelect={setSelectedEvent} />
 
-        {/* Floating Filter Panel - Top Right */}
-        <Card className="absolute top-4 right-4 bg-white/95 backdrop-blur-sm z-[1000] w-80">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-4">
-              <SlidersHorizontal className="w-5 h-5 text-stone-600" />
-              <h3 className="font-semibold text-stone-800">Filters</h3>
-            </div>
-
-            {/* Search Box */}
-            <div className="relative mb-3">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-stone-400" />
-              <Input
-                type="text"
-                placeholder="Search events or locations..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-
-            {/* Category Filter */}
-            <div className="mb-3">
-              <label className="block text-sm font-medium text-stone-700 mb-1">Cleanup Type</label>
-              <Select 
-                value={selectedCategory} 
-                onValueChange={setSelectedCategory}
-                options={[
-                  { value: "all", label: "All Types" },
-                  { value: "beach", label: "Beach" },
-                  { value: "park", label: "Park" },
-                  { value: "street", label: "Street" },
-                  { value: "forest", label: "Forest" },
-                  { value: "river", label: "River" }
-                ]}
-              />
-            </div>
-
-            {/* Distance Filter */}
-            <div className="mb-3">
-              <label className="block text-sm font-medium text-stone-700 mb-1">Distance</label>
-              <Select 
-                value={selectedDistance} 
-                onValueChange={setSelectedDistance}
-                options={[
-                  { value: "all", label: "Any Distance" },
-                  { value: "1", label: "Within 1 mile" },
-                  { value: "5", label: "Within 5 miles" },
-                  { value: "10", label: "Within 10 miles" },
-                  { value: "25", label: "Within 25 miles" }
-                ]}
-              />
-            </div>
-
-            {/* Date Filter */}
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-stone-700 mb-1">Date</label>
-              <Select 
-                value={selectedDate} 
-                onValueChange={setSelectedDate}
-                options={[
-                  { value: "all", label: "Any Date" },
-                  { value: "2025-09-15", label: "Sept 15, 2025" },
-                  { value: "2025-09-18", label: "Sept 18, 2025" },
-                  { value: "2025-09-22", label: "Sept 22, 2025" }
-                ]}
-              />
-            </div>
-
-            {/* Legend */}
-            <div className="border-t border-stone-200 pt-3">
-              <h4 className="font-medium text-stone-700 mb-2 text-sm">Event Categories</h4>
-              {Object.entries(categoryColors).map(([category, color]) => (
-                <div key={category} className="flex items-center gap-2 mb-1">
-                  <div
-                    className="w-3 h-3 rounded-full border border-white shadow-sm"
-                    style={{ backgroundColor: color }}
-                  ></div>
-                  <span className="text-xs capitalize text-stone-600">{category}</span>
+        {/* Floating Filter Panel - Top Right - Collapsible */}
+        <div className="absolute top-4 right-4 z-[1000]">
+          {!isFilterPanelExpanded ? (
+            // Collapsed State - Small icon button
+            <Button
+              onClick={() => setIsFilterPanelExpanded(true)}
+              size="sm"
+              className="bg-green/95 backdrop-blur-sm hover:bg-green/80 text-stone-700 border border-stone-200 shadow-md rounded-full p-2 w-10 h-10"
+            >
+              <SlidersHorizontal className="w-4 h-4" />
+            </Button>
+          ) : (
+            // Expanded State - Full filter panel
+            <Card className="bg-white/95 backdrop-blur-sm w-80">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <SlidersHorizontal className="w-5 h-5 text-stone-600" />
+                    <h3 className="font-semibold text-stone-800">Filters</h3>
+                  </div>
+                  <Button
+                    onClick={() => setIsFilterPanelExpanded(false)}
+                    variant="ghost"
+                    size="sm"
+                    className="text-stone-600 hover:text-stone-800"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+
+                {/* Search Box */}
+                <div className="relative mb-3">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-stone-400" />
+                  <Input
+                    type="text"
+                    placeholder="Search events or locations..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10 text-black"
+                  />
+                </div>
+
+                {/* Category Filter */}
+                <div className="mb-3">
+                  <label className="block text-sm font-medium text-stone-700 mb-1">Cleanup Type</label>
+                  <Select 
+                    value={selectedCategory} 
+                    onValueChange={setSelectedCategory}
+                    options={[
+                      { value: "all", label: "All Types" },
+                      { value: "beach", label: "Beach" },
+                      { value: "park", label: "Park" },
+                      { value: "street", label: "Street" },
+                      { value: "forest", label: "Forest" },
+                      { value: "river", label: "River" }
+                    ]}
+                  />
+                </div>
+
+                {/* Distance Filter */}
+                <div className="mb-3">
+                  <label className="block text-sm font-medium text-stone-700 mb-1">Distance</label>
+                  <Select 
+                    value={selectedDistance} 
+                    onValueChange={setSelectedDistance}
+                    options={[
+                      { value: "all", label: "Any Distance" },
+                      { value: "1", label: "Within 1 mile" },
+                      { value: "5", label: "Within 5 miles" },
+                      { value: "10", label: "Within 10 miles" },
+                      { value: "25", label: "Within 25 miles" }
+                    ]}
+                  />
+                </div>
+
+                {/* Date Filter */}
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-stone-700 mb-1">Date</label>
+                  <Select 
+                    value={selectedDate} 
+                    onValueChange={setSelectedDate}
+                    options={[
+                      { value: "all", label: "Any Date" },
+                      { value: "2025-09-15", label: "Sept 15, 2025" },
+                      { value: "2025-09-18", label: "Sept 18, 2025" },
+                      { value: "2025-09-22", label: "Sept 22, 2025" }
+                    ]}
+                  />
+                </div>
+
+                {/* Legend */}
+                <div className="border-t border-stone-200 pt-3">
+                  <h4 className="font-medium text-stone-700 mb-2 text-sm">Event Categories</h4>
+                  {Object.entries(categoryColors).map(([category, color]) => (
+                    <div key={category} className="flex items-center gap-2 mb-1">
+                      <div
+                        className="w-3 h-3 rounded-full border border-white shadow-sm"
+                        style={{ backgroundColor: color }}
+                      ></div>
+                      <span className="text-xs capitalize text-stone-600">{category}</span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
       </div>
 
       {/* Event Cards Grid Below Map */}

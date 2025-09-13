@@ -1,18 +1,11 @@
 "use client"
 
-import type React from "react"
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet"
 import L from "leaflet"
 import "leaflet/dist/leaflet.css"
 import { Calendar, Clock, Users } from "lucide-react"
-
-// Fix for default markers in react-leaflet
-delete (L.Icon.Default.prototype as any)._getIconUrl
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
-  iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
-  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
-})
+import type React from "react"
+import { useEffect, useState } from "react"
+import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet"
 
 interface Participant {
   id: string
@@ -52,7 +45,23 @@ interface MapWrapperProps {
 }
 
 const MapWrapper: React.FC<MapWrapperProps> = ({ events, categoryColors, onEventSelect }) => {
+  const [isClient, setIsClient] = useState(false)
+
+  useEffect(() => {
+    // Fix for default markers in react-leaflet - only run on client
+    delete (L.Icon.Default.prototype as L.Icon.Default & { _getIconUrl?: unknown })._getIconUrl
+    L.Icon.Default.mergeOptions({
+      iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
+      iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
+      shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
+    })
+    
+    setIsClient(true)
+  }, [])
+
   const createCustomIcon = (category: string) => {
+    if (!isClient) return undefined // Don't create icons on server
+    
     const color = categoryColors[category as keyof typeof categoryColors]
     return L.divIcon({
       className: "custom-marker",
@@ -62,6 +71,18 @@ const MapWrapper: React.FC<MapWrapperProps> = ({ events, categoryColors, onEvent
       iconSize: [24, 24],
       iconAnchor: [12, 12],
     })
+  }
+
+  // Don't render on server-side
+  if (!isClient) {
+    return (
+      <div className="h-full w-full bg-green-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-green-600 mx-auto mb-4"></div>
+          <p className="text-green-600 font-medium">Loading map...</p>
+        </div>
+      </div>
+    )
   }
 
   return (

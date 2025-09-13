@@ -294,7 +294,7 @@ export const SideBar = () => {
         )}>
           {!isCollapsed && (
             <h1 className="text-xl font-bold bg-gradient-to-r from-white to-teal-100 bg-clip-text text-transparent">
-              Your EcoQuest's
+              Your EcoQuest&#39;s
             </h1>
           )}
           <div className="flex items-center gap-2">
@@ -414,7 +414,7 @@ export const SideBar = () => {
             <div>
               <NavItem 
                 icon={MessageCircleMore} 
-                label="Community" 
+                label="Community Hub" 
                 href="/community" 
                 isCollapsed={isCollapsed} 
               />

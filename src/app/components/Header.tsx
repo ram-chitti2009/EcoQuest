@@ -2,7 +2,8 @@
 
 import { Calendar, Clock, User } from "lucide-react"
 import Image from "next/image"
-import React, { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
 
 interface HeaderProps {
   title?: string
@@ -20,6 +21,7 @@ export default function Header({
   showUserAvatar = true,
 }: HeaderProps) {
   const [currentTime, setCurrentTime] = useState<Date>(new Date())
+  const router = useRouter()
 
   // Update currentTime every second
   useEffect(() => {
@@ -28,6 +30,10 @@ export default function Header({
     }, 1000)
     return () => clearInterval(interval)
   }, [])
+
+  const handleAvatarClick = () => {
+    router.push('/profile')
+  }
 
   return (
     <header className="bg-white border-b border-gray-200 px-2 sm:px-4 lg:px-6 py-2 sm:py-3 lg:py-4 shadow-sm sticky top-0 z-50 flex-shrink-0">
@@ -83,7 +89,18 @@ export default function Header({
 
             {/* User Avatar */}
             {showUserAvatar && (
-              <div className="w-7 h-7 sm:w-8 sm:h-8 lg:w-9 lg:h-9 xl:w-10 xl:h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105 cursor-pointer flex-shrink-0">
+              <div 
+                className="w-7 h-7 sm:w-8 sm:h-8 lg:w-9 lg:h-9 xl:w-10 xl:h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105 cursor-pointer flex-shrink-0"
+                onClick={handleAvatarClick}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    handleAvatarClick()
+                  }
+                }}
+                aria-label="Go to profile page"
+              >
                 <User className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 text-white" />
               </div>
             )}

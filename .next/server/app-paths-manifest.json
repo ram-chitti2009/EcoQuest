@@ -1,3 +1,8 @@
 {
-  "/community-cleanup/page": "app/community-cleanup/page.js"
+  "/_not-found/page": "app/_not-found/page.js",
+  "/eco-echo/page": "app/eco-echo/page.js",
+  "/carbon-clash/page": "app/carbon-clash/page.js",
+  "/profile/page": "app/profile/page.js",
+  "/community-cleanup/page": "app/community-cleanup/page.js",
+  "/community/page": "app/community/page.js"
 }
