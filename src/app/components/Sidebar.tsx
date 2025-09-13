@@ -279,7 +279,7 @@ export const SideBar = () => {
 
       <div
         className={cn(
-          "fixed md:sticky md:top-0 inset-y-0 left-0 z-50 flex flex-col h-screen text-white",
+          "fixed md:sticky md:top-0 inset-y-0 left-0 z-[60] flex flex-col h-screen text-white",
           "transform transition-all duration-300 ease-in-out",
           "bg-gradient-to-b from-teal-700 to-teal-800 shadow-2xl",
           isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",

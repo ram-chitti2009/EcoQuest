@@ -1,5 +1,3 @@
 {
-  "/community-cleanup/page": "app/community-cleanup/page.js",
-  "/landingPage/page": "app/landingPage/page.js",
-  "/dashboard/page": "app/dashboard/page.js"
+  "/community-cleanup/page": "app/community-cleanup/page.js"
 }
