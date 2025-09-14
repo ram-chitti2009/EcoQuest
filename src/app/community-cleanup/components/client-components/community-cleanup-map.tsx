@@ -1,27 +1,15 @@
 "use client"
 
-import { Calendar, Filter, Leaf, MapPin, Search, SlidersHorizontal, Trash2, UserPlus, Users, X } from "lucide-react"
-import dynamic from "next/dynamic"
-import { useState } from "react"
+import { Calendar, Leaf, MapPin, Search, SlidersHorizontal, Trash2, UserPlus, Users, X } from "lucide-react"
+import { useEffect, useState } from "react"
 import { Badge } from "../ui/badge"
 import { Button } from "../ui/button"
 import { Card, CardContent } from "../ui/card"
 import { Input } from "../ui/input"
 import { Modal, ModalContent, ModalHeader } from "../ui/modal"
 import { Select } from "../ui/select"
-
-// Dynamically import the map component to avoid SSR issues
-const MapWrapper = dynamic(() => import("./map-wrapper"), {
-  ssr: false,
-  loading: () => (
-    <div className="h-full w-full bg-green-50 flex items-center justify-center">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-green-600 mx-auto mb-4"></div>
-        <p className="text-green-600 font-medium">Loading map...</p>
-      </div>
-    </div>
-  ),
-})
+import EventCardsGrid from "./event-cards-grid"
+import MapWrapper from "./map-wrapper"; // Declare the MapWrapper variable
 
 interface Participant {
   id: string
@@ -156,6 +144,22 @@ const statusColors = {
   completed: "#6B7280",
 }
 
+const transformEventForCards = (event: CleanupEvent) => ({
+  id: event.id,
+  title: event.title,
+  date: new Date(event.date).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+  time: event.time,
+  location: event.location.name,
+  type: event.category as "beach" | "park" | "street" | "river",
+  volunteers: event.participants.length,
+  maxVolunteers: event.maxParticipants,
+  description: event.description,
+  organizer: event.organizer,
+  rating: Math.random() > 0.5 ? Number((Math.random() * 2 + 3).toFixed(1)) : undefined,
+  difficulty: ["Easy", "Medium", "Hard"][Math.floor(Math.random() * 3)] as "Easy" | "Medium" | "Hard",
+  duration: event.duration,
+})
+
 export default function CommunityCleanupMap() {
   const [selectedEvent, setSelectedEvent] = useState<CleanupEvent | null>(null)
   const [events, setEvents] = useState<CleanupEvent[]>(sampleEvents)
@@ -164,6 +168,15 @@ export default function CommunityCleanupMap() {
   const [selectedDistance, setSelectedDistance] = useState<string>("all")
   const [selectedDate, setSelectedDate] = useState<string>("all")
   const [isFilterPanelExpanded, setIsFilterPanelExpanded] = useState(false)
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsFilterPanelExpanded(window.innerWidth >= 768)
+    }
+    checkMobile()
+    window.addEventListener("resize", checkMobile)
+    return () => window.removeEventListener("resize", checkMobile)
+  }, [])
 
   const filteredEvents = events.filter((event) => {
     const matchesSearch =
@@ -213,12 +226,11 @@ export default function CommunityCleanupMap() {
   }
 
   return (
-    <div className="min-h-screen bg-stone-50">
+    <div className="min-h-screen">
       {/* Full-width Hero Map */}
       <div className="h-[70vh] w-full relative">
         <MapWrapper events={filteredEvents} categoryColors={categoryColors} onEventSelect={setSelectedEvent} />
 
-        {/* Floating Filter Panel - Top Right - Collapsible */}
         <div className="absolute top-4 right-4 z-[1000]">
           {!isFilterPanelExpanded ? (
             // Collapsed State - Small icon button
@@ -263,8 +275,8 @@ export default function CommunityCleanupMap() {
                 {/* Category Filter */}
                 <div className="mb-3">
                   <label className="block text-sm font-medium text-stone-700 mb-1">Cleanup Type</label>
-                  <Select 
-                    value={selectedCategory} 
+                  <Select
+                    value={selectedCategory}
                     onValueChange={setSelectedCategory}
                     options={[
                       { value: "all", label: "All Types" },
@@ -272,7 +284,7 @@ export default function CommunityCleanupMap() {
                       { value: "park", label: "Park" },
                       { value: "street", label: "Street" },
                       { value: "forest", label: "Forest" },
-                      { value: "river", label: "River" }
+                      { value: "river", label: "River" },
                     ]}
                   />
                 </div>
@@ -280,15 +292,15 @@ export default function CommunityCleanupMap() {
                 {/* Distance Filter */}
                 <div className="mb-3">
                   <label className="block text-sm font-medium text-stone-700 mb-1">Distance</label>
-                  <Select 
-                    value={selectedDistance} 
+                  <Select
+                    value={selectedDistance}
                     onValueChange={setSelectedDistance}
                     options={[
                       { value: "all", label: "Any Distance" },
                       { value: "1", label: "Within 1 mile" },
                       { value: "5", label: "Within 5 miles" },
                       { value: "10", label: "Within 10 miles" },
-                      { value: "25", label: "Within 25 miles" }
+                      { value: "25", label: "Within 25 miles" },
                     ]}
                   />
                 </div>
@@ -296,14 +308,14 @@ export default function CommunityCleanupMap() {
                 {/* Date Filter */}
                 <div className="mb-4">
                   <label className="block text-sm font-medium text-stone-700 mb-1">Date</label>
-                  <Select 
-                    value={selectedDate} 
+                  <Select
+                    value={selectedDate}
                     onValueChange={setSelectedDate}
                     options={[
                       { value: "all", label: "Any Date" },
                       { value: "2025-09-15", label: "Sept 15, 2025" },
                       { value: "2025-09-18", label: "Sept 18, 2025" },
-                      { value: "2025-09-22", label: "Sept 22, 2025" }
+                      { value: "2025-09-22", label: "Sept 22, 2025" },
                     ]}
                   />
                 </div>
@@ -327,75 +339,7 @@ export default function CommunityCleanupMap() {
         </div>
       </div>
 
-      {/* Event Cards Grid Below Map */}
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="mb-6">
-          <h2 className="text-2xl font-bold text-stone-800 mb-2">Upcoming Cleanup Events</h2>
-          <p className="text-stone-600">
-            Join your community in making a difference. {filteredEvents.length} events available.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredEvents.map((event) => (
-            <Card key={event.id} className="overflow-hidden hover:shadow-md transition-shadow">
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <div
-                      className="w-3 h-3 rounded-full"
-                      style={{ backgroundColor: categoryColors[event.category] }}
-                    ></div>
-                    <Badge variant="secondary" className="text-xs uppercase tracking-wide">
-                      {event.category}
-                    </Badge>
-                  </div>
-                  <span className="text-xs text-stone-400">{event.date}</span>
-                </div>
-
-                <h3 className="font-semibold text-lg text-stone-800 mb-2 line-clamp-2">{event.title}</h3>
-                <p className="text-stone-600 text-sm mb-4 line-clamp-2">{event.description}</p>
-
-                <div className="space-y-2 mb-4">
-                  <div className="flex items-center gap-2 text-sm text-stone-500">
-                    <MapPin className="w-4 h-4" />
-                    <span>{event.location.name}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-stone-500">
-                    <Calendar className="w-4 h-4" />
-                    <span>
-                      {event.time} • {event.duration}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-stone-500">
-                    <Users className="w-4 h-4" />
-                    <span>
-                      {event.participants.length}/{event.maxParticipants} volunteers
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="text-xs text-stone-500">by {event.organizer}</div>
-                  <Button onClick={() => setSelectedEvent(event)} size="sm">
-                    Join Event
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {filteredEvents.length === 0 && (
-          <div className="text-center py-12">
-            <div className="text-stone-400 mb-2">
-              <Filter className="w-12 h-12 mx-auto" />
-            </div>
-            <h3 className="text-lg font-medium text-stone-600 mb-1">No events found</h3>
-            <p className="text-stone-500">Try adjusting your filters to see more events.</p>
-          </div>
-        )}
-      </div>
+      <EventCardsGrid events={filteredEvents.map(transformEventForCards)} loading={false} />
 
       {/* Event Details Modal */}
       <Modal isOpen={!!selectedEvent} onClose={() => setSelectedEvent(null)}>

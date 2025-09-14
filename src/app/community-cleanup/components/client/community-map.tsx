@@ -5,7 +5,7 @@ import CommunityCleanupMap from "../client-components/community-cleanup-map"
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50">
       <Header 
         title="Community Cleanup"
         centerMessage="🌍 Join Local Cleanup Events "
