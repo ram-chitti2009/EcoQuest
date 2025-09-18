@@ -6,16 +6,31 @@
       "static/css/app/layout.css",
       "static/chunks/app/layout.js"
     ],
-    "/litterLens/page": [
+    "/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/litterLens/page.js"
+      "static/chunks/app/page.js"
+    ],
+    "/landingPage/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/landingPage/page.js"
+    ],
+    "/dashboard/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/dashboard/page.js"
     ],
     "/community-cleanup/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/css/app/community-cleanup/page.css",
       "static/chunks/app/community-cleanup/page.js"
+    ],
+    "/litterLens/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/litterLens/page.js"
     ],
     "/eco-echo/page": [
       "static/chunks/webpack.js",
@@ -47,10 +62,10 @@
       "static/chunks/main-app.js",
       "static/chunks/app/calendar/page.js"
     ],
-    "/_not-found/page": [
+    "/community/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/_not-found/page.js"
+      "static/chunks/app/community/page.js"
     ]
   }
 }

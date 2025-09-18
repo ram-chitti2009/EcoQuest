@@ -4,8 +4,8 @@ import L from "leaflet"
 import "leaflet/dist/leaflet.css"
 import { Calendar, Clock, Users } from "lucide-react"
 import type React from "react"
-import { useEffect, useState } from "react"
-import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet"
+import { useEffect, useRef, useState } from "react"
+import { MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet"
 
 interface Participant {
   id: string
@@ -46,6 +46,16 @@ interface MapWrapperProps {
 
 const MapWrapper: React.FC<MapWrapperProps> = ({ events, categoryColors, onEventSelect }) => {
   const [isClient, setIsClient] = useState(false)
+  const mapRef = useRef<L.Map | null>(null)
+
+  // Component to capture map reference
+  const MapRefHandler = () => {
+    const map = useMap()
+    useEffect(() => {
+      mapRef.current = map
+    }, [map])
+    return null
+  }
 
   useEffect(() => {
     // Fix for default markers in react-leaflet - only run on client
@@ -58,6 +68,37 @@ const MapWrapper: React.FC<MapWrapperProps> = ({ events, categoryColors, onEvent
     
     setIsClient(true)
   }, [])
+
+  // Add resize handler for when sidebar changes
+  useEffect(() => {
+    if (!isClient) return
+
+    const handleResize = () => {
+      if (mapRef.current) {
+        // Small delay to ensure DOM has updated
+        setTimeout(() => {
+          mapRef.current?.invalidateSize()
+        }, 100)
+      }
+    }
+
+    // Listen for window resize events
+    window.addEventListener('resize', handleResize)
+    
+    // Use ResizeObserver to watch for container size changes (like sidebar toggle)
+    const mapContainer = document.querySelector('.leaflet-container')?.parentElement
+    let resizeObserver: ResizeObserver | null = null
+    
+    if (mapContainer && typeof ResizeObserver !== 'undefined') {
+      resizeObserver = new ResizeObserver(handleResize)
+      resizeObserver.observe(mapContainer)
+    }
+
+    return () => {
+      window.removeEventListener('resize', handleResize)
+      resizeObserver?.disconnect()
+    }
+  }, [isClient])
 
   const createCustomIcon = (category: string) => {
     if (!isClient) return undefined // Don't create icons on server
@@ -87,6 +128,7 @@ const MapWrapper: React.FC<MapWrapperProps> = ({ events, categoryColors, onEvent
 
   return (
     <MapContainer center={[40.7128, -74.006]} zoom={11} style={{ height: "100%", width: "100%" }}>
+      <MapRefHandler />
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"

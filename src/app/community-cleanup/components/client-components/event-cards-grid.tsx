@@ -299,9 +299,10 @@ function EventCardSkeleton() {
 interface EventCardsGridProps {
   events: CleanupEvent[]
   loading?: boolean
+  createEventButton?: React.ReactNode
 }
 
-export default function EventCardsGrid({ events, loading = false }: EventCardsGridProps) {
+export default function EventCardsGrid({ events, loading = false, createEventButton }: EventCardsGridProps) {
   // Sort events to show featured ones first
   const sortedEvents = [...events].sort((a, b) => {
     // This is just an example - you'd implement actual featured logic
@@ -333,11 +334,20 @@ export default function EventCardsGrid({ events, loading = false }: EventCardsGr
   return (
     <section className="w-full px-4 py-8">
       <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-8">
-          <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 bg-clip-text text-transparent mb-4 leading-tight">
-            Upcoming Cleanup Events
-          </h2>
-          <p className="text-lg md:text-xl text-gray-600 font-medium max-w-3xl mx-auto leading-relaxed tracking-wide">
+        <div className="flex flex-col items-center gap-6 mb-8">
+          <div className="relative w-full max-w-6xl">
+            <div className="text-center">
+              <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 bg-clip-text text-transparent mb-4 leading-tight">
+                Upcoming Cleanup Events
+              </h2>
+            </div>
+            {createEventButton && (
+              <div className="flex justify-center mt-4 md:absolute md:top-0 md:right-12 lg:right-16 xl:right-20 md:mt-0">
+                {createEventButton}
+              </div>
+            )}
+          </div>
+          <p className="text-lg md:text-xl text-gray-600 font-medium max-w-3xl mx-auto leading-relaxed tracking-wide text-center">
             Join passionate volunteers in cleaning up our communities and protecting nature.
           </p>
         </div>

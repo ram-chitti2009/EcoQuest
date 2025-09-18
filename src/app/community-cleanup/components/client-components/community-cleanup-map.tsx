@@ -168,6 +168,27 @@ export default function CommunityCleanupMap() {
   const [selectedDistance, setSelectedDistance] = useState<string>("all")
   const [selectedDate, setSelectedDate] = useState<string>("all")
   const [isFilterPanelExpanded, setIsFilterPanelExpanded] = useState(false)
+  const [isCreateEventModalOpen, setIsCreateEventModalOpen] = useState(false)
+  const [isGeocodingAddress, setIsGeocodingAddress] = useState(false)
+  const [geocodingError, setGeocodingError] = useState<string | null>(null)
+  const [newEvent, setNewEvent] = useState({
+    title: "",
+    description: "",
+    date: "",
+    time: "",
+    duration: "",
+    locationName: "",
+    locationAddress: "",
+    lat: "",
+    lng: "",
+    organizer: "",
+    category: "park" as CleanupEvent["category"],
+    maxParticipants: 20,
+    equipmentProvided: "",
+    requirements: "",
+    expectedTrashCollection: "",
+    carbonOffset: "",
+  })
 
   useEffect(() => {
     const checkMobile = () => {
@@ -186,6 +207,61 @@ export default function CommunityCleanupMap() {
     const matchesDate = selectedDate === "all" || event.date === selectedDate
     return matchesSearch && matchesCategory && matchesDate
   })
+
+  // Geocoding function to convert address to coordinates
+  const geocodeAddress = async (address: string): Promise<{lat: number, lng: number} | null> => {
+    if (!address.trim()) return null
+
+    setIsGeocodingAddress(true)
+    setGeocodingError(null)
+
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1&addressdetails=1`
+      )
+      
+      if (!response.ok) {
+        throw new Error('Geocoding request failed')
+      }
+
+      const data = await response.json()
+      
+      if (data.length === 0) {
+        setGeocodingError('Address not found. Please check the address and try again.')
+        return null
+      }
+
+      const result = data[0]
+      return {
+        lat: parseFloat(result.lat),
+        lng: parseFloat(result.lon)
+      }
+    } catch (error) {
+      console.error('Geocoding error:', error)
+      setGeocodingError('Failed to geocode address. Please enter coordinates manually.')
+      return null
+    } finally {
+      setIsGeocodingAddress(false)
+    }
+  }
+
+  // Function to handle address change and auto-geocode
+  const handleAddressChange = async (address: string) => {
+    setNewEvent((prev) => ({ ...prev, locationAddress: address }))
+    setGeocodingError(null) // Clear any previous errors
+    
+    // Auto-geocode only if address is substantial (more than 35 characters) and looks complete
+    if (address.trim().length > 35 && (address.includes(',') || address.match(/\d+.*[a-zA-Z].*\d/))) {
+      const coords = await geocodeAddress(address)
+      if (coords) {
+        setNewEvent((prev) => ({ 
+          ...prev, 
+          lat: coords.lat.toString(),
+          lng: coords.lng.toString()
+        }))
+      }
+    }
+  }
 
   const handleJoinEvent = (eventId: string) => {
     setEvents((prevEvents) =>
@@ -225,8 +301,73 @@ export default function CommunityCleanupMap() {
     }
   }
 
+  const handleCreateEvent = () => {
+    if (!newEvent.title || !newEvent.date || !newEvent.time || !newEvent.locationName) {
+      alert("Please fill in all required fields")
+      return
+    }
+
+    const event: CleanupEvent = {
+      id: Date.now().toString(),
+      title: newEvent.title,
+      description: newEvent.description,
+      date: newEvent.date,
+      time: newEvent.time,
+      duration: newEvent.duration || "2 hours",
+      location: {
+        name: newEvent.locationName,
+        address: newEvent.locationAddress,
+        lat: Number.parseFloat(newEvent.lat) || 40.7589,
+        lng: Number.parseFloat(newEvent.lng) || -73.9851,
+      },
+      organizer: newEvent.organizer || "You",
+      participants: [
+        {
+          id: "creator",
+          name: newEvent.organizer || "You",
+          role: "organizer",
+          joinedAt: new Date().toISOString().split("T")[0],
+        },
+      ],
+      maxParticipants: newEvent.maxParticipants,
+      category: newEvent.category,
+      status: "upcoming",
+      equipmentProvided: newEvent.equipmentProvided
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean),
+      requirements: newEvent.requirements
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean),
+      expectedTrashCollection: newEvent.expectedTrashCollection || "50 lbs",
+      carbonOffset: newEvent.carbonOffset || "10 kg CO2",
+    }
+
+    setEvents((prev) => [...prev, event])
+    setIsCreateEventModalOpen(false)
+    setNewEvent({
+      title: "",
+      description: "",
+      date: "",
+      time: "",
+      duration: "",
+      locationName: "",
+      locationAddress: "",
+      lat: "",
+      lng: "",
+      organizer: "",
+      category: "park",
+      maxParticipants: 20,
+      equipmentProvided: "",
+      requirements: "",
+      expectedTrashCollection: "",
+      carbonOffset: "",
+    })
+  }
+
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-stone-50">
       {/* Full-width Hero Map */}
       <div className="h-[70vh] w-full relative">
         <MapWrapper events={filteredEvents} categoryColors={categoryColors} onEventSelect={setSelectedEvent} />
@@ -339,7 +480,19 @@ export default function CommunityCleanupMap() {
         </div>
       </div>
 
-      <EventCardsGrid events={filteredEvents.map(transformEventForCards)} loading={false} />
+      <EventCardsGrid 
+        events={filteredEvents.map(transformEventForCards)} 
+        loading={false}
+        createEventButton={
+          <Button
+            onClick={() => setIsCreateEventModalOpen(true)}
+            className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2 px-6 py-3 text-lg font-semibold"
+          >
+            <UserPlus className="w-5 h-5" />
+            Create Event
+          </Button>
+        }
+      />
 
       {/* Event Details Modal */}
       <Modal isOpen={!!selectedEvent} onClose={() => setSelectedEvent(null)}>
@@ -480,6 +633,239 @@ export default function CommunityCleanupMap() {
             </ModalContent>
           </>
         )}
+      </Modal>
+
+      <Modal isOpen={isCreateEventModalOpen} onClose={() => setIsCreateEventModalOpen(false)}>
+        <ModalHeader onClose={() => setIsCreateEventModalOpen(false)}>
+          <h2 className="text-2xl font-bold">Create New Cleanup Event</h2>
+        </ModalHeader>
+
+        <ModalContent>
+          <div className="space-y-4">
+            {/* Basic Info */}
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-stone-700 mb-1">Event Title *</label>
+                <Input
+                  value={newEvent.title}
+                  onChange={(e) => setNewEvent((prev) => ({ ...prev, title: e.target.value }))}
+                  placeholder="e.g., Central Park Cleanup"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-stone-700 mb-1">Organizer Name</label>
+                <Input
+                  value={newEvent.organizer}
+                  onChange={(e) => setNewEvent((prev) => ({ ...prev, organizer: e.target.value }))}
+                  placeholder="Your name or organization"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-stone-700 mb-1">Description</label>
+              <textarea
+                className="w-full px-3 py-2 border border-stone-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                rows={3}
+                value={newEvent.description}
+                onChange={(e) => setNewEvent((prev) => ({ ...prev, description: e.target.value }))}
+                placeholder="Describe your cleanup event..."
+              />
+            </div>
+
+            {/* Date & Time */}
+            <div className="grid md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-stone-700 mb-1">Date *</label>
+                <Input
+                  type="date"
+                  value={newEvent.date}
+                  onChange={(e) => setNewEvent((prev) => ({ ...prev, date: e.target.value }))}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-stone-700 mb-1">Time *</label>
+                <Input
+                  type="time"
+                  value={newEvent.time}
+                  onChange={(e) => setNewEvent((prev) => ({ ...prev, time: e.target.value }))}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-stone-700 mb-1">Duration</label>
+                <Input
+                  value={newEvent.duration}
+                  onChange={(e) => setNewEvent((prev) => ({ ...prev, duration: e.target.value }))}
+                  placeholder="e.g., 2 hours"
+                />
+              </div>
+            </div>
+
+            {/* Location */}
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-stone-700 mb-1">Location Name *</label>
+                <Input
+                  value={newEvent.locationName}
+                  onChange={(e) => setNewEvent((prev) => ({ ...prev, locationName: e.target.value }))}
+                  placeholder="e.g., Central Park"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-stone-700 mb-1">
+                  Address 
+                  {isGeocodingAddress && <span className="text-green-600 ml-2">(Finding coordinates...)</span>}
+                </label>
+                <div className="space-y-2">
+                  <Input
+                    value={newEvent.locationAddress}
+                    onChange={(e) => handleAddressChange(e.target.value)}
+                    placeholder="Full address (will auto-find coordinates)"
+                    disabled={isGeocodingAddress}
+                  />
+                  {geocodingError && (
+                    <p className="text-sm text-red-600">{geocodingError}</p>
+                  )}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={async () => {
+                      const coords = await geocodeAddress(newEvent.locationAddress)
+                      if (coords) {
+                        setNewEvent((prev) => ({ 
+                          ...prev, 
+                          lat: coords.lat.toString(),
+                          lng: coords.lng.toString()
+                        }))
+                      }
+                    }}
+                    disabled={!newEvent.locationAddress.trim() || isGeocodingAddress}
+                    className="w-full"
+                  >
+                    {isGeocodingAddress ? (
+                      <span className="flex items-center gap-2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600"></div>
+                        Finding Location...
+                      </span>
+                    ) : (
+                      'Find Coordinates from Address'
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-stone-700 mb-1">
+                  Latitude {newEvent.lat && <span className="text-green-600">✓</span>}
+                </label>
+                <Input
+                  type="number"
+                  step="any"
+                  value={newEvent.lat}
+                  onChange={(e) => setNewEvent((prev) => ({ ...prev, lat: e.target.value }))}
+                  placeholder="40.7589"
+                  className={newEvent.lat ? "border-green-300 bg-green-50" : ""}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-stone-700 mb-1">
+                  Longitude {newEvent.lng && <span className="text-green-600">✓</span>}
+                </label>
+                <Input
+                  type="number"
+                  step="any"
+                  value={newEvent.lng}
+                  onChange={(e) => setNewEvent((prev) => ({ ...prev, lng: e.target.value }))}
+                  placeholder="-73.9851"
+                  className={newEvent.lng ? "border-green-300 bg-green-50" : ""}
+                />
+              </div>
+            </div>
+
+            {/* Category & Participants */}
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-stone-700 mb-1">Category</label>
+                <Select
+                  value={newEvent.category}
+                  onValueChange={(value) =>
+                    setNewEvent((prev) => ({ ...prev, category: value as CleanupEvent["category"] }))
+                  }
+                  options={[
+                    { value: "park", label: "Park" },
+                    { value: "beach", label: "Beach" },
+                    { value: "street", label: "Street" },
+                    { value: "forest", label: "Forest" },
+                    { value: "river", label: "River" },
+                  ]}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-stone-700 mb-1">Max Participants</label>
+                <Input
+                  type="number"
+                  value={newEvent.maxParticipants}
+                  onChange={(e) =>
+                    setNewEvent((prev) => ({ ...prev, maxParticipants: Number.parseInt(e.target.value) || 20 }))
+                  }
+                  min="1"
+                />
+              </div>
+            </div>
+
+            {/* Equipment & Requirements */}
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-stone-700 mb-1">Equipment Provided</label>
+                <Input
+                  value={newEvent.equipmentProvided}
+                  onChange={(e) => setNewEvent((prev) => ({ ...prev, equipmentProvided: e.target.value }))}
+                  placeholder="Gloves, Trash bags, Grabbers (comma separated)"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-stone-700 mb-1">Requirements</label>
+                <Input
+                  value={newEvent.requirements}
+                  onChange={(e) => setNewEvent((prev) => ({ ...prev, requirements: e.target.value }))}
+                  placeholder="Comfortable shoes, Water bottle (comma separated)"
+                />
+              </div>
+            </div>
+
+            {/* Impact */}
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-stone-700 mb-1">Expected Trash Collection</label>
+                <Input
+                  value={newEvent.expectedTrashCollection}
+                  onChange={(e) => setNewEvent((prev) => ({ ...prev, expectedTrashCollection: e.target.value }))}
+                  placeholder="e.g., 100 lbs"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-stone-700 mb-1">Carbon Offset</label>
+                <Input
+                  value={newEvent.carbonOffset}
+                  onChange={(e) => setNewEvent((prev) => ({ ...prev, carbonOffset: e.target.value }))}
+                  placeholder="e.g., 25 kg CO2"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-4">
+              <Button onClick={handleCreateEvent} className="flex-1 bg-green-600 hover:bg-green-700 text-white">
+                Create Event
+              </Button>
+              <Button onClick={() => setIsCreateEventModalOpen(false)} variant="outline" className="flex-1">
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </ModalContent>
       </Modal>
     </div>
   )
