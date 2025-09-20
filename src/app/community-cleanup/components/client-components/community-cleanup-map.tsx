@@ -1,5 +1,6 @@
 "use client"
 
+import { createClient } from '@/utils/supabase/client'
 import { Calendar, Leaf, MapPin, Search, SlidersHorizontal, Trash2, UserPlus, Users, X } from "lucide-react"
 import { useEffect, useState } from "react"
 import { Badge } from "../ui/badge"
@@ -40,6 +41,7 @@ interface CleanupEvent {
   requirements: string[]
   expectedTrashCollection: string
   carbonOffset: string
+  createdBy?: string // User ID of the event creator
 }
 
 const sampleEvents: CleanupEvent[] = [
@@ -171,6 +173,7 @@ export default function CommunityCleanupMap() {
   const [isCreateEventModalOpen, setIsCreateEventModalOpen] = useState(false)
   const [isGeocodingAddress, setIsGeocodingAddress] = useState(false)
   const [geocodingError, setGeocodingError] = useState<string | null>(null)
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [newEvent, setNewEvent] = useState({
     title: "",
     description: "",
@@ -197,6 +200,16 @@ export default function CommunityCleanupMap() {
     checkMobile()
     window.addEventListener("resize", checkMobile)
     return () => window.removeEventListener("resize", checkMobile)
+  }, [])
+
+  // Get current user on component mount
+  useEffect(() => {
+    const getCurrentUser = async () => {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      setCurrentUserId(user?.id || null)
+    }
+    getCurrentUser()
   }, [])
 
   const filteredEvents = events.filter((event) => {
@@ -342,6 +355,7 @@ export default function CommunityCleanupMap() {
         .filter(Boolean),
       expectedTrashCollection: newEvent.expectedTrashCollection || "50 lbs",
       carbonOffset: newEvent.carbonOffset || "10 kg CO2",
+      createdBy: currentUserId || undefined,
     }
 
     setEvents((prev) => [...prev, event])
@@ -364,6 +378,38 @@ export default function CommunityCleanupMap() {
       expectedTrashCollection: "",
       carbonOffset: "",
     })
+  }
+
+  // Delete event function - only allows deletion if user created the event
+  const handleDeleteEvent = (eventId: string) => {
+    const eventToDelete = events.find(event => event.id === eventId)
+    
+    if (!eventToDelete) {
+      alert("Event not found")
+      return
+    }
+
+    if (!currentUserId) {
+      alert("You must be logged in to delete events")
+      return
+    }
+
+    if (eventToDelete.createdBy !== currentUserId) {
+      alert("You can only delete events that you created")
+      return
+    }
+
+    if (window.confirm(`Are you sure you want to delete "${eventToDelete.title}"?`)) {
+      setEvents(prev => prev.filter(event => event.id !== eventId))
+      if (selectedEvent?.id === eventId) {
+        setSelectedEvent(null)
+      }
+    }
+  }
+
+  // Check if current user can delete an event
+  const canDeleteEvent = (event: CleanupEvent) => {
+    return currentUserId && event.createdBy === currentUserId
   }
 
   return (
@@ -556,16 +602,29 @@ export default function CommunityCleanupMap() {
                       style={{ width: `${(selectedEvent.participants.length / selectedEvent.maxParticipants) * 100}%` }}
                     ></div>
                   </div>
-                  {selectedEvent.participants.length < selectedEvent.maxParticipants && (
-                    <Button
-                      onClick={() => handleJoinEvent(selectedEvent.id)}
-                      size="sm"
-                      className="flex items-center gap-2"
-                    >
-                      <UserPlus className="w-4 h-4" />
-                      Join Event
-                    </Button>
-                  )}
+                  <div className="flex gap-2">
+                    {selectedEvent.participants.length < selectedEvent.maxParticipants && (
+                      <Button
+                        onClick={() => handleJoinEvent(selectedEvent.id)}
+                        size="sm"
+                        className="flex items-center gap-2"
+                      >
+                        <UserPlus className="w-4 h-4" />
+                        Join Event
+                      </Button>
+                    )}
+                    {canDeleteEvent(selectedEvent) && (
+                      <Button
+                        onClick={() => handleDeleteEvent(selectedEvent.id)}
+                        size="sm"
+                        variant="destructive"
+                        className="flex items-center gap-2"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        Delete Event
+                      </Button>
+                    )}
+                  </div>
                 </div>
 
                 {/* Impact */}

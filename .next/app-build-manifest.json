@@ -6,11 +6,6 @@
       "static/css/app/layout.css",
       "static/chunks/app/layout.js"
     ],
-    "/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/page.js"
-    ],
     "/landingPage/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
@@ -21,51 +16,26 @@
       "static/chunks/main-app.js",
       "static/chunks/app/dashboard/page.js"
     ],
+    "/login/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/login/page.js"
+    ],
     "/community-cleanup/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/css/app/community-cleanup/page.css",
       "static/chunks/app/community-cleanup/page.js"
     ],
-    "/litterLens/page": [
+    "/profile/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/litterLens/page.js"
+      "static/chunks/app/profile/page.js"
     ],
-    "/eco-echo/page": [
+    "/_not-found/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/eco-echo/page.js"
-    ],
-    "/carbon-clash/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/carbon-clash/page.js"
-    ],
-    "/learningPatch/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/learningPatch/page.js"
-    ],
-    "/carbon-tracker/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/carbon-tracker/page.js"
-    ],
-    "/leaderboard/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/leaderboard/page.js"
-    ],
-    "/calendar/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/calendar/page.js"
-    ],
-    "/community/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/community/page.js"
+      "static/chunks/app/_not-found/page.js"
     ]
   }
 }
