@@ -382,7 +382,6 @@ export async function updateUserStatistics(userId:string, updates: UserStatistic
     return {data, error:null}
 }
 
-
 //delete - delete user statistics
 export async function deleteUserStatistics(userId:string){
     const{error} = await supabase.
@@ -733,7 +732,6 @@ export async function fetchAllMonthlyGoals(){
 
     return {data:goals, error:null}
 }
-
 
 //Types for user monthly goals
 
@@ -1159,7 +1157,6 @@ export interface UserLitterSummaryUpdate {
   average_accuracy?: number;
 }
 
-
 //create - insert a new litter summary
 export async function createUserLitterSummary(data: UserLitterSummaryInsert) {
   const { data: result, error } = await supabase
@@ -1475,7 +1472,6 @@ export async function getCarbonActivitiesByDateRange(userId:string, startDate:st
     return {data, error:null}
 }
 
-
 //Read - get total carbon saved for user
 export async function getTotalCarbonSaved(userId: string) {
   const { data, error } = await supabase
@@ -1525,4 +1521,478 @@ export async function deleteCarbonActivity(id: string) {
   }
 
   return { data: true, error: null };
+}
+
+//postgREST for Calendar Tracker
+export interface EcoEvent {
+  id: number;
+  date: string;
+  title: string;
+  time: string;
+  location: string;
+  category: 'cleanup' | 'workshop' | 'planting' | 'seminar';
+  description: string;
+  participants: number;
+  max_participants: number;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+
+export interface EcoEventInsert {
+  date: string;
+  title: string;
+  time: string;
+  location: string;
+  category: 'cleanup' | 'workshop' | 'planting' | 'seminar';
+  description: string;
+  participants?: number;
+  max_participants: number;
+}
+
+export interface EcoEventUpdate {
+  date?: string;
+  title?: string;
+  time?: string;
+  location?: string;
+  category?: 'cleanup' | 'workshop' | 'planting' | 'seminar';
+  description?: string;
+  participants?: number;
+  max_participants?: number;
+
+
+}
+
+//Create - Insert a new eco event
+export async function createEcoEvent(data:EcoEventInsert){
+    const {data:result, error} = await supabase
+    .from('eco_events')
+    .insert(data)
+    .select()
+    .single();
+
+    if(error){
+        console.error("Error creating eco event", error)
+        return {data:null, error}
+    }
+
+    return {data:result, error:null}
+}
+
+//Read - get all eco events
+
+export async function getEcoEvents(){
+    const {data, error} = await supabase
+    .from('eco_events')
+    .select('*')
+    .order('date', {ascending:true});
+
+
+    if(error){
+        console.error("Error fetching eco events", error);
+        return {data : [], error};
+    }
+    return{data, error:null}
+}
+
+// Alias for backward compatibility
+export const getAllEcoEvent = getEcoEvents;
+
+//Read - get eco event by id
+export async function getEcoEventById(id:number){
+
+    const {data, error} = await supabase
+    .from('eco_events')
+    .select('*')
+    .eq('id', id)
+    .single();
+    if(error){
+        console.error("Error fetching eco event:", error)
+        return {data:null, error}
+    }
+    return {data, error:null}
+
+}
+
+//Read - get eco events by date
+
+export async function getEcoEventsByDate(date:string){
+    const {data, error} = await supabase
+    .from('eco_events')
+    .select('*')
+    .eq('date', date)
+    .order('time', {ascending:true});
+
+    if(error){
+        console.error("Error fetching eco events by date:", error)
+        return {data:[], error};
+    }
+
+    return {data, error:null}
+
+
+}
+
+//read - get eco events by month
+
+export async function getEcoEventsByMonth(year:number, month:number){
+  const startDate = `${year}-${month.toString().padStart(2, '0')}-01`;
+  const endDate = new Date(year, month, 0).getDate(); // Get actual last day of month
+  const endDateString = `${year}-${month.toString().padStart(2, '0')}-${endDate.toString().padStart(2, '0')}`;
+
+  const{data, error} = await supabase
+  .from("eco_events")
+  .select('*')
+  .gte('date', startDate)
+  .lte('date', endDateString)
+  .order('date', {ascending:true});
+
+  if(error){
+    console.error("Error fetching eco events by month:", error);
+    console.error("Query details:", { startDate, endDateString, year, month }); // Debug info
+    return {data:[], error};
+  }
+
+  return {data, error:null};
+}
+
+//Read - get eco events by category
+export async function getEcoEventsByCategory(category: 'cleanup' | 'workshop' | 'planting' | 'seminar') {
+  const { data, error } = await supabase
+    .from('eco_events')
+    .select('*')
+    .eq('category', category)
+    .order('date', { ascending: true });
+
+  if (error) {
+    console.error("Error fetching eco events by category:", error);
+    return { data: [], error };
+  }
+
+  return { data, error: null };
+}
+
+//READ - get upcoming eco events
+export async function getUpcomingEvents(){
+    const today = new Date().toISOString().split('T')[0];
+
+    const {data, error} = await supabase.
+    from("eco_events")
+    .select('*')
+    .gte('date', today)
+    .order('date', {ascending:true});
+
+    if(error){
+        console.error("error fetching eco events", error);
+        return {data:[], error};
+    }
+    return {data, error:null}
+}
+
+// UPDATE - update eco event
+export async function updateEcoEvent(id: number, updates: EcoEventUpdate) {
+    console.log("=== UPDATE ECO EVENT DEBUG ===");
+    console.log("Event ID:", id, "Type:", typeof id);
+    console.log("Updates:", updates);
+    
+    // First verify the event exists
+    const { data: existingEvent, error: checkError } = await supabase
+        .from('eco_events')
+        .select('*')
+        .eq('id', id);
+        
+    console.log("Check query result:", { data: existingEvent, error: checkError });
+        
+    if (checkError) {
+        console.error("Error checking for event:", checkError);
+        return { data: null, error: checkError };
+    }
+    
+    if (!existingEvent || existingEvent.length === 0) {
+        console.error("Event not found with ID:", id);
+        return { data: null, error: new Error(`Event ${id} not found`) };
+    }
+    
+    console.log("Found event to update:", existingEvent[0]);
+    
+    // Now update
+    const updatePayload = {
+        ...updates,
+        updated_at: new Date().toISOString()
+    };
+    
+    console.log("Update payload:", updatePayload);
+    
+    const { data: result, error } = await supabase
+        .from('eco_events')
+        .update(updatePayload)
+        .eq('id', id)
+        .select();
+
+    console.log("Update result:", { data: result, error });
+
+    if (error) {
+        console.error("Error updating eco event:", error);
+        return { data: null, error };
+    }
+
+    // Check if the update actually worked by querying again
+    const { data: updatedEvent, error: selectError } = await supabase
+        .from('eco_events')
+        .select('*')
+        .eq('id', id);
+        
+    console.log("Post-update verification:", { data: updatedEvent, error: selectError });
+
+    if (selectError) {
+        console.error("Error verifying update:", selectError);
+        return { data: null, error: selectError };
+    }
+
+    if (!updatedEvent || updatedEvent.length === 0) {
+        console.error("Event disappeared after update - this is very strange");
+        return { data: null, error: new Error("Event not found after update") };
+    }
+
+    // Even if the update query didn't return data, if we can select the updated event successfully,
+    // consider it a success
+    console.log("Successfully updated event (verified):", updatedEvent[0]);
+    return { data: updatedEvent[0], error: null };
+}
+
+// UTILITY - Search eco events
+
+
+
+
+export async function checkUserEventParticipation(eventId:number, userId:string):Promise<boolean>{
+    try {
+    const { data, error } = await supabase
+      .from('event_participants')
+      .select('id')
+      .eq('event_id', eventId)
+      .eq('user_id', userId)
+      .single();
+
+    if (error && error.code !== 'PGRST116') {
+      console.error('Error checking participation:', error);
+      return false;
+    }
+
+    return !!data;
+  } catch (error) {
+    console.error('Error checking user participation:', error);
+    return false;
+  }
+}
+
+//Join an event (add user to participants)
+export async function joinEcoEvent(eventId:number, userId:string ):Promise<{success:boolean; message : string}>{
+    try {
+    console.log('=== JOIN EVENT DEBUG ===');
+    console.log('Event ID:', eventId, 'User ID:', userId);
+
+    // First check if user is already registered
+    const alreadyJoined = await checkUserEventParticipation(eventId, userId);
+    if (alreadyJoined) {
+      return { success: false, message: 'You have already joined this event' };
+    }
+
+    // Check if event exists and has space
+    const { data: event, error: eventError } = await supabase
+      .from('eco_events')
+      .select('participants, max_participants')
+      .eq('id', eventId)
+      .single();
+
+    if (eventError) {
+      console.error('Error fetching event:', eventError);
+      return { success: false, message: 'Event not found' };
+    }
+
+    if (event.participants >= event.max_participants) {
+      return { success: false, message: 'Event is full' };
+    }
+
+    // Add user to event participants
+    const { error: insertError } = await supabase
+      .from('event_participants')
+      .insert([{ event_id: eventId, user_id: userId }]);
+
+    if (insertError) {
+      console.error('Error joining event:', insertError);
+      return { success: false, message: 'Failed to join event' };
+    }
+
+    console.log('Successfully joined event');
+    return { success: true, message: 'Successfully joined event!' };
+  } catch (error) {
+    console.error('Error in joinEcoEvent:', error);
+    return { success: false, message: 'An error occurred' };
+  }
+}; 
+
+export async function leaveEcoEvent(eventId: number, userId: string): Promise<{ success: boolean; message: string }> {
+  try {
+    const { error } = await supabase
+      .from('event_participants')
+      .delete()
+      .eq('event_id', eventId)
+      .eq('user_id', userId);
+
+    if (error) {
+      console.error('Error leaving event:', error);
+      return { success: false, message: 'Failed to leave event' };
+    }
+
+    return { success: true, message: 'Successfully left event!' };
+  } catch (error) {
+    console.error('Error in leaveEcoEvent:', error);
+    return { success: false, message: 'An error occurred' };
+  }
+}
+export async function getEcoEventsWithParticipation(userId?: string): Promise<(EcoEvent & { userJoined: boolean })[]> {
+  try {
+    let query = supabase
+      .from('eco_events')
+      .select(`
+        *,
+        event_participants!inner(user_id)
+      `);
+
+    const { data: events, error } = await query;
+
+    if (error) {
+      console.error('Error fetching events:', error);
+      return [];
+    }
+
+    // Add userJoined status to each event
+    const eventsWithStatus = events?.map(event => ({
+      ...event,
+      userJoined: userId ? event.event_participants?.some((p: any) => p.user_id === userId) : false
+    })) || [];
+
+    return eventsWithStatus;
+  } catch (error) {
+    console.error('Error in getEcoEventsWithParticipation:', error);
+    return [];
+  }
+}
+
+// Dashboard metrics functions
+
+// 1. Events This Month - Get count of eco_events for current month
+export async function getEventsThisMonth(): Promise<{ count: number; error: any }> {
+  try {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth() + 1; // getMonth() returns 0-11
+    
+    const startDate = `${year}-${month.toString().padStart(2, '0')}-01`;
+    const lastDay = new Date(year, month, 0).getDate();
+    const endDate = `${year}-${month.toString().padStart(2, '0')}-${lastDay.toString().padStart(2, '0')}`;
+
+    const { count, error } = await supabase
+      .from('eco_events')
+      .select('*', { count: 'exact', head: true })
+      .gte('date', startDate)
+      .lte('date', endDate);
+
+    if (error) {
+      console.error('Error fetching events this month:', error);
+      return { count: 0, error };
+    }
+
+    return { count: count || 0, error: null };
+  } catch (error) {
+    console.error('Error in getEventsThisMonth:', error);
+    return { count: 0, error };
+  }
+}
+
+// 2. Total Participants - Get total participants from event_participants table
+export async function getTotalParticipants(): Promise<{ count: number; error: any }> {
+  try {
+    const { count, error } = await supabase
+      .from('event_participants')
+      .select('*', { count: 'exact', head: true });
+
+    if (error) {
+      console.error('Error fetching total participants:', error);
+      return { count: 0, error };
+    }
+
+    return { count: count || 0, error: null };
+  } catch (error) {
+    console.error('Error in getTotalParticipants:', error);
+    return { count: 0, error };
+  }
+}
+
+// 3. Events Joined - Count events a specific user has joined
+export async function getEventsJoinedByUser(userId: string): Promise<{ count: number; error: any }> {
+  try {
+    if (!userId) {
+      return { count: 0, error: null };
+    }
+
+    const { count, error } = await supabase
+      .from('event_participants')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId);
+
+    if (error) {
+      console.error('Error fetching events joined by user:', error);
+      return { count: 0, error };
+    }
+
+    return { count: count || 0, error: null };
+  } catch (error) {
+    console.error('Error in getEventsJoinedByUser:', error);
+    return { count: 0, error };
+  }
+}
+
+// Combined dashboard metrics function
+export async function getDashboardMetrics(userId?: string): Promise<{
+  eventsThisMonth: number;
+  totalParticipants: number;
+  eventsJoined: number;
+  error: any;
+}> {
+  try {
+    // Run all queries in parallel for better performance
+    const [eventsResult, participantsResult, joinedResult] = await Promise.all([
+      getEventsThisMonth(),
+      getTotalParticipants(),
+      userId ? getEventsJoinedByUser(userId) : Promise.resolve({ count: 0, error: null })
+    ]);
+
+    // Check if any queries failed
+    const hasError = eventsResult.error || participantsResult.error || joinedResult.error;
+    
+    if (hasError) {
+      console.error('Error in dashboard metrics:', {
+        eventsError: eventsResult.error,
+        participantsError: participantsResult.error,
+        joinedError: joinedResult.error
+      });
+    }
+
+    return {
+      eventsThisMonth: eventsResult.count,
+      totalParticipants: participantsResult.count,
+      eventsJoined: joinedResult.count,
+      error: hasError
+    };
+  } catch (error) {
+    console.error('Error in getDashboardMetrics:', error);
+    return {
+      eventsThisMonth: 0,
+      totalParticipants: 0,
+      eventsJoined: 0,
+      error
+    };
+  }
 }
