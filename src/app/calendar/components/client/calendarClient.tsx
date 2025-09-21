@@ -1,10 +1,14 @@
 "use client"
 
+<<<<<<< HEAD
 import { useState, useEffect } from "react"
+=======
+>>>>>>> 648b8e123a0f650d74ce6d16af6d0dcdd832348e
 import Header from "@/app/components/Header"
 import { Calendar, MapPin, Users } from "lucide-react"
 import { CompactCalendar } from "../compact-calendar"
 import { UpcomingEvents } from "../upcomingEvents"
+<<<<<<< HEAD
 import { getDashboardMetrics } from "@/utils/supabase/functions"
 import { createClient } from "@/utils/supabase/client"
 
@@ -80,6 +84,10 @@ export default function EcoCalendar() {
       color: "from-teal-500 to-green-500" 
     },
   ]
+=======
+
+export default function EcoCalendar() {
+>>>>>>> 648b8e123a0f650d74ce6d16af6d0dcdd832348e
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50">
       {/* Header */}
@@ -92,7 +100,15 @@ export default function EcoCalendar() {
           <div className="max-w-7xl mx-auto">
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+<<<<<<< HEAD
               {statsConfig.map((stat, index) => (
+=======
+              {[
+                { label: "Events This Month", value: "12", icon: Calendar, color: "from-green-500 to-emerald-500" },
+                { label: "Total Participants", value: "248", icon: Users, color: "from-emerald-500 to-teal-500" },
+                { label: "Events Joined", value: "5", icon: MapPin, color: "from-teal-500 to-green-500" },
+              ].map((stat, index) => (
+>>>>>>> 648b8e123a0f650d74ce6d16af6d0dcdd832348e
                 <div
                   key={stat.label}
                   className="bg-white rounded-2xl p-6 shadow-lg border border-green-100 hover:shadow-xl transition-all duration-300 hover:scale-105 animate-in slide-in-from-bottom duration-500"
@@ -113,7 +129,11 @@ export default function EcoCalendar() {
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
               {/* Calendar - Takes more space */}
               <div className="lg:col-span-3 animate-in slide-in-from-left duration-700 delay-300">
+<<<<<<< HEAD
                 <CompactCalendar onMetricsUpdate={refreshMetrics} />
+=======
+                <CompactCalendar />
+>>>>>>> 648b8e123a0f650d74ce6d16af6d0dcdd832348e
               </div>
 
               {/* Upcoming Events - On the right */}

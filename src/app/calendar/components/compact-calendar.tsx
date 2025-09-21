@@ -1,5 +1,6 @@
 "use client"
 
+<<<<<<< HEAD
 import { useState, useEffect } from "react"
 import { ChevronLeft, ChevronRight, MapPin, Clock, X, Users } from "lucide-react"
 import { Button } from "./ui/button"
@@ -13,6 +14,72 @@ import {
   type EcoEvent 
 } from "@/utils/supabase/functions"
 import { createClient } from "@/utils/supabase/client"
+=======
+import { useState } from "react"
+import { ChevronLeft, ChevronRight, MapPin, Clock, X } from "lucide-react"
+import { Button } from "./ui/button"
+import { Card, CardContent, CardHeader } from "./ui/card"
+import { Badge } from "./ui/badge"
+
+// Sample eco-events data
+const ecoEvents = [
+  {
+    id: 1,
+    date: "2025-01-15",
+    title: "Beach Cleanup Drive",
+    time: "9:00 AM - 12:00 PM",
+    location: "Sunset Beach Park",
+    category: "cleanup",
+    description: "Join us for a community beach cleanup to protect marine life and keep our coastlines pristine.",
+    participants: 24,
+    maxParticipants: 50,
+  },
+  {
+    id: 2,
+    date: "2025-01-18",
+    title: "Recycling Workshop",
+    time: "2:00 PM - 4:00 PM",
+    location: "Community Center",
+    category: "workshop",
+    description: "Learn creative ways to upcycle household items and reduce waste.",
+    participants: 12,
+    maxParticipants: 20,
+  },
+  {
+    id: 3,
+    date: "2025-01-22",
+    title: "Urban Tree Planting",
+    time: "8:00 AM - 11:00 AM",
+    location: "Central Park",
+    category: "planting",
+    description: "Help expand our city's green canopy by planting native trees.",
+    participants: 18,
+    maxParticipants: 30,
+  },
+  {
+    id: 4,
+    date: "2025-01-25",
+    title: "Sustainability Seminar",
+    time: "6:00 PM - 8:00 PM",
+    location: "Green Library",
+    category: "seminar",
+    description: "Expert-led discussion on reducing your carbon footprint.",
+    participants: 35,
+    maxParticipants: 100,
+  },
+  {
+    id: 5,
+    date: "2025-01-28",
+    title: "River Restoration",
+    time: "9:00 AM - 3:00 PM",
+    location: "Riverside Trail",
+    category: "cleanup",
+    description: "Hands-on restoration work including invasive species removal.",
+    participants: 8,
+    maxParticipants: 25,
+  },
+]
+>>>>>>> 648b8e123a0f650d74ce6d16af6d0dcdd832348e
 
 const monthNames = [
   "January",
@@ -29,7 +96,11 @@ const monthNames = [
   "December",
 ]
 
+<<<<<<< HEAD
 const dayNames = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"]
+=======
+const dayNames = ["S", "M", "T", "W", "T", "F", "S"]
+>>>>>>> 648b8e123a0f650d74ce6d16af6d0dcdd832348e
 
 const categoryColors = {
   cleanup: "bg-emerald-100 text-emerald-700 border-emerald-200",
@@ -38,6 +109,7 @@ const categoryColors = {
   seminar: "bg-teal-100 text-teal-700 border-teal-200",
 }
 
+<<<<<<< HEAD
 interface CompactCalendarProps {
   onMetricsUpdate?: () => Promise<void>
 }
@@ -140,6 +212,19 @@ export function CompactCalendar({ onMetricsUpdate }: CompactCalendarProps) {
       alert('An error occurred. Please try again.')
     }
   }
+=======
+export function CompactCalendar() {
+  const [currentDate, setCurrentDate] = useState(new Date(2025, 0, 1))
+  const [selectedDate, setSelectedDate] = useState<string | null>(null)
+  const [showEventCard, setShowEventCard] = useState(false)
+
+  const year = currentDate.getFullYear()
+  const month = currentDate.getMonth()
+
+  const firstDay = new Date(year, month, 1).getDay()
+  const daysInMonth = new Date(year, month + 1, 0).getDate()
+  const daysInPrevMonth = new Date(year, month, 0).getDate()
+>>>>>>> 648b8e123a0f650d74ce6d16af6d0dcdd832348e
 
   const goToPrevMonth = () => {
     setCurrentDate(new Date(year, month - 1, 1))
@@ -154,6 +239,7 @@ export function CompactCalendar({ onMetricsUpdate }: CompactCalendarProps) {
   }
 
   const getEventsForDate = (date: string) => {
+<<<<<<< HEAD
     return ecoEvents.filter((event) => {
       // Handle the date comparison properly
       const eventDateString = event.date.toString().split('T')[0] // Remove time if present
@@ -169,6 +255,18 @@ export function CompactCalendar({ onMetricsUpdate }: CompactCalendarProps) {
 
   const handleDateClick = (day: number, clickYear: number, clickMonth: number) => {
     const dateString = `${clickYear}-${String(clickMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`
+=======
+    return ecoEvents.filter((event) => event.date === date)
+  }
+
+  const hasEvents = (day: number) => {
+    const dateString = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`
+    return getEventsForDate(dateString).length > 0
+  }
+
+  const handleDateClick = (day: number) => {
+    const dateString = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`
+>>>>>>> 648b8e123a0f650d74ce6d16af6d0dcdd832348e
     const events = getEventsForDate(dateString)
 
     if (events.length > 0) {
@@ -179,6 +277,7 @@ export function CompactCalendar({ onMetricsUpdate }: CompactCalendarProps) {
 
   // Generate calendar days
   const calendarDays = []
+<<<<<<< HEAD
   
   // Get the first day of the month (0 = Sunday, 1 = Monday, etc.)
   const firstDayOfMonth = new Date(year, month, 1).getDay()
@@ -233,6 +332,35 @@ export function CompactCalendar({ onMetricsUpdate }: CompactCalendarProps) {
       isCurrentMonth: false,
       isToday: false,
       hasEvents: hasEvents(day, nextYear, adjustedNextMonth),
+=======
+
+  for (let i = firstDay - 1; i >= 0; i--) {
+    calendarDays.push({
+      day: daysInPrevMonth - i,
+      isCurrentMonth: false,
+      isToday: false,
+    })
+  }
+
+  const today = new Date()
+  for (let day = 1; day <= daysInMonth; day++) {
+    const isToday = today.getFullYear() === year && today.getMonth() === month && today.getDate() === day
+
+    calendarDays.push({
+      day,
+      isCurrentMonth: true,
+      isToday,
+      hasEvents: hasEvents(day),
+    })
+  }
+
+  const remainingDays = 42 - calendarDays.length
+  for (let day = 1; day <= remainingDays; day++) {
+    calendarDays.push({
+      day,
+      isCurrentMonth: false,
+      isToday: false,
+>>>>>>> 648b8e123a0f650d74ce6d16af6d0dcdd832348e
     })
   }
 
@@ -273,6 +401,7 @@ export function CompactCalendar({ onMetricsUpdate }: CompactCalendarProps) {
           </div>
         </CardHeader>
 
+<<<<<<< HEAD
         <CardContent className="p-6"> 
           {loading ? (
             <div className="flex items-center justify-center h-64">
@@ -311,6 +440,39 @@ export function CompactCalendar({ onMetricsUpdate }: CompactCalendarProps) {
               })}
             </div>
           )}
+=======
+        <CardContent className="p-6">
+          <div className="grid grid-cols-7 gap-2">
+            {calendarDays.map((calendarDay, index) => {
+              const dateString = calendarDay.isCurrentMonth
+                ? `${year}-${String(month + 1).padStart(2, "0")}-${String(calendarDay.day).padStart(2, "0")}`
+                : null
+
+              return (
+                <button
+                  key={index}
+                  onClick={() => calendarDay.isCurrentMonth && handleDateClick(calendarDay.day)}
+                  className={`
+                    h-14 w-14 flex items-center justify-center text-sm rounded-xl transition-all duration-200 relative font-medium
+                    ${
+                      !calendarDay.isCurrentMonth
+                        ? "text-gray-300 cursor-default"
+                        : "text-gray-700 hover:bg-green-100 cursor-pointer hover:scale-105 hover:shadow-md"
+                    }
+                    ${calendarDay.isToday ? "bg-green-500 text-white hover:bg-green-600 shadow-lg" : ""}
+                    ${selectedDate === dateString ? "bg-green-200 text-green-800 ring-2 ring-green-400" : ""}
+                  `}
+                  disabled={!calendarDay.isCurrentMonth}
+                >
+                  {calendarDay.day}
+                  {calendarDay.hasEvents && (
+                    <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                  )}
+                </button>
+              )
+            })}
+          </div>
+>>>>>>> 648b8e123a0f650d74ce6d16af6d0dcdd832348e
         </CardContent>
       </Card>
 
@@ -340,6 +502,7 @@ export function CompactCalendar({ onMetricsUpdate }: CompactCalendarProps) {
 
             <div className="p-6 max-h-96 overflow-y-auto">
               <div className="space-y-4">
+<<<<<<< HEAD
                 {getEventsForDate(selectedDate).map((event, index) => {
                   const userJoined = userParticipations[event.id]
                   const isFull = event.participants >= event.max_participants
@@ -411,6 +574,45 @@ export function CompactCalendar({ onMetricsUpdate }: CompactCalendarProps) {
                     </div>
                   )
                 })}
+=======
+                {getEventsForDate(selectedDate).map((event, index) => (
+                  <div
+                    key={event.id}
+                    className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200 hover:shadow-md transition-all duration-200 animate-in slide-in-from-bottom duration-300"
+                    style={{ animationDelay: `${index * 100}ms` }}
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <h4 className="font-semibold text-gray-900 text-lg">{event.title}</h4>
+                      <Badge className={`${categoryColors[event.category]} text-xs`}>{event.category}</Badge>
+                    </div>
+
+                    <p className="text-gray-600 text-sm mb-3">{event.description}</p>
+
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <Clock className="h-4 w-4 text-green-600" />
+                        {event.time}
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <MapPin className="h-4 w-4 text-green-600" />
+                        {event.location}
+                      </div>
+                    </div>
+
+                    <div className="mt-4 flex items-center justify-between">
+                      <span className="text-xs text-gray-500">
+                        {event.participants}/{event.maxParticipants} participants
+                      </span>
+                      <Button
+                        size="sm"
+                        className="bg-green-600 hover:bg-green-700 text-white transition-all duration-200 hover:scale-105"
+                      >
+                        Join Event
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+>>>>>>> 648b8e123a0f650d74ce6d16af6d0dcdd832348e
               </div>
             </div>
           </div>
