@@ -100,8 +100,8 @@ export const ActionCards = () => {
         </Card>
       </Link>
 
-      {/* Take an Eco Quiz Card - Links to Test Prep */}
-      <Link href="/test-prep" className="block">
+      {/* Take an Eco Quiz Card - Links to Carbon Clash */}
+      <Link href="/carbon-clash" className="block">
         <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-green-500 via-emerald-500 to-teal-600 text-white hover:shadow-2xl transition-all duration-500 hover:scale-[1.03] cursor-pointer">
           {/* ...existing background decorative elements... */}
           <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />

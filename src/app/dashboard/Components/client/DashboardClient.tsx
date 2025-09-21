@@ -11,12 +11,12 @@ import {
 import { useEffect, useState } from "react"
 import { ActionCards } from "../action-cards"
 import { CommunityStatsCard } from "../community-stats-card"
+import { EcoChatbot } from "../eco-chatbot"
 import { ImpactHeader } from "../impact-header"
 import { ImpactMetrics } from "../impact-metrics"
 import { LeaderboardCard } from "../leaderboard-card"
 import { QuestCalendar } from "../quest-calendar"
 import { UpcomingEventsCard } from "../upcoming-events-card"
-import { EcoChatbot } from "../eco-chatbot"
 
 // Extended interface for leaderboard with joined user statistics
 interface LeaderboardWithStats extends Leaderboard {
@@ -99,6 +99,34 @@ export default function Dashboard() {
   // Derived values
   const totalEcoPoints = calculateEcoPoints(userStats)
   const currentRank = getUserRank(leaderboardData, currentUserId || "")
+
+  // Ensure page starts at the top after all components are loaded
+  useEffect(() => {
+    const scrollToTop = () => {
+      window.scrollTo({ top: 0, behavior: 'instant' })
+      document.documentElement.scrollTop = 0
+      document.body.scrollTop = 0
+    }
+    
+    // Immediate scroll
+    scrollToTop()
+    
+    // Delayed scroll to override any other scroll behavior
+    const timeoutId = setTimeout(scrollToTop, 100)
+    
+    return () => clearTimeout(timeoutId)
+  }, [])
+
+  // Additional effect to ensure scroll stays at top after loading
+  useEffect(() => {
+    if (!loading) {
+      setTimeout(() => {
+        window.scrollTo({ top: 0, behavior: 'instant' })
+        document.documentElement.scrollTop = 0
+        document.body.scrollTop = 0
+      }, 200)
+    }
+  }, [loading])
 
   // Fetch user data on component mount
   useEffect(() => {

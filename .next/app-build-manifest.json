@@ -6,20 +6,10 @@
       "static/css/app/layout.css",
       "static/chunks/app/layout.js"
     ],
-    "/community-cleanup/page": [
+    "/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/community-cleanup/page.js"
-    ],
-    "/litterLens/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/litterLens/page.js"
-    ],
-    "/carbon-tracker/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/carbon-tracker/page.js"
+      "static/chunks/app/page.js"
     ],
     "/landingPage/page": [
       "static/chunks/webpack.js",
@@ -30,6 +20,17 @@
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/dashboard/page.js"
+    ],
+    "/community-cleanup/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/css/app/community-cleanup/page.css",
+      "static/chunks/app/community-cleanup/page.js"
+    ],
+    "/calendar/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/calendar/page.js"
     ]
   }
 }
