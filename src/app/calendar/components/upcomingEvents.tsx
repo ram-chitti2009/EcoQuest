@@ -1,11 +1,11 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Card, CardContent, CardHeader } from "./ui/card"
-import { Button } from "./ui/button"
+import { getEcoEventsByMonth, type EcoEvent } from "@/utils/supabase/functions"
+import { ChevronRight, Clock, MapPin } from "lucide-react"
+import { useEffect, useMemo, useState } from "react"
 import { Badge } from "./ui/badge"
-import { MapPin, Clock, ChevronRight } from "lucide-react"
-import { getAllEcoEvent, type EcoEvent } from "@/utils/supabase/functions"
+import { Button } from "./ui/button"
+import { Card, CardContent, CardHeader } from "./ui/card"
 
 const categoryColors = {
   cleanup: "bg-emerald-100 text-emerald-700 border-emerald-200",
@@ -14,25 +14,40 @@ const categoryColors = {
   seminar: "bg-teal-100 text-teal-700 border-teal-200",
 }
 
-export function UpcomingEvents() {
+interface UpcomingEventsProps {
+  currentMonth?: Date
+}
+
+export function UpcomingEvents({ currentMonth: propMonth }: UpcomingEventsProps) {
   const [showAll, setShowAll] = useState(false)
   const [allEvents, setAllEvents] = useState<EcoEvent[]>([])
   const [loading, setLoading] = useState(true)
+  
+  // Use prop month or default to current month
+  const currentMonth = useMemo(() => propMonth || new Date(), [propMonth])
 
-  // Fetch events when component mounts
+  // Fetch events when component mounts or month changes
   useEffect(() => {
     const fetchEvents = async () => {
       setLoading(true)
       try {
-        const { data, error } = await getAllEcoEvent()
+        const year = currentMonth.getFullYear()
+        const month = currentMonth.getMonth()
+        console.log(`🌱 Fetching upcoming events for ${year}-${month + 1}`)
+        const { data, error } = await getEcoEventsByMonth(year, month + 1)
+        
         if (error) {
           console.error('Error fetching events:', error)
         } else {
-          // Filter for upcoming events (future dates)
+          // Filter for upcoming events (future dates only)
           const now = new Date()
-          const upcomingEvents = (data || []).filter(event => {
-            const eventDate = new Date(event.date)
-            return eventDate >= now
+          const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()) // Start of today
+          
+          const upcomingEvents = (data || []).filter((event: EcoEvent) => {
+            // Parse event date as local date to avoid timezone issues
+            const [year, month, day] = event.date.toString().split('T')[0].split('-')
+            const eventDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
+            return eventDate >= today
           })
           setAllEvents(upcomingEvents)
         }
@@ -44,13 +59,15 @@ export function UpcomingEvents() {
     }
 
     fetchEvents()
-  }, [])
+  }, [currentMonth])
 
   const displayEvents = showAll ? allEvents : allEvents.slice(0, 4)
 
   // Helper function to format date
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
+    // Parse date as local date to avoid timezone issues
+    const [year, month, day] = dateString.split('T')[0].split('-')
+    const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
   }
 
@@ -86,7 +103,7 @@ export function UpcomingEvents() {
           </div>
         ) : (
           <>
-            <div className={`space-y-3 ${showAll ? "max-h-96 overflow-y-auto pr-2" : ""}`}>
+            <div className={`space-y-3 ${showAll ? "max-h-96 overflow-y-auto scrollbar-hide" : "max-h-80 overflow-y-auto scrollbar-hide"}`}>
               {displayEvents.map((event, index) => (
                 <div
                   key={event.id}

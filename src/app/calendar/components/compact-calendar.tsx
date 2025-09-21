@@ -1,53 +1,43 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { ChevronLeft, ChevronRight, MapPin, Clock, X, Users } from "lucide-react"
+import { createClient } from "@/utils/supabase/client"
+import {
+  checkUserEventParticipation,
+  getEcoEventsByMonth,
+  joinEcoEvent,
+  leaveEcoEvent
+} from "@/utils/supabase/functions"
+import {
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  Leaf,
+  MapPin,
+  Sparkles,
+  TreePine,
+  Users,
+  X
+} from "lucide-react"
+import { useEffect, useState } from "react"
+import { CATEGORY_CONFIG, DAY_NAMES, MONTH_NAMES } from "./constants/calendar"
+import { CalendarSkeleton, EventCardSkeleton } from "./LoadingSkeleton"
+import type { CalendarDay, EcoEvent } from "./types/eco-events"
+import { Badge } from "./ui/badge"
 import { Button } from "./ui/button"
 import { Card, CardContent, CardHeader } from "./ui/card"
-import { Badge } from "./ui/badge"
-import { 
-  getEcoEventsByMonth, 
-  joinEcoEvent, 
-  leaveEcoEvent, 
-  checkUserEventParticipation,
-  type EcoEvent 
-} from "@/utils/supabase/functions"
-import { createClient } from "@/utils/supabase/client"
-
-const monthNames = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
-]
-
-const dayNames = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"]
-
-const categoryColors = {
-  cleanup: "bg-emerald-100 text-emerald-700 border-emerald-200",
-  workshop: "bg-green-100 text-green-700 border-green-200",
-  planting: "bg-lime-100 text-lime-700 border-lime-200",
-  seminar: "bg-teal-100 text-teal-700 border-teal-200",
-}
 
 interface CompactCalendarProps {
   onMetricsUpdate?: () => Promise<void>
+  onMonthChange?: (date: Date) => void
 }
 
-export function CompactCalendar({ onMetricsUpdate }: CompactCalendarProps) {
+export function CompactCalendar({ onMetricsUpdate, onMonthChange }: CompactCalendarProps) {
   const [currentDate, setCurrentDate] = useState(new Date())
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [showEventCard, setShowEventCard] = useState(false)
   const [ecoEvents, setEcoEvents] = useState<EcoEvent[]>([])
   const [loading, setLoading] = useState(true)
+  const [actionLoading, setActionLoading] = useState<number | null>(null)
   const [currentUser, setCurrentUser] = useState<{ id: string } | null>(null)
   const [userParticipations, setUserParticipations] = useState<Record<number, boolean>>({})
 
@@ -64,21 +54,28 @@ export function CompactCalendar({ onMetricsUpdate }: CompactCalendarProps) {
     checkUser()
   }, [supabase.auth])
 
+  // Notify parent about initial month
+  useEffect(() => {
+    if (onMonthChange) {
+      onMonthChange(currentDate)
+    }
+  }, [onMonthChange, currentDate])
+
   // Fetch events when component mounts or month changes
   useEffect(() => {
     const fetchEvents = async () => {
       setLoading(true)
       try {
-        console.log(`Fetching events for ${year}-${month + 1}`) // Debug log
-        const { data, error } = await getEcoEventsByMonth(year, month + 1) // month is 0-indexed, but our function expects 1-indexed
+        console.log(`🌱 Fetching eco events for ${year}-${month + 1}`)
+        const { data, error } = await getEcoEventsByMonth(year, month + 1)
+        
         if (error) {
-          console.error('Error fetching events:', error)
-          console.error('Error details:', error.message, error.code) // More detailed error
+          console.error('🚨 Error fetching events:', error)
         } else {
-          console.log(`Fetched ${data?.length || 0} events:`, data) // Debug log
+          console.log(`🌿 Found ${data?.length || 0} eco events`)
           setEcoEvents(data || [])
           
-          // Load user participation status for each event
+          // Load user participation status
           if (currentUser && data) {
             const participationStatus: Record<number, boolean> = {}
             for (const event of data) {
@@ -89,7 +86,7 @@ export function CompactCalendar({ onMetricsUpdate }: CompactCalendarProps) {
           }
         }
       } catch (err) {
-        console.error('Error fetching events:', err)
+        console.error('🚨 Error fetching events:', err)
       } finally {
         setLoading(false)
       }
@@ -101,11 +98,12 @@ export function CompactCalendar({ onMetricsUpdate }: CompactCalendarProps) {
   // Handle joining/leaving events
   const handleEventAction = async (eventId: number) => {
     if (!currentUser) {
-      alert('Please sign in to join events')
+      alert('🌱 Please sign in to join our eco community!')
       return
     }
 
     const isJoined = userParticipations[eventId]
+    setActionLoading(eventId)
     
     try {
       let result
@@ -116,7 +114,7 @@ export function CompactCalendar({ onMetricsUpdate }: CompactCalendarProps) {
       }
 
       if (result.success) {
-        // Update local participation state
+        // Update local participation state with animation
         setUserParticipations(prev => ({
           ...prev,
           [eventId]: !isJoined
@@ -132,39 +130,40 @@ export function CompactCalendar({ onMetricsUpdate }: CompactCalendarProps) {
         if (onMetricsUpdate) {
           await onMetricsUpdate()
         }
-      }
 
-      alert(result.message)
+        // Show success message with eco theme
+        alert(`🌟 ${result.message}`)
+      }
     } catch (error) {
-      console.error('Error with event action:', error)
-      alert('An error occurred. Please try again.')
+      console.error('🚨 Error with event action:', error)
+      alert('🌿 Something went wrong. Please try again!')
+    } finally {
+      setActionLoading(null)
     }
   }
 
-  const goToPrevMonth = () => {
-    setCurrentDate(new Date(year, month - 1, 1))
+  const navigateMonth = (direction: 'prev' | 'next') => {
+    const newDate = new Date(year, direction === 'prev' ? month - 1 : month + 1, 1)
+    setCurrentDate(newDate)
     setSelectedDate(null)
     setShowEventCard(false)
+    
+    // Notify parent about month change
+    if (onMonthChange) {
+      onMonthChange(newDate)
+    }
   }
 
-  const goToNextMonth = () => {
-    setCurrentDate(new Date(year, month + 1, 1))
-    setSelectedDate(null)
-    setShowEventCard(false)
-  }
-
-  const getEventsForDate = (date: string) => {
+  const getEventsForDate = (date: string): EcoEvent[] => {
     return ecoEvents.filter((event) => {
-      // Handle the date comparison properly
-      const eventDateString = event.date.toString().split('T')[0] // Remove time if present
+      const eventDateString = event.date.toString().split('T')[0]
       return eventDateString === date
     })
   }
 
-  const hasEvents = (day: number, checkYear: number, checkMonth: number) => {
+  const hasEvents = (day: number, checkYear: number, checkMonth: number): boolean => {
     const dateString = `${checkYear}-${String(checkMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`
-    const events = getEventsForDate(dateString)
-    return events.length > 0
+    return getEventsForDate(dateString).length > 0
   }
 
   const handleDateClick = (day: number, clickYear: number, clickMonth: number) => {
@@ -178,109 +177,145 @@ export function CompactCalendar({ onMetricsUpdate }: CompactCalendarProps) {
   }
 
   // Generate calendar days
-  const calendarDays = []
-  
-  // Get the first day of the month (0 = Sunday, 1 = Monday, etc.)
-  const firstDayOfMonth = new Date(year, month, 1).getDay()
-  const daysInCurrentMonth = new Date(year, month + 1, 0).getDate()
-  const daysInPrevMonth = new Date(year, month, 0).getDate()
-  
-  // Add previous month's days (grayed out) - CAN have events
-  for (let i = firstDayOfMonth - 1; i >= 0; i--) {
-    const prevMonthDay = daysInPrevMonth - i
-    const prevMonth = month - 1
-    const prevYear = month === 0 ? year - 1 : year
-    const adjustedPrevMonth = month === 0 ? 11 : prevMonth
+  const generateCalendarDays = (): CalendarDay[] => {
+    const calendarDays: CalendarDay[] = []
     
-    calendarDays.push({
-      day: prevMonthDay,
-      month: adjustedPrevMonth,
-      year: prevYear,
-      isCurrentMonth: false,
-      isToday: false,
-      hasEvents: hasEvents(prevMonthDay, prevYear, adjustedPrevMonth),
-    })
-  }
-  
-  // Add current month's days - CAN have events
-  const today = new Date()
-  for (let day = 1; day <= daysInCurrentMonth; day++) {
-    const isToday = today.getFullYear() === year && 
-                   today.getMonth() === month && 
-                   today.getDate() === day
+    const firstDayOfMonth = new Date(year, month, 1).getDay()
+    const daysInCurrentMonth = new Date(year, month + 1, 0).getDate()
+    const daysInPrevMonth = new Date(year, month, 0).getDate()
     
-    calendarDays.push({
-      day,
-      month,
-      year,
-      isCurrentMonth: true,
-      isToday,
-      hasEvents: hasEvents(day, year, month),
-    })
+    // Previous month days
+    for (let i = firstDayOfMonth - 1; i >= 0; i--) {
+      const prevMonthDay = daysInPrevMonth - i
+      const prevMonth = month - 1
+      const prevYear = month === 0 ? year - 1 : year
+      const adjustedPrevMonth = month === 0 ? 11 : prevMonth
+      
+      calendarDays.push({
+        day: prevMonthDay,
+        month: adjustedPrevMonth,
+        year: prevYear,
+        isCurrentMonth: false,
+        isToday: false,
+        hasEvents: hasEvents(prevMonthDay, prevYear, adjustedPrevMonth),
+      })
+    }
+    
+    // Current month days
+    const today = new Date()
+    for (let day = 1; day <= daysInCurrentMonth; day++) {
+      const isToday = today.getFullYear() === year && 
+                     today.getMonth() === month && 
+                     today.getDate() === day
+      
+      calendarDays.push({
+        day,
+        month,
+        year,
+        isCurrentMonth: true,
+        isToday,
+        hasEvents: hasEvents(day, year, month),
+      })
+    }
+    
+    // Next month days
+    const remainingDays = 42 - calendarDays.length
+    const nextMonth = month + 1
+    const nextYear = month === 11 ? year + 1 : year
+    const adjustedNextMonth = month === 11 ? 0 : nextMonth
+    
+    for (let day = 1; day <= remainingDays; day++) {
+      calendarDays.push({
+        day,
+        month: adjustedNextMonth,
+        year: nextYear,
+        isCurrentMonth: false,
+        isToday: false,
+        hasEvents: hasEvents(day, nextYear, adjustedNextMonth),
+      })
+    }
+
+    return calendarDays
   }
-  
-  // Add next month's days to fill the grid - CAN have events
-  const remainingDays = 42 - calendarDays.length
-  const nextMonth = month + 1
-  const nextYear = month === 11 ? year + 1 : year
-  const adjustedNextMonth = month === 11 ? 0 : nextMonth
-  
-  for (let day = 1; day <= remainingDays; day++) {
-    calendarDays.push({
-      day,
-      month: adjustedNextMonth,
-      year: nextYear,
-      isCurrentMonth: false,
-      isToday: false,
-      hasEvents: hasEvents(day, nextYear, adjustedNextMonth),
-    })
-  }
+
+  const calendarDays = generateCalendarDays()
 
   return (
     <div className="w-full relative">
-      <Card className="shadow-lg border-green-200 bg-gradient-to-br from-white to-green-50 transition-all duration-300 hover:shadow-xl">
-        <CardHeader className="pb-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-t-lg">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold">
-              {monthNames[month]} {year}
-            </h2>
+      {/* Decorative background elements */}
+      <div className="absolute -top-4 -left-4 w-20 h-20 bg-gradient-to-br from-emerald-200/30 to-green-200/30 rounded-full blur-xl"></div>
+      <div className="absolute -bottom-4 -right-4 w-16 h-16 bg-gradient-to-br from-lime-200/30 to-emerald-200/30 rounded-full blur-xl"></div>
+
+      <Card className="shadow-2xl border-emerald-200/50 bg-gradient-to-br from-white via-emerald-50/30 to-green-50/30 backdrop-blur-sm transition-all duration-500 hover:shadow-3xl hover:scale-[1.02]">
+        {/* Header */}
+        <CardHeader className="pb-4 bg-gradient-to-r from-emerald-600 via-green-600 to-emerald-600 text-white rounded-t-2xl relative overflow-hidden">
+          {/* Decorative elements */}
+          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-white/10 to-transparent rounded-full -translate-y-16 translate-x-16"></div>
+          <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-white/5 to-transparent rounded-full translate-y-12 -translate-x-12"></div>
+          
+          <div className="flex items-center justify-between relative z-10">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-white/20 rounded-xl">
+                <Leaf className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold flex items-center gap-2">
+                  {MONTH_NAMES[month]} {year}
+                  <Sparkles className="h-5 w-5 text-emerald-200" />
+                </h2>
+                <p className="text-emerald-100 text-sm">Eco Events Calendar</p>
+              </div>
+            </div>
+            
             <div className="flex gap-2">
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={goToPrevMonth}
-                className="h-10 w-10 p-0 hover:bg-white/20 text-white transition-all duration-200 hover:scale-110"
+                onClick={() => navigateMonth('prev')}
+                className="h-10 w-10 p-0 hover:bg-white/20 text-white transition-all duration-300 hover:scale-110 hover:rotate-6"
               >
                 <ChevronLeft className="h-5 w-5" />
               </Button>
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={goToNextMonth}
-                className="h-10 w-10 p-0 hover:bg-white/20 text-white transition-all duration-200 hover:scale-110"
+                onClick={() => navigateMonth('next')}
+                className="h-10 w-10 p-0 hover:bg-white/20 text-white transition-all duration-300 hover:scale-110 hover:-rotate-6"
               >
                 <ChevronRight className="h-5 w-5" />
               </Button>
             </div>
           </div>
 
-          <div className="grid grid-cols-7 gap-2 mt-6">
-            {dayNames.map((day) => (
-              <div key={day} className="h-12 flex items-center justify-center text-sm font-semibold text-green-100">
+          {/* Day names */}
+          <div className="grid grid-cols-7 gap-2 mt-6 relative z-10">
+            {DAY_NAMES.map((day, index) => (
+              <div 
+                key={day} 
+                className="h-12 flex items-center justify-center text-sm font-semibold text-emerald-100 transition-all duration-300 hover:text-white hover:scale-110"
+                style={{ animationDelay: `${index * 50}ms` }}
+              >
                 {day}
               </div>
             ))}
           </div>
         </CardHeader>
 
-        <CardContent className="p-6"> 
+        {/* Calendar Grid */}
+        <CardContent className="p-6 bg-gradient-to-br from-white/80 to-emerald-50/50"> 
           {loading ? (
-            <div className="flex items-center justify-center h-64">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
-              <span className="ml-2 text-gray-600">Loading events...</span>
+            <div className="space-y-4">
+              <div className="flex items-center justify-center gap-3 mb-6">
+                <div className="relative">
+                  <div className="w-8 h-8 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin"></div>
+                  <TreePine className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 h-3 w-3 text-emerald-600" />
+                </div>
+                <span className="text-emerald-700 font-medium">Loading eco events...</span>
+              </div>
+              <CalendarSkeleton />
             </div>
           ) : (
-            <div className="grid grid-cols-7 gap-2">
+            <div className="grid grid-cols-7 gap-3">
               {calendarDays.map((calendarDay, index) => {
                 const dateString = `${calendarDay.year}-${String(calendarDay.month + 1).padStart(2, "0")}-${String(calendarDay.day).padStart(2, "0")}`
 
@@ -289,23 +324,27 @@ export function CompactCalendar({ onMetricsUpdate }: CompactCalendarProps) {
                     key={index}
                     onClick={() => handleDateClick(calendarDay.day, calendarDay.year, calendarDay.month)}
                     className={`
-                      h-14 w-14 flex items-center justify-center text-sm rounded-xl transition-all duration-200 relative font-medium border-2
+                      h-14 w-14 flex items-center justify-center text-sm rounded-2xl transition-all duration-300 relative font-medium border-2 group
                       ${
                         !calendarDay.isCurrentMonth
                           ? calendarDay.hasEvents
-                            ? "text-gray-500 bg-gray-50 border-gray-200 cursor-pointer hover:bg-gray-100 hover:border-gray-300 hover:scale-105 hover:shadow-md"
+                            ? "text-emerald-600 bg-emerald-50 border-emerald-200 cursor-pointer hover:bg-emerald-100 hover:border-emerald-300 hover:scale-110 hover:shadow-lg hover:rotate-2"
                             : "text-gray-300 cursor-default bg-transparent border-transparent"
                           : calendarDay.hasEvents
-                          ? "text-white bg-green-500 border-green-500 cursor-pointer hover:bg-green-600 hover:border-green-600 hover:scale-105 hover:shadow-md"
+                          ? "text-white bg-gradient-to-br from-emerald-500 to-green-500 border-emerald-400 cursor-pointer hover:from-emerald-600 hover:to-green-600 hover:border-emerald-500 hover:scale-110 hover:shadow-xl hover:-rotate-2 shadow-lg"
                           : calendarDay.isToday
-                          ? "text-white bg-blue-500 border-blue-500 cursor-pointer hover:bg-blue-600 hover:border-blue-600 hover:scale-105 hover:shadow-md"
-                          : "text-gray-700 bg-white border-gray-200 cursor-pointer hover:bg-gray-100 hover:border-gray-300 hover:scale-105 hover:shadow-md"
+                          ? "text-white bg-gradient-to-br from-blue-500 to-indigo-500 border-blue-400 cursor-pointer hover:from-blue-600 hover:to-indigo-600 hover:border-blue-500 hover:scale-110 hover:shadow-xl hover:rotate-2 shadow-lg"
+                          : "text-gray-700 bg-white/80 border-gray-200 cursor-pointer hover:bg-emerald-50 hover:border-emerald-300 hover:scale-105 hover:shadow-md"
                       }
-                      ${selectedDate === dateString ? "ring-2 ring-green-400" : ""}
+                      ${selectedDate === dateString ? "ring-4 ring-emerald-400 ring-opacity-50 scale-110" : ""}
                     `}
                     disabled={!calendarDay.hasEvents && !calendarDay.isCurrentMonth}
+                    style={{ animationDelay: `${index * 10}ms` }}
                   >
                     {calendarDay.day}
+                    {calendarDay.hasEvents && (
+                      <div className="absolute -top-1 -right-1 w-3 h-3 bg-gradient-to-r from-lime-400 to-emerald-400 rounded-full animate-pulse group-hover:scale-125 transition-transform duration-300"></div>
+                    )}
                   </button>
                 )
               })}
@@ -314,104 +353,151 @@ export function CompactCalendar({ onMetricsUpdate }: CompactCalendarProps) {
         </CardContent>
       </Card>
 
-      {/* Event Card Popup */}
+      {/* Enhanced Event Popup */}
       {showEventCard && selectedDate && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 animate-in zoom-in-95 duration-300">
-            <div className="bg-gradient-to-r from-green-600 to-emerald-600 text-white p-6 rounded-t-2xl">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xl font-bold">
-                  {new Date(selectedDate).toLocaleDateString("en-US", {
-                    weekday: "long",
-                    month: "long",
-                    day: "numeric",
-                  })}
-                </h3>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in duration-300">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full mx-4 animate-in zoom-in-95 duration-500 border border-emerald-200/50 overflow-hidden">
+            {/* Event Card Header */}
+            <div className="bg-gradient-to-r from-emerald-600 via-green-600 to-emerald-600 text-white p-6 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-16 translate-x-16"></div>
+              <div className="absolute bottom-0 left-0 opacity-20">
+                <Leaf className="h-24 w-24 text-white/30" />
+              </div>
+              
+              <div className="flex items-center justify-between relative z-10">
+                <div>
+                  <h3 className="text-xl font-bold mb-1">
+                    {(() => {
+                      // Parse selectedDate as local date to avoid timezone issues
+                      const [year, month, day] = selectedDate.split('-')
+                      const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
+                      return date.toLocaleDateString("en-US", {
+                        weekday: "long",
+                        month: "long",
+                        day: "numeric",
+                      })
+                    })()}
+                  </h3>
+                  <p className="text-emerald-100 text-sm flex items-center gap-2">
+                    <Sparkles className="h-4 w-4" />
+                    Eco Events Today
+                  </p>
+                </div>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => setShowEventCard(false)}
-                  className="h-8 w-8 p-0 hover:bg-white/20 text-white"
+                  className="h-10 w-10 p-0 hover:bg-white/20 text-white transition-all duration-300 hover:scale-110 hover:rotate-90 rounded-full"
                 >
-                  <X className="h-4 w-4" />
+                  <X className="h-5 w-5" />
                 </Button>
               </div>
             </div>
 
-            <div className="p-6 max-h-96 overflow-y-auto">
-              <div className="space-y-4">
-                {getEventsForDate(selectedDate).map((event, index) => {
-                  const userJoined = userParticipations[event.id]
-                  const isFull = event.participants >= event.max_participants
-                  
-                  return (
-                    <div
-                      key={event.id}
-                      className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200 hover:shadow-md transition-all duration-200 animate-in slide-in-from-bottom"
-                      style={{ animationDelay: `${index * 100}ms` }}
-                    >
-                      <div className="flex items-start justify-between mb-3">
-                        <h4 className="font-semibold text-gray-900 text-lg">{event.title}</h4>
-                        <Badge className={`${categoryColors[event.category]} text-xs`}>{event.category}</Badge>
-                      </div>
-
-                      <p className="text-gray-600 text-sm mb-3">{event.description}</p>
-
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                          <Clock className="h-4 w-4 text-green-600" />
-                          {event.time}
+            {/* Events List */}
+            <div className="p-6 max-h-96 overflow-y-auto bg-gradient-to-br from-white to-emerald-50/30 scrollbar-hide">
+              {loading ? (
+                <EventCardSkeleton />
+              ) : (
+                <div className="space-y-4">
+                  {getEventsForDate(selectedDate).map((event, index) => {
+                    const userJoined = userParticipations[event.id]
+                    const isFull = event.participants >= event.max_participants
+                    const categoryConfig = CATEGORY_CONFIG[event.category]
+                    
+                    return (
+                      <div
+                        key={event.id}
+                        className="group p-5 bg-gradient-to-r from-white via-emerald-50/30 to-green-50/30 rounded-2xl border border-emerald-200/50 hover:shadow-lg transition-all duration-300 hover:scale-[1.02] hover:border-emerald-300/50 backdrop-blur-sm"
+                        style={{ animationDelay: `${index * 150}ms` }}
+                      >
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="flex-1">
+                            <h4 className="font-bold text-gray-900 text-lg mb-2 group-hover:text-emerald-700 transition-colors duration-300">
+                              {categoryConfig.icon} {event.title}
+                            </h4>
+                            <Badge className={`${categoryConfig.color} text-xs font-semibold`}>
+                              {event.category.charAt(0).toUpperCase() + event.category.slice(1)}
+                            </Badge>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                          <MapPin className="h-4 w-4 text-green-600" />
-                          {event.location}
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                          <Users className="h-4 w-4 text-green-600" />
-                          {event.participants}/{event.max_participants} participants
-                        </div>
-                      </div>
 
-                      <div className="mt-4 flex items-center justify-between">
-                        <span className={`text-xs px-2 py-1 rounded ${
-                          userJoined 
-                            ? 'bg-green-100 text-green-700' 
-                            : isFull 
-                            ? 'bg-red-100 text-red-700'
-                            : 'bg-gray-100 text-gray-600'
-                        }`}>
-                          {userJoined ? 'You joined' : isFull ? 'Event full' : 'Available'}
-                        </span>
-                        
-                        {currentUser ? (
-                          <Button
-                            size="sm"
-                            onClick={() => handleEventAction(event.id)}
-                            disabled={!userJoined && isFull}
-                            className={`transition-all duration-200 hover:scale-105 ${
-                              userJoined 
-                                ? 'bg-red-600 hover:bg-red-700 text-white' 
-                                : isFull
-                                ? 'bg-gray-400 cursor-not-allowed'
-                                : 'bg-green-600 hover:bg-green-700 text-white'
-                            } disabled:bg-gray-400 disabled:cursor-not-allowed`}
-                          >
-                            {userJoined ? 'Leave Event' : isFull ? 'Full' : 'Join Event'}
-                          </Button>
-                        ) : (
-                          <Button
-                            size="sm"
-                            onClick={() => alert('Please sign in to join events')}
-                            className="bg-blue-600 hover:bg-blue-700 text-white transition-all duration-200 hover:scale-105"
-                          >
-                            Sign In to Join
-                          </Button>
-                        )}
+                        <p className="text-gray-600 text-sm mb-4 leading-relaxed">{event.description}</p>
+
+                        <div className="space-y-3 mb-4">
+                          <div className="flex items-center gap-3 text-sm text-gray-600 hover:text-emerald-600 transition-colors duration-200">
+                            <div className="p-1.5 bg-emerald-100 rounded-lg">
+                              <Clock className="h-4 w-4 text-emerald-600" />
+                            </div>
+                            <span className="font-medium">{event.time}</span>
+                          </div>
+                          <div className="flex items-center gap-3 text-sm text-gray-600 hover:text-emerald-600 transition-colors duration-200">
+                            <div className="p-1.5 bg-emerald-100 rounded-lg">
+                              <MapPin className="h-4 w-4 text-emerald-600" />
+                            </div>
+                            <span className="font-medium">{event.location}</span>
+                          </div>
+                          <div className="flex items-center gap-3 text-sm text-gray-600">
+                            <div className="p-1.5 bg-emerald-100 rounded-lg">
+                              <Users className="h-4 w-4 text-emerald-600" />
+                            </div>
+                            <span className="font-medium">
+                              {event.participants}/{event.max_participants} eco warriors joined
+                            </span>
+                            <div className="flex-1 bg-gray-200 rounded-full h-2 ml-2">
+                              <div 
+                                className="bg-gradient-to-r from-emerald-400 to-green-400 h-2 rounded-full transition-all duration-500"
+                                style={{ width: `${(event.participants / event.max_participants) * 100}%` }}
+                              ></div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                          <div className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all duration-300 ${
+                            userJoined 
+                              ? 'bg-gradient-to-r from-emerald-100 to-green-100 text-emerald-800 border border-emerald-200' 
+                              : isFull 
+                              ? 'bg-gradient-to-r from-red-100 to-pink-100 text-red-700 border border-red-200'
+                              : 'bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-700 border border-blue-200'
+                          }`}>
+                            {userJoined ? '🌱 You\'re joining!' : isFull ? '🚫 Event full' : '✨ Available'}
+                          </div>
+                          
+                          {currentUser ? (
+                            <Button
+                              size="sm"
+                              onClick={() => handleEventAction(event.id)}
+                              disabled={(!userJoined && isFull) || actionLoading === event.id}
+                              variant={userJoined ? 'danger' : isFull ? 'outline' : 'eco'}
+                              className={`transition-all duration-300 hover:scale-105 min-w-[100px] ${
+                                actionLoading === event.id ? 'animate-pulse' : ''
+                              }`}
+                            >
+                              {actionLoading === event.id ? (
+                                <div className="flex items-center gap-2">
+                                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                </div>
+                              ) : (
+                                userJoined ? 'Leave Event' : isFull ? 'Full' : 'Join Event'
+                              )}
+                            </Button>
+                          ) : (
+                            <Button
+                              size="sm"
+                              onClick={() => alert('🌱 Please sign in to join our eco community!')}
+                              variant="eco"
+                              className="transition-all duration-300 hover:scale-105"
+                            >
+                              🌿 Sign In to Join
+                            </Button>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  )
-                })}
-              </div>
+                    )
+                  })}
+                </div>
+              )}
             </div>
           </div>
         </div>
