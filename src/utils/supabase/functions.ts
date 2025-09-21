@@ -1,0 +1,1528 @@
+//functions to query supabase database CRUD OPS
+
+import { createClient } from "./client";
+const supabase = createClient();
+
+//crud ops for leaderboard
+
+export interface Leaderboard {
+  id: string;
+  rank: number;
+  name: string;
+  avatar?: string | null;
+  type?: string | null;
+  streak?: number | null;
+  level?: number | null;
+  created_at?: string | null;
+  user_id?: string | null;
+}
+
+
+export interface LeaderboardInsert {
+  rank: number;
+  name: string;
+  avatar?: string | null;
+  type?: string | null;
+  streak?: number | null;
+  level?: number | null;
+  user_id?: string | null;
+}
+
+export interface LeaderboardUpdate {
+  rank?: number;
+  name?: string;
+  avatar?: string | null;
+  type?: string | null;
+  streak?: number | null;
+  level?: number | null;
+  user_id?: string | null;
+}
+
+//crud ops for leaderboard
+
+//Create- insert a new leaderboard entry
+
+
+
+export async function createLeaderboardEntry(data:LeaderboardInsert){
+    const{data:result, error} = await supabase
+    .from('leaderboard')
+    .insert(data)
+    .select()
+    .single();
+
+    if(error){
+        console.error("Error creating leaderboard entry:", error);
+        return {data:null, error};
+    }
+    
+    return {data:result, error:null};
+}
+
+
+//Read- get all leaderboard entries
+
+export async function getAllLeaderboardEntries(){
+    const{data, error} = await supabase
+    .from('leaderboard')
+    .select('*')
+    .order('rank', { ascending: true });
+    if(error){
+        console.error("Error fetching leaderboard entries:", error);
+        return {data:[], error};
+    }
+    return {data, error:null};
+
+}
+
+
+
+//Read- get leaderboard entry by id
+
+
+export async function getLeaderboardEntryById(id : string){
+    const {data, error} = await supabase
+    .from('leaderboard')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+    if(error){
+        console.error("Error fetching leaderboard entry:", error);
+        return {data:null, error};
+    }
+
+    return {data, error:null};
+}
+
+
+//READ get leaderboard entries by user id
+
+
+export async function getLeaderboardEntriesByUserId(userId:string){
+    const {data, error} = await supabase
+    .from('leaderboard')
+    .select('*')
+    .eq('user_id', userId)
+    .order('rank', { ascending: true });
+
+    if(error){
+        console.error("Error fetching leaderboard entries:", error);
+        return {data:[], error};
+    }
+
+    return {data, error:null};
+}
+//Read - get top N leaderboard entries
+
+export async function getTopLeaderboardEntries(limit:number=10){
+    const {data, error} = await supabase
+    .from('leaderboard')
+    .select('*')
+    .order('rank', { ascending: true })
+    .limit(limit);
+
+    if(error){
+        console.error("Error fetching top leaderboard entries:", error);
+        return {data:[], error};
+    }
+
+    return {data, error:null};
+}
+
+
+//Update - updare leaderboard entry
+
+export async function updateLeaderboardEntry(id:string, updates: LeaderboardUpdate){
+    const {data, error} = await supabase
+    .from('leaderboard')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single();
+
+    if(error){
+        console.error("Error updating leaderboard entry:", error);
+        return {data:null, error};
+    }
+
+    return {data, error:null};
+}
+
+//Delete - delete leaderboard entry by id
+export async function deleteLeaderboardEntry(id:string){
+    const {error} = await supabase
+    .from('leaderboard')
+    .delete()
+    .eq('id', id);
+
+    if(error){
+        console.error("Error deleting leaderboard entry:", error);
+        return {data:null, error};
+    }
+
+    return {data:true, error:null};
+}
+
+//Delete all leaderboard entries for a user
+export async function deleteLeaderboardEntriesByUserId(userId:string){
+    const {error} = await supabase
+    .from('leaderboard')
+    .delete()
+    .eq('user_id', userId);
+
+    if(error){
+        console.error("Error deleting leaderboard entries:", error);
+        return {data:null, error};
+    }
+
+    return {data:true, error:null};
+}
+
+
+//crud ops for user_profiles table
+//interfaces
+export interface UserProfile {
+  id: string;
+  name: string;
+  title?: string | null;
+  about?: string | null;
+  profile_image_url?: string | null;
+  city?: string | null;
+  country?: string | null;
+  member_since?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+export interface UserProfileInsert{
+    id : string, 
+    name : string, 
+    title? : string|null,
+    about? : string | null,
+    profile_image_url? : string | null;
+    city? : string|null,
+    country?: string|null,
+    member_since? : string|null
+}
+
+
+export interface UserProfileUpdate{
+    name? : string;
+    title? : string|null;
+    about?:string|null;
+    profile_image_url? : string | null;
+    city? : string|null,
+    country? : string|null
+}
+//read all rows
+
+export async function getAllUserProfiles(){
+    const {data, error} = await supabase.
+    from('user_profiles')
+    .select('*')
+
+    .order('created_at', { ascending: false });
+    if(error){
+        console.error("Error fetching user profiles:", error);
+        return {data:[], error};
+    }
+    return {data, error:null};
+
+}
+
+export async function getUserProfileByUserId(userId: string){
+    const {data, error} = await supabase
+    .from('user_profiles')
+    .select('*')
+    .eq('id', userId)
+    .single();
+
+    if(error){
+        console.error("Error fetching user profile:", error);
+        return {data:null, error};
+    }
+
+    return {data, error:null};
+}
+
+
+
+//insert profile
+export async function createUserProfile(data:UserProfileInsert){
+    const { data: result, error} = await supabase
+    .from('user_profiles')
+    .insert(data)
+    .select()
+    .single();
+
+    if(error){
+        console.error("Error creating user profile:", error);
+        return {data: null, error};
+    }
+
+    return {data: result, error: null};
+}
+
+//update - update user profile
+export async function updateUserProfile(userId:string, updates : UserProfileUpdate){
+    const {data, error} = await supabase
+    .from('user_profiles')
+    .update({
+        ...updates,
+        updated_at : new Date().toISOString()
+    })
+    .eq('id', userId)
+    .select()
+    .single();
+
+    if(error){
+        console.error("Error updating user profile:", error);
+        return {data:null, error};
+    }
+
+    return {data, error:null};
+}
+
+export async function deleteUserProfile(userId:string){
+    const {error} = await supabase
+    .from('user_profiles')
+    .delete()
+    .eq('id', userId);
+
+    if(error){
+        console.error("Error delete user profile", error);
+        return {data: null, error};
+    }
+
+    return {data: true, error: null};
+}
+
+
+
+
+
+//Crud ops for userStats
+
+// Types for user statistics
+export interface UserStatistics{
+    id : string;
+    user_id?: string|null;
+    carbon_saved? : number | null;
+    volunteer_hours? : number|null;
+    cleanups_participated? : number|null;
+    quiz_correct_answers? : number|null;
+    xp? : number|null;
+    created_at? : string|null;
+    updated_at? : string | null
+}
+
+export interface UserStatisticsInsert {
+    user_id : string;
+    carbon_saved?: number|null;
+    volunteer_hours?: number | null;
+    cleanups_participated? : number | null;
+    quiz_correct_answers?: number | null;
+}
+
+export interface UserStatisticsUpdate {
+  carbon_saved?: number | null;
+  volunteer_hours?: number | null;
+  cleanups_participated?: number | null;
+  quiz_correct_answers?: number | null;
+}
+
+export async function createUserStatistics(data:UserStatisticsInsert){
+    const {data:result, error} = await supabase.
+    from('user_statistics')
+    .insert(data)
+    .select()
+    .single()
+
+    if(error){
+        console.error("Error Creating user Statistics", error)
+        return {data:null, error}
+    }
+
+    return {data:result, error:null};
+}
+
+//read-get user statistics by Id
+export async function getUserStatistics(userId: string) {
+    const { data, error } = await supabase
+        .from('user_statistics')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+
+    if (error) {
+        console.error("Error fetching user statistics:", error);
+        return { data: null, error };
+    }
+
+    return { data, error: null };
+}
+
+//Update-update user statistics
+export async function updateUserStatistics(userId:string, updates: UserStatisticsUpdate){
+    const{data, error} = await supabase
+    .from('user_statistics')
+    .update({
+        ...updates,
+        updated_at : new Date().toISOString()
+    })
+    .eq('user_id', userId)
+    .select()
+    .single();
+
+    if(error){
+        console.error("error updating user statistics", error)
+        return {data:null, error}
+    }
+    return {data, error:null}
+}
+
+
+//delete - delete user statistics
+export async function deleteUserStatistics(userId:string){
+    const{error} = await supabase.
+    from('user_statistics')
+    .delete()
+    .eq('user_id', userId);
+
+
+    if(error){
+        console.error("Error deleting user statisics", error)
+        return {data :null, error}
+    }
+
+
+    return{data:true, error:null}
+
+}
+
+//Universal Achievements Table 
+export async function fetchAllAchievements(){
+    
+const { data: achievements, error } = await supabase
+  .from('achievements')
+  .select('*')
+          
+if(error){
+    console.error("Error fetching all Achievemnts", error)
+    return {data:null, error};
+
+}
+return { data:achievements, error:null}
+}
+
+
+
+//Universal Badges Table
+export async function fetchAllBadges(){
+    const{data:badges, error} = await supabase
+    .from('badges')
+    .select('*')
+    if(error){
+        console.error("Error fetching all badges", error)
+        return {data:null, error}
+    }
+
+    return {data:badges, error:null}
+}
+
+
+
+//User badges crud
+
+export interface UserBadge{
+    id:number;
+    user_id:string;
+    badge_id:number;
+    awarded_at?:string|null
+}
+
+export interface UserBadgeInsert{
+    user_id: string;
+    badge_id : number;
+    awarded_at? : string|null
+}
+
+export interface UserBadgeUpdate{
+    awarded_at? : string|null
+}
+
+//get all user badges by user_id
+
+export async function fetchBadgesByUserId(userId:string){
+    const {data:badges, error} = await supabase.
+    from('user_badges')
+    .select('*')
+    .eq('user_id', userId)
+    .single();
+
+    if(error){
+        console.error("error obtaining user badges", error)
+        return{data:null, error}
+    }
+
+    return {data:badges, error:null}
+}
+
+//award a badge to the user
+
+export async function createUserBadge(data:UserBadgeInsert){
+    const {data:result, error} = await supabase
+    .from('user_badges')
+    .insert(data)
+    .select()
+    .single()
+
+    if(error){
+        console.error("Error creating user badge", error)
+        return {data:null, error};
+    }
+    return {data:result, error:null}
+
+}
+
+// Update - Update user badge
+export async function updateUserBadge(id: number, updates: UserBadgeUpdate) {
+  const { data, error } = await supabase
+    .from('user_badges')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error updating user badge:", error);
+    return { data: null, error };
+  }
+
+  return { data, error: null };
+}
+
+
+//Delete- remove a badge from user
+
+export async function deleteUserBadge(id:number){
+    const {error} = await supabase
+    .from('user_badges')
+    .delete()
+    .eq('id', id);
+
+    if(error){
+        console.error("Error deleting user badge: ", error)
+        return {data:null, error}
+    }
+    return {data:true, error:null}
+
+
+}
+
+
+//Crud ops for user impact details
+
+
+export interface UserImpactDetails{
+    id:string;
+    user_id?:string|null;
+    category_id?:number|null;
+    current_value:number;
+    last_updated? : string|null;
+    created_at? : string|null
+}
+
+export interface UserImpactDetailsInsert{
+    user_id:string;
+    category_id : number;
+    current_value : number;
+    last_updated? : string|null
+}
+
+export interface UserImpactDetailsUpdate{
+    current_value? : number;
+    last_updated? : string|null;
+}
+
+export async function createUserImpactDetails(data:UserImpactDetailsInsert){
+
+    const {data:result, error} = await supabase
+    .from('user_impact_details')
+    .insert(data)
+    .select()
+    .single()
+
+    if(error){
+        console.error("Error creating user impact details", error)
+        return {data:null, error};
+    }
+
+    return {data:result, error:null}
+
+}
+
+
+export async function updateUserImpactDetails(userId:string, categoryId:number, updates:UserImpactDetailsUpdate){
+    const{data, error} = await supabase
+    .from('user_impact_details')
+    .update({
+        ...updates,
+        last_updated:new Date().toISOString()
+    })
+    .eq('user_id', userId)
+    .eq('category_id', categoryId)
+    .select()
+    .single()
+
+
+    if(error){
+        console.error("Error updating user impact details", error)
+        return {data:null, error};
+    }
+
+
+    return {data, error:null}
+}
+
+
+export async function getUserImpactDetails(userId:string){
+    const {data, error} = await supabase.
+    from('user_impact_details')
+    .select('*')
+    .eq('user_id', userId)
+
+    if(error){
+        console.error("Error fetching user impact details")
+        return {data:[], error}
+    }
+
+    return {data, error:null}
+}
+
+export async function deleteUserImpactDetails(userId:string, categoryId:string){
+    const {error} = await supabase.
+    from('user_impact_details')
+    .delete()
+    .eq('user_id', userId)
+    .eq('category_id', categoryId);
+
+
+    if(error){
+        console.error("Error deleting user impact details", error)
+        return {data:null, error}
+    }
+
+    return {data:true, error:null}
+}
+
+
+
+export interface userImpactAchievement{
+    id:number;
+    user_id? : string|null;
+    impact_acheivement_id? : number|null
+}
+
+
+export interface UserImpactAchievementInsert{
+    user_id:string;
+    impact_achievement_id:number;
+}
+
+
+export interface UserImpactAchievementUpdate{
+    impact_achievement_id? : number;
+}
+
+
+///Create - award achievement to the user
+
+
+export async function createUserImpactAchievement(data: UserImpactAchievementInsert){
+    const {data:result, error} = await supabase.
+    from('user_impact_achievements')
+    .insert(data)
+    .select()
+    .single()
+
+
+    if(error){
+        console.error("Error creating user impact achievement", error)
+        return {data:null, error}
+
+    }
+
+    return {data:result, error:null}
+}
+
+export async function getUserImpactAchievemnt(userId:string){
+   const { data, error } = await supabase
+    .from('user_impact_achievements')
+    .select(`
+      *,
+      impact_achievements (
+        id,
+        title,
+        description,
+        category_id,
+        required_value,
+        achievement_type,
+        icon,
+        badge_color
+      )
+    `)
+    .eq('user_id', userId);
+
+    if(error){
+        console.error("Error fetching user impact  ", error)
+        return {data:[], error};
+    }
+    return {data, error:null}
+
+}
+
+export async function updateUserImpactAchievement(id:number, updates:UserImpactAchievementUpdate){
+
+    const {data, error} = await supabase
+    .from('user_impact_achievements')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single()
+
+    if(error){
+        console.error("Error updating user impact achievements", error)
+        return {data:null, error}
+    }
+
+    return {data, error:null}
+
+}
+
+
+//Delete
+
+export async function deleteUserImpactAchievement(id:number){
+    const {error} = await supabase
+    .from('user_impact_achievements')
+    .delete()
+    .eq('id', id)
+
+    if(error){
+        console.error("Error deleting user impact achievements", error)
+        return {data:null, error}
+    }
+
+    return {data:true, error:null}
+}
+
+
+
+//fetch all monthly goals
+export async function fetchAllMonthlyGoals(){
+    const {data:goals, error} = await supabase
+    .from('monthly_goals')
+    .select('*')
+
+    if(error){
+        console.error("Error fetching all monthly goals", error)
+        return {data:[], error}
+    }
+
+    return {data:goals, error:null}
+}
+
+
+//Types for user monthly goals
+
+export interface UsersMonthlyGoal{
+    id:number;
+    user_id:string;
+    goal_id:number;
+    custom_target?:number|null;
+    progress? : number|null;
+    month:string;
+}
+
+export interface UsersMonthlyGoalInsert{
+    user_id:string;
+    goal_id:number;
+    custom_target?:number|null;
+    progress?:number|null;
+    month:string
+}
+
+export interface UsersMonthlyGoalUpdate{
+    custom_target?:number|null;
+    progress?:number|null
+}
+
+//Create user monthly goal
+
+export async function createUsersMonthlyGoal(data: UsersMonthlyGoalInsert) {
+  const { data: result, error } = await supabase
+    .from('users_monthly_goals')
+    .insert(data)
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error creating users monthly goal:", error);
+    return { data: null, error };
+  }
+
+  return { data: result, error: null };
+}
+
+
+// Read - Get user's monthly goals for a specific month
+export async function getUsersMonthlyGoals(userId: string, month: string) {
+  const { data, error } = await supabase
+    .from('users_monthly_goals')
+    .select(`
+      *,
+      monthly_goals (
+        id,
+        title,
+        description,
+        default_target,
+        unit,
+        category
+      )
+    `)
+    .eq('user_id', userId)
+    .eq('month', month);
+
+  if (error) {
+    console.error("Error fetching users monthly goals:", error);
+    return { data: [], error };
+  }
+
+  return { data, error: null };
+}
+
+
+export async function updateUsersMonthlyGoal(id:number, updates:UsersMonthlyGoalUpdate){
+    const{data, error} = await supabase.
+    from('users_monthly_goals')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single()
+
+
+    if(error){
+        console.error("Erorr updating users monthly goals", error)
+        return {data:null, error}
+    }
+
+    return {data, error:null}
+}
+
+export async function deleteUsersMonthlyGoal(id: number) {
+  const { error } = await supabase
+    .from('users_monthly_goals')
+    .delete()
+    .eq('id', id);
+
+  if (error) {
+    console.error("Error deleting users monthly goal:", error);
+    return { data: null, error };
+  }
+
+  return { data: true, error: null };
+}
+
+// Enhanced leaderboard function with user profiles and statistics
+export async function getLeaderboardWithUserData() {
+  const { data, error } = await supabase
+  .from('leaderboard')
+  .select(`
+    *,
+    user_statistics(
+      carbon_saved,
+      volunteer_hours,
+      cleanups_participated,
+      quiz_correct_answers,
+      xp
+    )
+  `)
+  .order('rank', { ascending: true });
+
+console.log("Leaderboard with stats:", data);
+    if (error) {
+        console.error("Error fetching leaderboard with user data:", error);
+        return { data: [], error };
+    }
+
+    return { data, error: null };
+}
+
+export async function getLeaderboardWithXp(){
+    const { data, error } = await supabase
+        .from('leaderboard')
+        .select(`
+            *,
+            user_statistics:user_statistics_id(
+                carbon_saved,
+                volunteer_hours,
+                cleanups_participated,
+                xp
+            )
+        `)
+        .order('rank', { ascending: true });
+
+    console.log("Leaderboard with stats:", data);
+    if (error) {
+        console.error("Error fetching leaderboard with user data:", error);
+        return { data: [], error };
+    }
+
+    return { data, error: null };
+}
+
+// Get leaderboard sorted by specific metric(Arpit to work on the computation of points logic)
+export async function getLeaderboardByMetric(metric: 'carbon' | 'hours' | 'cleanups' | 'points') {
+    let orderColumn = 'carbon_saved';
+    
+    switch (metric) {
+        case 'carbon':
+            orderColumn = 'carbon_saved';
+            break;
+        case 'hours':
+            orderColumn = 'volunteer_hours';
+            break;
+        case 'cleanups':
+            orderColumn = 'cleanups_participated';
+            break;
+        case 'points':
+            // For points, we'll need to calculate on the client side since it's computed
+            orderColumn = 'carbon_saved'; // Default to carbon for now
+            break;
+    }
+
+    const { data, error } = await supabase
+        .from('leaderboard')
+        .select(`
+            *,
+            user_statistics (
+                carbon_saved,
+                volunteer_hours,
+                cleanups_participated
+            )
+        `)
+        .order(`user_statistics(${orderColumn})`, { ascending: false });
+
+    if (error) {
+        console.error("Error fetching leaderboard by metric:", error);
+        return { data: [], error };
+    }
+
+    return { data, error: null };
+}
+
+// Get community impact statistics
+export async function getCommunityStats() {
+    try {
+        // Get total carbon saved
+        const { data: carbonData, error: carbonError } = await supabase
+            .from('user_statistics')
+            .select('carbon_saved');
+
+        // Get total volunteer hours
+        const { data: hoursData, error: hoursError } = await supabase
+            .from('user_statistics')
+            .select('volunteer_hours');
+
+        // Get total cleanups
+        const { data: cleanupsData, error: cleanupsError } = await supabase
+            .from('user_statistics')
+            .select('cleanups_participated');
+
+        const { data: xpData, error: xpError } = await supabase
+            .from('user_statistics')
+            .select('xp');
+
+        // Get active users count
+        const { count: usersCount, error: usersError } = await supabase
+            .from('user_profiles')
+            .select('*', { count: 'exact', head: true });
+
+        if (carbonError || hoursError || cleanupsError || xpError || usersError) {
+            console.error("Error fetching community stats");
+            return {
+                data: {
+                    total_carbon_saved: 0,
+                    total_volunteer_hours: 0,
+                    total_cleanups: 0,
+                    total_xp: 0,
+                    active_users: 0
+                },
+                error: carbonError || hoursError || cleanupsError || xpError || usersError
+            };
+        }
+
+        const totalCarbon = carbonData?.reduce((sum, item) => sum + (item.carbon_saved || 0), 0) || 0;
+        const totalHours = hoursData?.reduce((sum, item) => sum + (item.volunteer_hours || 0), 0) || 0;
+        const totalCleanups = cleanupsData?.reduce((sum, item) => sum + (item.cleanups_participated || 0), 0) || 0;
+        const totalXp = xpData?.reduce((sum, item) => sum + (item.xp || 0), 0) || 0;
+
+        return {
+            data: {
+                total_carbon_saved: totalCarbon,
+                total_volunteer_hours: totalHours,
+                total_cleanups: totalCleanups,
+                total_xp: totalXp,
+                active_users: usersCount || 0
+            },
+            error: null
+        };
+    } catch (error) {
+        console.error("Error in getCommunityStats:", error);
+        return {
+            data: {
+                total_carbon_saved: 0,
+                total_volunteer_hours: 0,
+                total_cleanups: 0,
+                total_xp: 0,
+                active_users: 0
+            },
+            error
+        };
+    }
+}
+
+
+
+//fetch all achievements
+
+
+//CRUD OPS FOR LITTER and LITTER_SUMMARY
+
+
+
+export interface UserLitterReport {
+  id: string;
+  user_id: string;
+  litter_type: string;
+  confidence: number;
+  quantity: string;
+  recyclable: boolean;
+  hazard_level: string;
+  recommendations: string[];
+  environmental_impact: {
+    decompositionTime?: string;
+    carbonFootprint?: string;
+    wildlifeRisk?: string;
+    [key: string]: any;
+  };
+  created_at?: string | null;
+}
+
+
+export interface UserLitterReportInsert {
+  user_id: string;
+  litter_type: string;
+  confidence: number;
+  quantity: string;
+  recyclable: boolean;
+  hazard_level: string;
+  recommendations: string[];
+  environmental_impact: {
+    decompositionTime?: string;
+    carbonFootprint?: string;
+    wildlifeRisk?: string;
+    [key: string]: any;
+  };
+}
+
+export interface UserLitterReportUpdate {
+  litter_type?: string;
+  confidence?: number;
+  quantity?: string;
+  recyclable?: boolean;
+  hazard_level?: string;
+  recommendations?: string[];
+  environmental_impact?: {
+    decompositionTime?: string;
+    carbonFootprint?: string;
+    wildlifeRisk?: string;
+    [key: string]: any;
+  };
+}
+
+export async function createUserLitterReport(data: UserLitterReportInsert) {
+    const { data: result, error } = await supabase
+        .from('user_litter_reports')
+        .insert(data)
+        .select()
+        .single();
+
+    if (error) {
+        console.error("Error creating user litter report:", error);
+        return { data: null, error };
+    }
+
+    return { data: result, error: null };
+}
+
+//Read - get all litter reports for a specific user
+
+export async function getUserLitterReports(userId:string){
+    const {data, error} = await supabase
+    .from('user_litter_reports')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', {ascending:false});
+
+    if (error) {
+        console.error("Error fetching user litter reports:", error);
+        return { data: null, error };
+    }
+
+    return { data, error: null };
+}
+
+//REad - get specific litter report by id
+export async function getUserLitterReportById(id:string){
+    const{data, error} = await supabase.
+    from('user_litter_reports')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+    if (error) {
+        console.error("Error fetching user litter report by id:", error);
+        return { data: null, error };
+    }
+
+    return { data, error: null };
+}
+
+
+//UPDATE- update a litter report
+
+export async function updateUserLitterReport(id:string, updates:UserLitterReportUpdate){
+    const {data, error} = await supabase
+    .from('user_litter_reports')
+    .update(updates)
+    .eq('id', id)
+    .single();
+
+    if (error) {
+        console.error("Error updating user litter report:", error);
+        return { data: null, error };
+    }
+
+    return { data, error: null };
+}
+
+//Delete - delete a litter report
+export async function deleteUserLitterReport(id: string) {
+  const { error } = await supabase
+    .from('user_litter_reports')
+    .delete()
+    .eq('id', id);
+
+  if (error) {
+    console.error("Error deleting user litter report:", error);
+    return { data: null, error };
+  }
+
+  return { data: true, error: null };
+}
+
+
+
+
+
+//crud ops for litter summary
+
+export interface UserLitterSummary {
+  id?: string;
+  user_id: string;
+  total_items: number;
+  average_accuracy: number;
+  last_updated?: string | null;
+}
+
+export interface UserLitterSummaryInsert {
+  user_id: string;
+  total_items: number;
+  average_accuracy: number;
+}
+
+export interface UserLitterSummaryUpdate {
+  total_items?: number;
+  average_accuracy?: number;
+}
+
+
+//create - insert a new litter summary
+export async function createUserLitterSummary(data: UserLitterSummaryInsert) {
+  const { data: result, error } = await supabase
+    .from('user_litter_summary')
+    .insert({
+      ...data,
+      last_updated: new Date().toISOString()
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error creating user litter summary:", error);
+    return { data: null, error };
+  }
+
+  return { data: result, error: null };
+}
+//upsert litter summary
+export async function upsertUserLitterSummary(data: UserLitterSummaryUpdate) {
+  const { data: result, error } = await supabase
+    .from('user_litter_summary')
+    .upsert({
+      ...data,
+      last_updated: new Date().toISOString()
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error upserting user litter summary:", error);
+    return { data: null, error };
+  }
+
+  return { data: result, error: null };
+}
+
+
+
+
+
+// CREATE OR UPDATE - Upsert litter summary (since user_id is unique)
+
+//get litter summaries for the specific user
+export async function getUserLitterSummaries(userId:string){
+    const { data, error } = await supabase
+    .from('user_litter_summary')
+    .select('*')
+    .eq('user_id', userId);
+
+    if (error) {
+        console.error("Error fetching user litter summaries:", error);
+        return { data: null, error };
+    }
+
+    return { data, error: null };
+}
+
+// READ - Get all litter summaries (for admin purposes)
+export async function getAllLitterSummaries() {
+  const { data, error } = await supabase
+    .from('user_litter_summary')
+    .select('*')
+    .order('total_items', { ascending: false });
+
+  if (error) {
+    console.error("Error fetching all litter summaries:", error);
+    return { data: [], error };
+  }
+
+  return { data, error: null };
+}
+
+//update - update litter summary
+export async function updateUserLitterSummary(userId: string, updates: UserLitterSummaryUpdate){
+    const{data, error} = await supabase
+    .from('user_litter_summary')
+    .update({
+        ...updates,
+        last_updated: new Date().toISOString()
+    })
+    .eq('user_id', userId)
+    .select()
+    .single();
+
+    if (error) {
+        console.error("Error updating user litter summary:", error);
+        return { data: null, error };
+    }
+
+    return { data, error: null };
+}
+
+//delete - delete litter summary
+
+export async function deleteUserLitterSummary(userId:string){
+    const {error} = await supabase.
+    from('user_litter_summary')
+    .delete()
+    .eq('user_id', userId)
+
+    if(error){
+        console.error("Error deleting user litter summary:", error)
+        return {data:null, error};
+    }
+}
+
+
+//postgREST for user_quiz_report
+export interface UserQuizReport{
+    id:string;
+    created_at : string;
+    user_id : string | null;
+    correct_answers: number|null
+}
+
+export interface UserQuizReportInsert{
+    user_id? : string | null;
+    correct_answers? : number|null;
+}
+
+export interface UserQuizReportUpdate{
+    correct_answers? : number | null
+}
+
+//CREATE - Insert a new quiz report
+
+export async function createUserQuizReport(data:UserQuizReportInsert){
+    const { data: result, error } = await supabase
+    .from('user_quiz_report')
+    .insert({
+        ...data,
+    })
+    .select()
+    .single();
+
+    if (error) {
+        console.error("Error creating user quiz report:", error);
+        return { data: null, error };
+    }
+
+    return { data: result, error: null };
+}
+
+//Read - get all quiz reports for a specific user
+
+export async function getUserQuizReports(userId:string){
+    const {data, error} = await supabase
+    .from('user_quiz_report')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', {ascending:false})
+
+    if(error){
+        console.error("Error fetching user quiz reports", error)
+        return {data:[], error}
+    }
+
+    return {data, error:null}
+}
+
+
+export async function updateUserQuizReport(id:string, updates:UserQuizReportUpdate){
+    const {data, error} = await supabase
+    .from('user_quiz_report')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single()
+
+    if(error){
+        console.error("Error updating user quiz report:", error)
+        return {data:null, error};
+    }
+
+    return {data, error:null}
+
+}
+
+//Delete - delete a quiz report by id
+export async function deleteUserQuizReport(id:string){
+    const {error} = await supabase
+    .from('user_quiz_report')
+    .delete()
+    .eq('id', id)
+
+    if(error){
+        console.error("Error deleting user quiz report:", error)
+        return {data:null, error};
+    }
+
+    return {data: true, error:null};
+}
+
+//postgREST for CarbonClash
+export async function persistQuizReport(userId: string, quiz_correct_answers: number){
+    // First, check if user statistics record exists
+    const { data: existingRecord, error: fetchError } = await supabase
+        .from('user_statistics')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+
+    if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 is "no rows returned"
+        console.error("Error checking existing user statistics:", fetchError);
+        return { data: null, error: fetchError };
+    }
+
+    let result;
+    if (existingRecord) {
+        // Update existing record - ADD to existing quiz_correct_answers
+        const newTotal = (existingRecord.quiz_correct_answers || 0) + quiz_correct_answers;
+        result = await supabase
+            .from('user_statistics')
+            .update({ 
+                quiz_correct_answers: newTotal,
+                updated_at: new Date().toISOString()
+            })
+            .eq('user_id', userId)
+            .select();
+    } else {
+        // Create new record with just the required fields
+        result = await supabase
+            .from('user_statistics')
+            .insert({ 
+                user_id: userId,
+                quiz_correct_answers: quiz_correct_answers,
+                updated_at: new Date().toISOString()
+            })
+            .select();
+    }
+
+    if (result.error) {
+        console.error("Error persisting quiz report:", result.error);
+        return { data: null, error: result.error };
+    }
+
+    return { data: result.data, error: null };
+}
+
+
+//Carbon Tracker postgREST functions
+
+export interface CarbonActivity{
+    id:string;
+    user_id:string;
+    type:string;
+    date:string;
+    quantity:number;
+    carbon_saved:number;
+    created_at?:string|null;
+    updated_at?:string|null;
+}
+
+export interface CarbonActivityInsert{
+    user_id:string;
+    type:string;
+    date?:string;
+    quantity:number;
+    carbon_saved:number;
+
+}
+
+export interface CarbonActivityUpdate{
+    type?:string;
+    date?:string;
+    quantity?:number;
+    carbon_saved?:number;
+}
+
+//Create - insert a new carbon activity
+export async function createCarbonActivity(data:CarbonActivityInsert){
+    const {data:result, error} = await supabase
+    .from('carbon_activities')
+    .insert(data)
+    .select()
+    .single();
+    if(error){
+        console.error("Error creating carbon activity", error)
+        return {data:null, error}
+    }
+    return {data:result, error:null}
+}
+
+//Read - get all carbon activities for a specific user
+export async function getUserCarbonActivities(userId:string){
+    const {data, error} = await supabase
+    .from('carbon_activities')
+    .select('*')
+    .eq('user_id', userId )
+    .order('date', {ascending:false});
+    if(error){
+        console.error("Error fetching user carbon activities", error)
+        return {data:[], error}
+    }
+    return {data, error:null}
+}
+
+//Read-get Carbon activities by date range
+
+export async function getCarbonActivitiesByDateRange(userId:string, startDate:string, endDate:string){
+    const {data, error} = await supabase
+    .from('carbon_activities')
+    .select('*')
+    .eq('user_id', userId)
+    .gte('date', startDate)
+    .lte('date', endDate)
+    .order('date', {ascending:false});
+    if(error){
+        console.error("Error fetching carbon activities by date range", error)
+        return {data:[], error}
+    }
+    return {data, error:null}
+}
+
+
+//Read - get total carbon saved for user
+export async function getTotalCarbonSaved(userId: string) {
+  const { data, error } = await supabase
+    .from('carbon_activities')
+    .select('carbon_saved')
+    .eq('user_id', userId);
+
+  if (error) {
+    console.error("Error fetching total carbon saved:", error);
+    return { data: 0, error };
+  }
+
+  const total = data.reduce((sum, activity) => sum + activity.carbon_saved, 0);
+  return { data: total, error: null };
+}
+
+
+//Get monthly carbon savings
+export async function updateCarbonActivity(id: string, updates: CarbonActivityUpdate) {
+  const { data, error } = await supabase
+    .from('carbon_activities')
+    .update({
+      ...updates,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error updating carbon activity:", error);
+    return { data: null, error };
+  }
+
+  return { data, error: null };
+}
+
+export async function deleteCarbonActivity(id: string) {
+  const { error } = await supabase
+    .from('carbon_activities')
+    .delete()
+    .eq('id', id);
+
+  if (error) {
+    console.error("Error deleting carbon activity:", error);
+    return { data: null, error };
+  }
+
+  return { data: true, error: null };
+}
