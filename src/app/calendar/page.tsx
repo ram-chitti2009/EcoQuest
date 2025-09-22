@@ -11,10 +11,10 @@ export default function CalendarPage() {
     return <LoadingScreen />;
   }
   return (
-    <div className="flex h-screen">
+    <div className="flex min-h-screen">
       <SidebarWrapper loading={false} />
-      <main className="flex-1 overflow-hidden">
-        <div className="h-full">
+      <main className="flex-1 overflow-y-auto">
+        <div className="min-h-full">
           <CalendarClient />
         </div>
       </main>

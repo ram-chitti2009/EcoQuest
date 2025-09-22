@@ -1,1 +1,10 @@
+<<<<<<< HEAD
 {}
+=======
+{
+  "/_app": "pages/_app.js",
+  "/_document": "pages/_document.js",
+  "/_error": "pages/_error.js",
+  "/api/learning-patch": "pages/api/learning-patch.js"
+}
+>>>>>>> e600891bddacf028a16aa34dd65df2a3280c77df
