@@ -11,6 +11,15 @@ import { Modal, ModalContent, ModalHeader } from "../ui/modal"
 import { Select } from "../ui/select"
 import EventCardsGrid from "./event-cards-grid"
 import MapWrapper from "./map-wrapper"; // Declare the MapWrapper variable
+// Add these imports at the top of your file
+import { 
+  getAllUnifiedEvents,
+  createUnifiedEvent,
+  joinUnifiedEvent,
+  leaveUnifiedEvent,
+  checkUserEventParticipation,
+  type UnifiedEvent 
+} from '@/utils/supabase/functions'
 
 interface Participant {
   id: string
@@ -44,94 +53,6 @@ interface CleanupEvent {
   createdBy?: string // User ID of the event creator
 }
 
-const sampleEvents: CleanupEvent[] = [
-  {
-    id: "1",
-    title: "Central Park Cleanup",
-    description:
-      "Join us for a morning cleanup of Central Park. We'll focus on the areas around the lake and walking paths.",
-    date: "2025-09-15",
-    time: "09:00",
-    duration: "3 hours",
-    location: {
-      name: "Central Park",
-      address: "Central Park, New York, NY 10024",
-      lat: 40.785091,
-      lng: -73.968285,
-    },
-    organizer: "NYC Parks Department",
-    participants: [
-      { id: "1", name: "Sarah Johnson", role: "organizer", joinedAt: "2025-09-01" },
-      { id: "2", name: "Mike Chen", role: "coordinator", joinedAt: "2025-09-03" },
-      { id: "3", name: "Emma Davis", role: "volunteer", joinedAt: "2025-09-05" },
-      { id: "4", name: "John Smith", role: "volunteer", joinedAt: "2025-09-07" },
-    ],
-    maxParticipants: 50,
-    category: "park",
-    status: "upcoming",
-    equipmentProvided: ["Gloves", "Trash bags", "Grabbers", "Safety vests"],
-    requirements: ["Comfortable walking shoes", "Water bottle", "Sun protection"],
-    expectedTrashCollection: "200 lbs",
-    carbonOffset: "50 kg CO2",
-  },
-  {
-    id: "2",
-    title: "Brooklyn Bridge Cleanup",
-    description:
-      "Help keep the iconic Brooklyn Bridge and surrounding areas clean. Perfect for photography enthusiasts!",
-    date: "2025-09-18",
-    time: "14:00",
-    duration: "2 hours",
-    location: {
-      name: "Brooklyn Bridge",
-      address: "Brooklyn Bridge, New York, NY 10038",
-      lat: 40.706086,
-      lng: -73.996864,
-    },
-    organizer: "Brooklyn Community Group",
-    participants: [
-      { id: "5", name: "Alex Rivera", role: "organizer", joinedAt: "2025-08-28" },
-      { id: "6", name: "Lisa Wang", role: "volunteer", joinedAt: "2025-09-02" },
-    ],
-    maxParticipants: 30,
-    category: "street",
-    status: "upcoming",
-    equipmentProvided: ["Gloves", "Trash bags", "First aid kit"],
-    requirements: ["Comfortable shoes", "Photo ID for bridge access"],
-    expectedTrashCollection: "100 lbs",
-    carbonOffset: "25 kg CO2",
-  },
-  {
-    id: "3",
-    title: "Hudson River Shore Cleanup",
-    description: "Coastal cleanup along the Hudson River. Help protect marine life and enjoy beautiful river views.",
-    date: "2025-09-22",
-    time: "10:00",
-    duration: "4 hours",
-    location: {
-      name: "Hudson River Park",
-      address: "Hudson River Park, New York, NY 10014",
-      lat: 40.72903,
-      lng: -74.009667,
-    },
-    organizer: "Hudson River Conservation",
-    participants: [
-      { id: "7", name: "Maria Gonzalez", role: "organizer", joinedAt: "2025-08-25" },
-      { id: "8", name: "David Kim", role: "coordinator", joinedAt: "2025-08-30" },
-      { id: "9", name: "Anna Brown", role: "volunteer", joinedAt: "2025-09-01" },
-      { id: "10", name: "Tom Wilson", role: "volunteer", joinedAt: "2025-09-04" },
-      { id: "11", name: "Rachel Green", role: "volunteer", joinedAt: "2025-09-06" },
-    ],
-    maxParticipants: 75,
-    category: "river",
-    status: "upcoming",
-    equipmentProvided: ["Gloves", "Trash bags", "Recycling bags", "Data collection sheets", "Refreshments"],
-    requirements: ["Closed-toe shoes", "Sun protection", "Water bottle", "Weather-appropriate clothing"],
-    expectedTrashCollection: "500 lbs",
-    carbonOffset: "125 kg CO2",
-  },
-]
-
 const categoryColors = {
   beach: "#3B82F6",
   park: "#10B981",
@@ -144,6 +65,55 @@ const statusColors = {
   upcoming: "#10B981",
   ongoing: "#F59E0B",
   completed: "#6B7280",
+}
+
+// Transform UnifiedEvent to CleanupEvent format
+const transformUnifiedToCleanup = (event: UnifiedEvent): CleanupEvent => ({
+  id: event.id.toString(),
+  title: event.title,
+  description: event.description || '',
+  date: event.date,
+  time: event.time,
+  duration: event.duration || '2 hours',
+  location: {
+    name: event.location_name || event.location,
+    address: event.location_address || event.location,
+    lat: event.lat || 40.7589,
+    lng: event.lng || -73.9851,
+  },
+  organizer: event.organizer || 'Unknown',
+  participants: [], // Will be populated separately
+  maxParticipants: event.max_participants,
+  category: mapCategoryToCleanup(event.category),
+  status: (event.status as "upcoming" | "ongoing" | "completed") || 'upcoming',
+  equipmentProvided: event.equipment_provided || [],
+  requirements: event.requirements || [],
+  expectedTrashCollection: event.expected_trash_collection || '50 lbs',
+  carbonOffset: event.carbon_offset || '10 kg CO2',
+  createdBy: event.user_id || undefined,
+})
+
+// Map unified categories to cleanup categories
+const mapCategoryToCleanup = (category: string): CleanupEvent["category"] => {
+  const mapping: Record<string, CleanupEvent["category"]> = {
+    cleanup: 'park',
+    workshop: 'park', 
+    planting: 'forest',
+    seminar: 'park'
+  }
+  return mapping[category] || 'park'
+}
+
+// Helper function to map cleanup categories back to unified categories
+const mapCleanupToUnified = (category: CleanupEvent["category"]): 'cleanup' | 'workshop' | 'planting' | 'seminar' => {
+  const mapping: Record<CleanupEvent["category"], 'cleanup' | 'workshop' | 'planting' | 'seminar'> = {
+    park: 'cleanup',
+    beach: 'cleanup',
+    street: 'cleanup', 
+    forest: 'planting',
+    river: 'cleanup'
+  }
+  return mapping[category] || 'cleanup'
 }
 
 const transformEventForCards = (event: CleanupEvent) => ({
@@ -164,7 +134,9 @@ const transformEventForCards = (event: CleanupEvent) => ({
 
 export default function CommunityCleanupMap() {
   const [selectedEvent, setSelectedEvent] = useState<CleanupEvent | null>(null)
-  const [events, setEvents] = useState<CleanupEvent[]>(sampleEvents)
+  const [events, setEvents] = useState<CleanupEvent[]>([])
+  const [loading, setLoading] = useState(true)
+  const [userParticipations, setUserParticipations] = useState<Record<string, boolean>>({})
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedCategory, setSelectedCategory] = useState<string>("all")
   const [selectedDistance, setSelectedDistance] = useState<string>("all")
@@ -211,6 +183,39 @@ export default function CommunityCleanupMap() {
     }
     getCurrentUser()
   }, [])
+
+  // Fetch events from database
+  useEffect(() => {
+    const fetchEvents = async () => {
+      setLoading(true)
+      try {
+        const { data, error } = await getAllUnifiedEvents()
+        if (error) {
+          console.error('Error fetching events:', error)
+        } else {
+          console.log(`Fetched ${data?.length || 0} unified events:`, data)
+          const transformedEvents = (data || []).map(transformUnifiedToCleanup)
+          setEvents(transformedEvents)
+          
+          // Check user participation for each event
+          if (currentUserId && data) {
+            const participations: Record<string, boolean> = {}
+            for (const event of data) {
+              const hasJoined = await checkUserEventParticipation(event.id, currentUserId)
+              participations[event.id.toString()] = hasJoined
+            }
+            setUserParticipations(participations)
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching events:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchEvents()
+  }, [currentUserId])
 
   const filteredEvents = events.filter((event) => {
     const matchesSearch =
@@ -276,141 +281,126 @@ export default function CommunityCleanupMap() {
     }
   }
 
-  const handleJoinEvent = (eventId: string) => {
-    setEvents((prevEvents) =>
-      prevEvents.map((event) => {
-        if (event.id === eventId && event.participants.length < event.maxParticipants) {
-          const newParticipant: Participant = {
-            id: Date.now().toString(),
-            name: "You",
-            role: "volunteer",
-            joinedAt: new Date().toISOString().split("T")[0],
-          }
-          return {
-            ...event,
-            participants: [...event.participants, newParticipant],
+  const handleJoinEvent = async (eventId: string) => {
+    if (!currentUserId) {
+      alert('Please sign in to join events')
+      return
+    }
+
+    const isJoined = userParticipations[eventId]
+    
+    try {
+      let result
+      if (isJoined) {
+        result = await leaveUnifiedEvent(Number(eventId), currentUserId)
+      } else {
+        result = await joinUnifiedEvent(Number(eventId), currentUserId)
+      }
+
+      if (result.success) {
+        // Update local participation state
+        setUserParticipations(prev => ({
+          ...prev,
+          [eventId]: !isJoined
+        }))
+
+        // Refresh events to get updated participant count
+        const { data } = await getAllUnifiedEvents()
+        if (data) {
+          const transformedEvents = data.map(transformUnifiedToCleanup)
+          setEvents(transformedEvents)
+        }
+
+        // Update selected event if it's the one being joined/left
+        if (selectedEvent?.id === eventId) {
+          const updatedEvent = events.find(e => e.id === eventId)
+          if (updatedEvent) {
+            setSelectedEvent(updatedEvent)
           }
         }
-        return event
-      }),
-    )
-
-    if (selectedEvent && selectedEvent.id === eventId) {
-      const updatedEvent = events.find((e) => e.id === eventId)
-      if (updatedEvent) {
-        setSelectedEvent({
-          ...updatedEvent,
-          participants: [
-            ...updatedEvent.participants,
-            {
-              id: Date.now().toString(),
-              name: "You",
-              role: "volunteer",
-              joinedAt: new Date().toISOString().split("T")[0],
-            },
-          ],
-        })
       }
+
+      alert(result.message)
+    } catch (error) {
+      console.error('Error with event action:', error)
+      alert('An error occurred. Please try again.')
     }
   }
 
-  const handleCreateEvent = () => {
+  const handleCreateEvent = async () => {
     if (!newEvent.title || !newEvent.date || !newEvent.time || !newEvent.locationName) {
       alert("Please fill in all required fields")
       return
     }
 
-    const event: CleanupEvent = {
-      id: Date.now().toString(),
+    if (!currentUserId) {
+      alert("You must be logged in to create events")
+      return
+    }
+
+    const eventData = {
       title: newEvent.title,
       description: newEvent.description,
       date: newEvent.date,
       time: newEvent.time,
+      location: newEvent.locationName,
+      category: mapCleanupToUnified(newEvent.category),
+      max_participants: newEvent.maxParticipants,
+      user_id: currentUserId,
       duration: newEvent.duration || "2 hours",
-      location: {
-        name: newEvent.locationName,
-        address: newEvent.locationAddress,
-        lat: Number.parseFloat(newEvent.lat) || 40.7589,
-        lng: Number.parseFloat(newEvent.lng) || -73.9851,
-      },
+      location_name: newEvent.locationName,
+      location_address: newEvent.locationAddress,
+      lat: newEvent.lat ? Number.parseFloat(newEvent.lat) : undefined,
+      lng: newEvent.lng ? Number.parseFloat(newEvent.lng) : undefined,
       organizer: newEvent.organizer || "You",
-      participants: [
-        {
-          id: "creator",
-          name: newEvent.organizer || "You",
-          role: "organizer",
-          joinedAt: new Date().toISOString().split("T")[0],
-        },
-      ],
-      maxParticipants: newEvent.maxParticipants,
-      category: newEvent.category,
-      status: "upcoming",
-      equipmentProvided: newEvent.equipmentProvided
-        .split(",")
-        .map((item) => item.trim())
-        .filter(Boolean),
-      requirements: newEvent.requirements
-        .split(",")
-        .map((item) => item.trim())
-        .filter(Boolean),
-      expectedTrashCollection: newEvent.expectedTrashCollection || "50 lbs",
-      carbonOffset: newEvent.carbonOffset || "10 kg CO2",
-      createdBy: currentUserId || undefined,
+      status: 'upcoming' as const,
+      equipment_provided: newEvent.equipmentProvided.split(',').map(s => s.trim()).filter(Boolean),
+      requirements: newEvent.requirements.split(',').map(s => s.trim()).filter(Boolean),
+      expected_trash_collection: newEvent.expectedTrashCollection || "50 lbs",
+      carbon_offset: newEvent.carbonOffset || "10 kg CO2"
     }
 
-    setEvents((prev) => [...prev, event])
-    setIsCreateEventModalOpen(false)
-    setNewEvent({
-      title: "",
-      description: "",
-      date: "",
-      time: "",
-      duration: "",
-      locationName: "",
-      locationAddress: "",
-      lat: "",
-      lng: "",
-      organizer: "",
-      category: "park",
-      maxParticipants: 20,
-      equipmentProvided: "",
-      requirements: "",
-      expectedTrashCollection: "",
-      carbonOffset: "",
-    })
-  }
-
-  // Delete event function - only allows deletion if user created the event
-  const handleDeleteEvent = (eventId: string) => {
-    const eventToDelete = events.find(event => event.id === eventId)
-    
-    if (!eventToDelete) {
-      alert("Event not found")
-      return
-    }
-
-    if (!currentUserId) {
-      alert("You must be logged in to delete events")
-      return
-    }
-
-    if (eventToDelete.createdBy !== currentUserId) {
-      alert("You can only delete events that you created")
-      return
-    }
-
-    if (window.confirm(`Are you sure you want to delete "${eventToDelete.title}"?`)) {
-      setEvents(prev => prev.filter(event => event.id !== eventId))
-      if (selectedEvent?.id === eventId) {
-        setSelectedEvent(null)
+    try {
+      const { data, error } = await createUnifiedEvent(eventData)
+      if (error) {
+        console.error('Error creating event:', error)
+        alert('Failed to create event')
+      } else {
+        // Refresh events list
+        const { data: allEvents } = await getAllUnifiedEvents()
+        if (allEvents) {
+          const transformedEvents = allEvents.map(transformUnifiedToCleanup)
+          setEvents(transformedEvents)
+        }
+        setIsCreateEventModalOpen(false)
+        // Reset form
+        setNewEvent({
+          title: "",
+          description: "",
+          date: "",
+          time: "",
+          duration: "",
+          locationName: "",
+          locationAddress: "",
+          lat: "",
+          lng: "",
+          organizer: "",
+          category: "park",
+          maxParticipants: 20,
+          equipmentProvided: "",
+          requirements: "",
+          expectedTrashCollection: "",
+          carbonOffset: "",
+        })
+        alert('Event created successfully!')
       }
+    } catch (error) {
+      console.error('Error creating event:', error)
+      alert('Failed to create event')
     }
   }
 
-  // Check if current user can delete an event
-  const canDeleteEvent = (event: CleanupEvent) => {
-    return currentUserId && event.createdBy === currentUserId
-  }
+
 
   return (
     <div className="min-h-screen bg-stone-50">
@@ -528,7 +518,7 @@ export default function CommunityCleanupMap() {
 
       <EventCardsGrid 
         events={filteredEvents.map(transformEventForCards)} 
-        loading={false}
+        loading={loading}
         createEventButton={
           <Button
             onClick={() => setIsCreateEventModalOpen(true)}
@@ -603,14 +593,26 @@ export default function CommunityCleanupMap() {
                     ></div>
                   </div>
                   <div className="flex gap-2">
-                    {selectedEvent.participants.length < selectedEvent.maxParticipants && (
+                    {currentUserId ? (
                       <Button
                         onClick={() => handleJoinEvent(selectedEvent.id)}
                         size="sm"
-                        className="flex items-center gap-2"
+                        className={`flex items-center gap-2 ${
+                          userParticipations[selectedEvent.id] 
+                            ? 'bg-red-600 hover:bg-red-700' 
+                            : 'bg-green-600 hover:bg-green-700'
+                        }`}
                       >
                         <UserPlus className="w-4 h-4" />
-                        Join Event
+                        {userParticipations[selectedEvent.id] ? 'Leave Event' : 'Join Event'}
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={() => alert('Please sign in to join events')}
+                        size="sm"
+                        className="bg-blue-600 hover:bg-blue-700"
+                      >
+                        Sign In to Join
                       </Button>
                     )}
                     {canDeleteEvent(selectedEvent) && (

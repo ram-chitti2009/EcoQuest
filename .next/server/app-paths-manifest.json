@@ -1,4 +1,6 @@
 {
-  "/_not-found/page": "app/_not-found/page.js",
-  "/calendar/page": "app/calendar/page.js"
+  "/favicon.ico/route": "app/favicon.ico/route.js",
+  "/community/page": "app/community/page.js",
+  "/calendar/page": "app/calendar/page.js",
+  "/community-cleanup/page": "app/community-cleanup/page.js"
 }

@@ -5,7 +5,7 @@ import Header from "@/app/components/Header"
 import { Calendar, MapPin, Users } from "lucide-react"
 import { CompactCalendar } from "../compact-calendar"
 import { UpcomingEvents } from "../upcomingEvents"
-import { getDashboardMetrics } from "@/utils/supabase/functions"
+import { getDashboardMetricsUnified } from "@/utils/supabase/functions"
 import { createClient } from "@/utils/supabase/client"
 
 export default function EcoCalendar() {
@@ -31,7 +31,7 @@ export default function EcoCalendar() {
   const loadMetrics = async () => {
     try {
       setLoading(true)
-      const dashboardData = await getDashboardMetrics(currentUser?.id)
+      const dashboardData = await getDashboardMetricsUnified(currentUser?.id)
       
       if (!dashboardData.error) {
         setMetrics({

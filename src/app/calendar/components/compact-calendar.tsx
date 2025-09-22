@@ -6,9 +6,9 @@ import { Button } from "./ui/button"
 import { Card, CardContent, CardHeader } from "./ui/card"
 import { Badge } from "./ui/badge"
 import { 
-  getEcoEventsByMonth, 
-  joinEcoEvent, 
-  leaveEcoEvent, 
+  getUnifiedEventsByMonth, 
+  joinUnifiedEvent, 
+  leaveUnifiedEvent, 
   checkUserEventParticipation,
   type EcoEvent 
 } from "@/utils/supabase/functions"
@@ -70,7 +70,7 @@ export function CompactCalendar({ onMetricsUpdate }: CompactCalendarProps) {
       setLoading(true)
       try {
         console.log(`Fetching events for ${year}-${month + 1}`) // Debug log
-        const { data, error } = await getEcoEventsByMonth(year, month + 1) // month is 0-indexed, but our function expects 1-indexed
+        const { data, error } = await getUnifiedEventsByMonth(year, month + 1) // month is 0-indexed, but our function expects 1-indexed
         if (error) {
           console.error('Error fetching events:', error)
           console.error('Error details:', error.message, error.code) // More detailed error
@@ -110,9 +110,9 @@ export function CompactCalendar({ onMetricsUpdate }: CompactCalendarProps) {
     try {
       let result
       if (isJoined) {
-        result = await leaveEcoEvent(eventId, currentUser.id)
+        result = await leaveUnifiedEvent(eventId, currentUser.id)
       } else {
-        result = await joinEcoEvent(eventId, currentUser.id)
+        result = await joinUnifiedEvent(eventId, currentUser.id)
       }
 
       if (result.success) {
@@ -123,7 +123,7 @@ export function CompactCalendar({ onMetricsUpdate }: CompactCalendarProps) {
         }))
 
         // Refresh events to get updated participant count
-        const { data } = await getEcoEventsByMonth(year, month + 1)
+        const { data } = await getUnifiedEventsByMonth(year, month + 1)
         if (data) {
           setEcoEvents(data)
         }

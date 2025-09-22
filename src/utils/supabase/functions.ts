@@ -1,5 +1,6 @@
 //functions to query supabase database CRUD OPS
 
+import { constants } from "fs/promises";
 import { createClient } from "./client";
 const supabase = createClient();
 
@@ -1853,7 +1854,7 @@ export async function leaveEcoEvent(eventId: number, userId: string): Promise<{ 
 }
 export async function getEcoEventsWithParticipation(userId?: string): Promise<(EcoEvent & { userJoined: boolean })[]> {
   try {
-    let query = supabase
+    const query = supabase
       .from('eco_events')
       .select(`
         *,
@@ -1996,3 +1997,224 @@ export async function getDashboardMetrics(userId?: string): Promise<{
     };
   }
 }
+
+
+export interface UnifiedEvent {
+  id: number;
+  date: string;
+  title: string;
+  time: string;
+  location: string;
+  category: 'cleanup' | 'workshop' | 'planting' | 'seminar';
+  description: string;
+  participants: number;
+  max_participants: number;
+  created_at?: string | null;
+  updated_at?: string | null;
+  user_id?: string | null;
+  event_type?: string | null;
+  duration?: string | null;
+  location_name?: string | null;
+  location_address?: string | null;
+  lat?: number | null;
+  lng?: number | null;
+  organizer?: string | null;
+  status?: string | null;
+  equipment_provided?: string[] | null;
+  requirements?: string[] | null;
+  expected_trash_collection?: string | null;
+  carbon_offset?: string | null;
+}
+
+
+export interface UnifiedEventInsert {
+  date: string;
+  title: string;
+  time: string;
+  location: string;
+  category: 'cleanup' | 'workshop' | 'planting' | 'seminar';
+  description: string;
+  participants?: number;
+  max_participants: number;
+  user_id?: string;
+  duration?: string;
+  location_name?: string;
+  location_address?: string;
+  lat?: number;
+  lng?: number;
+  organizer?: string;
+  status?: 'upcoming' | 'ongoing' | 'completed';
+  equipment_provided?: string[];
+  requirements?: string[];
+  expected_trash_collection?: string;
+  carbon_offset?: string;
+}
+
+
+export async function getAllUnifiedEvents(): Promise<{ data: UnifiedEvent[] | null; error: any }> {
+  try{
+    const {data, error} = await supabase.
+    from('eco_events')
+    .select('*')
+    .order('date', {ascending:true});
+
+
+    if(error) throw error;
+    return {data, error:null}
+  }
+
+
+  catch(error){
+    return {data:null, error}
+  }
+}
+
+
+
+
+
+//Get events by month(for calendar view)
+// Get events by month (for calendar view)
+export async function getUnifiedEventsByMonth(year: number, month: number): Promise<{ data: UnifiedEvent[] | null; error: any }> {
+  try {
+    const startDate = `${year}-${month.toString().padStart(2, '0')}-01`;
+    const endDate = new Date(year, month, 0).getDate();
+    const endDateString = `${year}-${month.toString().padStart(2, '0')}-${endDate.toString().padStart(2, '0')}`;
+
+    const { data, error } = await supabase
+      .from('eco_events')
+      .select('*')
+      .gte('date', startDate)
+      .lte('date', endDateString)
+      .order('date', { ascending: true });
+
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    return { data: null, error };
+  }
+}
+
+//Get upcoming events (for Both UIs)
+export async function getUpcomingUnifiedEvents(): Promise<{ data: UnifiedEvent[] | null; error: any }> {
+  try {
+    const today = new Date().toISOString().split('T')[0];
+
+    const { data, error } = await supabase
+      .from('eco_events')
+      .select('*')
+      .gte('date', today)
+      .order('date', { ascending: true });
+
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    return { data: null, error };
+  }
+}
+
+export async function createUnifiedEvent(eventData: UnifiedEventInsert): Promise<{ data: UnifiedEvent | null; error: any }> {
+  try {
+    const { data, error } = await supabase
+      .from('eco_events')
+      .insert([eventData])
+      .select()
+      .single();
+
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    return { data: null, error };
+  }
+}
+
+
+export async function joinUnifiedEvent(eventId: number, userId: string): Promise<{ success: boolean; message: string }> {
+  try {
+    const { data: existing } = await supabase
+      .from('event_participants')
+      .select('id')
+      .eq('event_id', eventId)
+      .eq('user_id', userId)
+      .single();
+
+    if (existing) {
+      return { success: false, message: 'Already joined' };
+    }
+
+    const { data: event } = await supabase
+      .from('eco_events')
+      .select('participants, max_participants')
+      .eq('id', eventId)
+      .single();
+
+    if (event && event.participants >= event.max_participants) {
+      return { success: false, message: 'Event full' };
+    }
+
+    const { error } = await supabase
+      .from('event_participants')
+      .insert([{ event_id: eventId, user_id: userId }]);
+
+    if (error) throw error;
+    return { success: true, message: 'Joined successfully!' };
+  } catch (error) {
+    console.error('Error joining event:', error);
+    return { success: false, message: 'Failed to join' };
+  }
+}
+
+
+export async function leaveUnifiedEvent(eventId: number, userId: string): Promise<{ success: boolean; message: string }> {
+  try {
+    const { error } = await supabase
+      .from('event_participants')
+      .delete()
+      .eq('event_id', eventId)
+      .eq('user_id', userId);
+
+    if (error) throw error;
+    return { success: true, message: 'Left successfully!' };
+  } catch (error) {
+    console.error('Error leaving event:', error);
+    return { success: false, message: 'Failed to leave event' };
+  }
+
+
+}
+
+
+export async function getDashboardMetricsUnified(userId?: string): Promise<{
+  eventsThisMonth: number;
+  totalParticipants: number;
+  eventsJoined: number;
+  error: any;
+}> {
+  try {
+    const [eventsResult, participantsResult, joinedResult] = await Promise.all([
+      getEventsThisMonth(), // Uses existing function (gets all events)
+      getTotalParticipants(), // Uses existing function (gets all participants)
+      userId ? getEventsJoinedByUser(userId) : Promise.resolve({ count: 0, error: null })
+    ]);
+
+    const hasError = eventsResult.error || participantsResult.error || joinedResult.error;
+    
+    return {
+      eventsThisMonth: eventsResult.count,
+      totalParticipants: participantsResult.count,
+      eventsJoined: joinedResult.count,
+      error: hasError
+    };
+  } catch (error) {
+    console.error('Error in getDashboardMetricsUnified:', error);
+    return {
+      eventsThisMonth: 0,
+      totalParticipants: 0,
+      eventsJoined: 0,
+      error
+    };
+  }
+}
+
+
+

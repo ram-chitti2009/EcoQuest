@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader } from "./ui/card"
 import { Button } from "./ui/button"
 import { Badge } from "./ui/badge"
 import { MapPin, Clock, ChevronRight } from "lucide-react"
-import { getAllEcoEvent, type EcoEvent } from "@/utils/supabase/functions"
+import { getAllUnifiedEvents, type EcoEvent } from "@/utils/supabase/functions"
 
 const categoryColors = {
   cleanup: "bg-emerald-100 text-emerald-700 border-emerald-200",
@@ -24,7 +24,7 @@ export function UpcomingEvents() {
     const fetchEvents = async () => {
       setLoading(true)
       try {
-        const { data, error } = await getAllEcoEvent()
+        const { data, error } = await getAllUnifiedEvents()
         if (error) {
           console.error('Error fetching events:', error)
         } else {
