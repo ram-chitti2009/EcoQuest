@@ -289,6 +289,12 @@ export default function CommunityCleanupMap() {
 
     const isJoined = userParticipations[eventId]
     
+    // Update UI immediately (optimistic update)
+    setUserParticipations(prev => ({
+      ...prev,
+      [eventId]: !isJoined
+    }))
+    
     try {
       let result
       if (isJoined) {
@@ -297,32 +303,60 @@ export default function CommunityCleanupMap() {
         result = await joinUnifiedEvent(Number(eventId), currentUserId)
       }
 
-      if (result.success) {
-        // Update local participation state
+      if (!result.success) {
+        // Revert the UI change if the API call failed
         setUserParticipations(prev => ({
           ...prev,
-          [eventId]: !isJoined
+          [eventId]: isJoined
         }))
+        alert(result.message)
+      }
+    } catch (error) {
+      // Revert the UI change if there was an error
+      setUserParticipations(prev => ({
+        ...prev,
+        [eventId]: isJoined
+      }))
+      console.error('Error with event action:', error)
+      alert('An error occurred. Please try again.')
+    }
+  }
 
-        // Refresh events to get updated participant count
-        const { data } = await getAllUnifiedEvents()
-        if (data) {
-          const transformedEvents = data.map(transformUnifiedToCleanup)
-          setEvents(transformedEvents)
-        }
+  // Check if current user can delete an event (only creator can delete)
+  const canDeleteEvent = (event: CleanupEvent): boolean => {
+    return currentUserId === event.createdBy
+  }
 
-        // Update selected event if it's the one being joined/left
-        if (selectedEvent?.id === eventId) {
-          const updatedEvent = events.find(e => e.id === eventId)
-          if (updatedEvent) {
-            setSelectedEvent(updatedEvent)
-          }
-        }
+  // Handle event deletion
+  const handleDeleteEvent = async (eventId: string) => {
+    if (!currentUserId) {
+      alert('Please sign in to delete events')
+      return
+    }
+
+    const confirmDelete = window.confirm('Are you sure you want to delete this event? This action cannot be undone.')
+    if (!confirmDelete) return
+
+    try {
+      const supabase = createClient()
+      const { error } = await supabase
+        .from('eco_events')
+        .delete()
+        .eq('id', eventId)
+        .eq('user_id', currentUserId) // Ensure only creator can delete
+
+      if (error) {
+        console.error('Error deleting event:', error)
+        alert('Failed to delete event. Please try again.')
+        return
       }
 
-      alert(result.message)
+      // Remove from local state
+      setEvents(prev => prev.filter(event => event.id !== eventId))
+      setSelectedEvent(null)
+      alert('Event deleted successfully!')
     } catch (error) {
-      console.error('Error with event action:', error)
+      console.error('Error deleting event:', error)
       alert('An error occurred. Please try again.')
     }
   }
