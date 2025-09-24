@@ -1,12 +1,12 @@
 "use client"
 
-import { useState, useEffect } from "react"
 import Header from "@/app/components/Header"
+import { createClient } from "@/utils/supabase/client"
+import { getDashboardMetrics } from "@/utils/supabase/functions"
 import { Calendar, MapPin, Users } from "lucide-react"
+import { useEffect, useState } from "react"
 import { CompactCalendar } from "../compact-calendar"
 import { UpcomingEvents } from "../upcomingEvents"
-import { getDashboardMetricsUnified } from "@/utils/supabase/functions"
-import { createClient } from "@/utils/supabase/client"
 
 export default function EcoCalendar() {
   const [metrics, setMetrics] = useState({
@@ -16,6 +16,7 @@ export default function EcoCalendar() {
   })
   const [loading, setLoading] = useState(true)
   const [currentUser, setCurrentUser] = useState<{ id: string } | null>(null)
+  const [currentMonth, setCurrentMonth] = useState(new Date())
   const supabase = createClient()
 
   // Check authentication status
@@ -31,7 +32,7 @@ export default function EcoCalendar() {
   const loadMetrics = async () => {
     try {
       setLoading(true)
-      const dashboardData = await getDashboardMetricsUnified(currentUser?.id)
+      const dashboardData = await getDashboardMetrics(currentUser?.id)
       
       if (!dashboardData.error) {
         setMetrics({
@@ -58,6 +59,11 @@ export default function EcoCalendar() {
   // Refresh metrics function to pass to child components
   const refreshMetrics = async () => {
     await loadMetrics()
+  }
+
+  // Handle month change from calendar
+  const handleMonthChange = (newMonth: Date) => {
+    setCurrentMonth(newMonth)
   }
 
   const statsConfig = [
@@ -113,12 +119,15 @@ export default function EcoCalendar() {
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
               {/* Calendar - Takes more space */}
               <div className="lg:col-span-3 animate-in slide-in-from-left duration-700 delay-300">
-                <CompactCalendar onMetricsUpdate={refreshMetrics} />
+                <CompactCalendar 
+                  onMetricsUpdate={refreshMetrics} 
+                  onMonthChange={handleMonthChange}
+                />
               </div>
 
               {/* Upcoming Events - On the right */}
               <div className="lg:col-span-1 animate-in slide-in-from-right duration-700 delay-500">
-                <UpcomingEvents />
+                <UpcomingEvents currentMonth={currentMonth} />
               </div>
             </div>
           </div>
