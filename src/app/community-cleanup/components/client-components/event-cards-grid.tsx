@@ -25,9 +25,12 @@ interface CleanupEvent {
 interface EventCardProps {
   event: CleanupEvent
   featured?: boolean
+  onJoinEvent?: (eventId: string) => void
+  isJoined?: boolean
+  currentUserId?: string | null
 }
 
-function EventCard({ event, featured = false }: EventCardProps) {
+function EventCard({ event, featured = false, onJoinEvent, isJoined = false, currentUserId }: EventCardProps) {
   const [isLiked, setIsLiked] = useState(false)
   const [isBookmarked, setIsBookmarked] = useState(false)
   const [isHovered, setIsHovered] = useState(false)
@@ -97,7 +100,7 @@ function EventCard({ event, featured = false }: EventCardProps) {
 
   return (
     <Card
-      className={`group relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:shadow-black/5 hover:-translate-y-1 cursor-pointer bg-gradient-to-br ${typeColors.gradient} border-0 ${featured ? "ring-1 ring-primary/20 shadow-md" : ""}`}
+      className={`group relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:shadow-black/5 hover:-translate-y-1 cursor-pointer bg-gradient-to-br ${typeColors.gradient} border-0 ${featured ? "ring-1 ring-primary/20 shadow-md" : ""} flex flex-col h-full`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -182,82 +185,99 @@ function EventCard({ event, featured = false }: EventCardProps) {
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-3 pb-4">
-        <div className="grid grid-cols-2 gap-2">
-          <div className="flex items-center gap-2 p-2 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-md border border-white/50 dark:border-gray-700/50">
-            <div className="w-6 h-6 bg-primary/10 rounded-md flex items-center justify-center">
-              <Calendar className="w-3 h-3 text-primary" />
+      <CardContent className="flex flex-col flex-1 pb-4">
+        <div className="space-y-3 flex-1">
+          <div className="grid grid-cols-2 gap-2">
+            <div className="flex items-center gap-2 p-2 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-md border border-white/50 dark:border-gray-700/50">
+              <div className="w-6 h-6 bg-primary/10 rounded-md flex items-center justify-center">
+                <Calendar className="w-3 h-3 text-primary" />
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">
+                  {event.date}
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">
-                {event.date}
-              </p>
+
+            <div className="flex items-center gap-2 p-2 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-md border border-white/50 dark:border-gray-700/50">
+              <div className="w-6 h-6 bg-secondary/10 rounded-md flex items-center justify-center">
+                <Clock className="w-3 h-3 text-secondary" />
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">
+                  {event.time}
+                </p>
+              </div>
             </div>
           </div>
 
           <div className="flex items-center gap-2 p-2 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-md border border-white/50 dark:border-gray-700/50">
-            <div className="w-6 h-6 bg-secondary/10 rounded-md flex items-center justify-center">
-              <Clock className="w-3 h-3 text-secondary" />
+            <div className="w-6 h-6 bg-accent/10 rounded-md flex items-center justify-center">
+              <MapPin className="w-3 h-3 text-accent" />
             </div>
-            <div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">
-                {event.time}
-              </p>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold text-gray-900 dark:text-white truncate">{event.location}</p>
             </div>
           </div>
-        </div>
 
-        <div className="flex items-center gap-2 p-2 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-md border border-white/50 dark:border-gray-700/50">
-          <div className="w-6 h-6 bg-accent/10 rounded-md flex items-center justify-center">
-            <MapPin className="w-3 h-3 text-accent" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-semibold text-gray-900 dark:text-white truncate">{event.location}</p>
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Users className="w-3 h-3 text-primary" />
-              <span className="text-xs font-semibold text-gray-900 dark:text-white">
-                {event.volunteers} {event.maxVolunteers && `/ ${event.maxVolunteers}`} volunteers
-              </span>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Users className="w-3 h-3 text-primary" />
+                <span className="text-xs font-semibold text-gray-900 dark:text-white">
+                  {event.volunteers} {event.maxVolunteers && `/ ${event.maxVolunteers}`} volunteers
+                </span>
+              </div>
+              {event.duration && (
+                <Badge
+                  variant="outline"
+                  className="text-xs bg-white/50 dark:bg-gray-800/50 border-gray-300 dark:border-gray-600 px-1.5 py-0.5"
+                >
+                  {event.duration}
+                </Badge>
+              )}
             </div>
-            {event.duration && (
-              <Badge
-                variant="outline"
-                className="text-xs bg-white/50 dark:bg-gray-800/50 border-gray-300 dark:border-gray-600 px-1.5 py-0.5"
-              >
-                {event.duration}
-              </Badge>
+
+            {event.maxVolunteers && (
+              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5 overflow-hidden">
+                <div
+                  className="bg-gradient-to-r from-primary to-primary/80 h-1.5 rounded-full transition-all duration-700 ease-out"
+                  style={{ width: `${Math.min(progress, 100)}%` }}
+                />
+              </div>
             )}
           </div>
 
-          {event.maxVolunteers && (
-            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5 overflow-hidden">
-              <div
-                className="bg-gradient-to-r from-primary to-primary/80 h-1.5 rounded-full transition-all duration-700 ease-out"
-                style={{ width: `${Math.min(progress, 100)}%` }}
-              />
+          {event.description && (
+            <div className="p-2 bg-white/40 dark:bg-gray-800/40 backdrop-blur-sm rounded-md border border-white/50 dark:border-gray-700/50">
+              <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed line-clamp-1">{event.description}</p>
             </div>
           )}
         </div>
 
-        {event.description && (
-          <div className="p-2 bg-white/40 dark:bg-gray-800/40 backdrop-blur-sm rounded-md border border-white/50 dark:border-gray-700/50">
-            <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed line-clamp-1">{event.description}</p>
-          </div>
-        )}
-
-        <Button
-          className={`w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white font-medium py-2 rounded-md shadow-md hover:shadow-lg transition-all duration-300 group/btn ${isHovered ? "scale-[1.01]" : ""}`}
-        >
-          <span className="flex items-center justify-center gap-2 text-sm">
-            Join Cleanup
-            <ArrowRight className="w-3 h-3 group-hover/btn:translate-x-1 transition-transform duration-200" />
-          </span>
-        </Button>
+        <div className="mt-3">
+          <Button
+            onClick={() => {
+              if (!currentUserId) {
+                alert('Please sign in to join events')
+                return
+              }
+              if (onJoinEvent) {
+                onJoinEvent(event.id)
+              }
+            }}
+            className={`w-full font-medium py-2 rounded-md shadow-md hover:shadow-lg transition-all duration-300 group/btn border-2 border-white ${
+              isJoined 
+                ? 'bg-gradient-to-r from-red-600 to-red-600/90 hover:from-red-600/90 hover:to-red-600 text-white'
+                : 'bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white'
+            } ${isHovered ? "scale-[1.01]" : ""}`}
+          >
+            <span className="flex items-center justify-center gap-2 text-sm">
+              {isJoined ? 'Leave Cleanup' : 'Join Cleanup'}
+              <ArrowRight className="w-3 h-3 group-hover/btn:translate-x-1 transition-transform duration-200" />
+            </span>
+          </Button>
+        </div>
       </CardContent>
 
       {/* Subtle Overlay for Depth */}
@@ -300,9 +320,12 @@ interface EventCardsGridProps {
   events: CleanupEvent[]
   loading?: boolean
   createEventButton?: React.ReactNode
+  onJoinEvent?: (eventId: string) => void
+  userParticipations?: Record<string, boolean>
+  currentUserId?: string | null
 }
 
-export default function EventCardsGrid({ events, loading = false, createEventButton }: EventCardsGridProps) {
+export default function EventCardsGrid({ events, loading = false, createEventButton, onJoinEvent, userParticipations, currentUserId }: EventCardsGridProps) {
   // Sort events to show featured ones first
   const sortedEvents = [...events].sort((a, b) => {
     // This is just an example - you'd implement actual featured logic
@@ -355,7 +378,14 @@ export default function EventCardsGrid({ events, loading = false, createEventBut
         {events.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {sortedEvents.map((event, index) => (
-              <EventCard key={event.id} event={event} featured={event.rating ? event.rating >= 4.5 : index === 0} />
+              <EventCard 
+                key={event.id} 
+                event={event} 
+                featured={event.rating ? event.rating >= 4.5 : index === 0}
+                onJoinEvent={onJoinEvent}
+                isJoined={userParticipations?.[event.id] || false}
+                currentUserId={currentUserId}
+              />
             ))}
           </div>
         ) : (

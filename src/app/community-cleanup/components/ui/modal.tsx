@@ -17,7 +17,7 @@ const Modal = forwardRef<HTMLDivElement, ModalProps>(({ isOpen, onClose, childre
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[2000] p-4">
-      <div ref={ref} className={`bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto ${className}`}>
+      <div ref={ref} className={`bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto scrollbar-hide ${className}`}>
         {children}
       </div>
     </div>

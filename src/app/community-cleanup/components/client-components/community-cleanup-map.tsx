@@ -12,13 +12,13 @@ import { Select } from "../ui/select"
 import EventCardsGrid from "./event-cards-grid"
 import MapWrapper from "./map-wrapper"; // Declare the MapWrapper variable
 // Add these imports at the top of your file
-import { 
-  getAllUnifiedEvents,
+import {
+  checkUserEventParticipation,
   createUnifiedEvent,
+  getAllUnifiedEvents,
   joinUnifiedEvent,
   leaveUnifiedEvent,
-  checkUserEventParticipation,
-  type UnifiedEvent 
+  type UnifiedEvent
 } from '@/utils/supabase/functions'
 
 interface Participant {
@@ -42,7 +42,8 @@ interface CleanupEvent {
     lng: number
   }
   organizer: string
-  participants: Participant[]
+  participantCount: number
+  participants: Participant[] // Keep for MapWrapper compatibility
   maxParticipants: number
   category: "beach" | "park" | "street" | "forest" | "river"
   status: "upcoming" | "ongoing" | "completed"
@@ -68,30 +69,42 @@ const statusColors = {
 }
 
 // Transform UnifiedEvent to CleanupEvent format
-const transformUnifiedToCleanup = (event: UnifiedEvent): CleanupEvent => ({
-  id: event.id.toString(),
-  title: event.title,
-  description: event.description || '',
-  date: event.date,
-  time: event.time,
-  duration: event.duration || '2 hours',
-  location: {
-    name: event.location_name || event.location,
-    address: event.location_address || event.location,
-    lat: event.lat || 40.7589,
-    lng: event.lng || -73.9851,
-  },
-  organizer: event.organizer || 'Unknown',
-  participants: [], // Will be populated separately
-  maxParticipants: event.max_participants,
-  category: mapCategoryToCleanup(event.category),
-  status: (event.status as "upcoming" | "ongoing" | "completed") || 'upcoming',
-  equipmentProvided: event.equipment_provided || [],
-  requirements: event.requirements || [],
-  expectedTrashCollection: event.expected_trash_collection || '50 lbs',
-  carbonOffset: event.carbon_offset || '10 kg CO2',
-  createdBy: event.user_id || undefined,
-})
+const transformUnifiedToCleanup = (event: UnifiedEvent): CleanupEvent => {
+  const participantCount = event.participants || 0
+  // Create minimal participants array for MapWrapper compatibility
+  const participants = Array.from({ length: participantCount }, (_, i) => ({
+    id: `participant-${i}`,
+    name: `Participant ${i + 1}`,
+    role: 'volunteer' as const,
+    joinedAt: new Date().toISOString()
+  }))
+
+  return {
+    id: event.id.toString(),
+    title: event.title,
+    description: event.description || '',
+    date: event.date,
+    time: event.time,
+    duration: event.duration || '2 hours',
+    location: {
+      name: event.location_name || event.location,
+      address: event.location_address || event.location,
+      lat: event.lat || 40.7589,
+      lng: event.lng || -73.9851,
+    },
+    organizer: event.organizer || 'Unknown',
+    participantCount: participantCount,
+    participants: participants, // For MapWrapper compatibility
+    maxParticipants: event.max_participants,
+    category: mapCategoryToCleanup(event.category),
+    status: (event.status as "upcoming" | "ongoing" | "completed") || 'upcoming',
+    equipmentProvided: event.equipment_provided || [],
+    requirements: event.requirements || [],
+    expectedTrashCollection: event.expected_trash_collection || '50 lbs',
+    carbonOffset: event.carbon_offset || '10 kg CO2',
+    createdBy: event.user_id || undefined,
+  }
+}
 
 // Map unified categories to cleanup categories
 const mapCategoryToCleanup = (category: string): CleanupEvent["category"] => {
@@ -116,21 +129,40 @@ const mapCleanupToUnified = (category: CleanupEvent["category"]): 'cleanup' | 'w
   return mapping[category] || 'cleanup'
 }
 
-const transformEventForCards = (event: CleanupEvent) => ({
-  id: event.id,
-  title: event.title,
-  date: new Date(event.date).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-  time: event.time,
-  location: event.location.name,
-  type: event.category as "beach" | "park" | "street" | "river",
-  volunteers: event.participants.length,
-  maxVolunteers: event.maxParticipants,
-  description: event.description,
-  organizer: event.organizer,
-  rating: Math.random() > 0.5 ? Number((Math.random() * 2 + 3).toFixed(1)) : undefined,
-  difficulty: ["Easy", "Medium", "Hard"][Math.floor(Math.random() * 3)] as "Easy" | "Medium" | "Hard",
-  duration: event.duration,
-})
+// Create a stable random seed based on event ID to prevent cards from shuffling
+const getStableRandom = (eventId: string, seed: number = 0) => {
+  let hash = 0;
+  const str = eventId + seed.toString();
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  return Math.abs(hash) / 2147483647; // Normalize to 0-1
+}
+
+const transformEventForCards = (event: CleanupEvent) => {
+  // Use stable random values based on event ID to prevent shuffling
+  const stableRandom1 = getStableRandom(event.id, 1);
+  const stableRandom2 = getStableRandom(event.id, 2);
+  const stableRandom3 = getStableRandom(event.id, 3);
+
+  return {
+    id: event.id,
+    title: event.title,
+    date: new Date(event.date).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+    time: event.time,
+    location: event.location.name,
+    type: event.category as "beach" | "park" | "street" | "river",
+    volunteers: event.participantCount,
+    maxVolunteers: event.maxParticipants,
+    description: event.description,
+    organizer: event.organizer,
+    rating: stableRandom1 > 0.5 ? Number((stableRandom2 * 2 + 3).toFixed(1)) : undefined,
+    difficulty: ["Easy", "Medium", "Hard"][Math.floor(stableRandom3 * 3)] as "Easy" | "Medium" | "Hard",
+    duration: event.duration,
+  }
+}
 
 export default function CommunityCleanupMap() {
   const [selectedEvent, setSelectedEvent] = useState<CleanupEvent | null>(null)
@@ -294,6 +326,36 @@ export default function CommunityCleanupMap() {
       ...prev,
       [eventId]: !isJoined
     }))
+
+    // Update participant count in events state
+    setEvents(prev => prev.map(event => {
+      if (event.id === eventId) {
+        const newCount = Math.max(0, isJoined ? event.participantCount - 1 : event.participantCount + 1)
+        const newParticipants = Array.from({ length: newCount }, (_, i) => ({
+          id: `participant-${i}`,
+          name: `Participant ${i + 1}`,
+          role: 'volunteer' as const,
+          joinedAt: new Date().toISOString()
+        }))
+        return { ...event, participantCount: newCount, participants: newParticipants }
+      }
+      return event
+    }))
+
+    // Update selected event if it's the one being modified
+    if (selectedEvent?.id === eventId) {
+      setSelectedEvent(prev => {
+        if (!prev) return null
+        const newCount = Math.max(0, isJoined ? prev.participantCount - 1 : prev.participantCount + 1)
+        const newParticipants = Array.from({ length: newCount }, (_, i) => ({
+          id: `participant-${i}`,
+          name: `Participant ${i + 1}`,
+          role: 'volunteer' as const,
+          joinedAt: new Date().toISOString()
+        }))
+        return { ...prev, participantCount: newCount, participants: newParticipants }
+      })
+    }
     
     try {
       let result
@@ -304,19 +366,95 @@ export default function CommunityCleanupMap() {
       }
 
       if (!result.success) {
-        // Revert the UI change if the API call failed
+        // Revert all UI changes if the API call failed
         setUserParticipations(prev => ({
           ...prev,
           [eventId]: isJoined
         }))
+        
+        // Revert events state
+        setEvents(prev => prev.map(event => {
+          if (event.id === eventId) {
+            const revertedCount = Math.max(0, isJoined ? event.participantCount + 1 : event.participantCount - 1)
+            const revertedParticipants = Array.from({ length: revertedCount }, (_, i) => ({
+              id: `participant-${i}`,
+              name: `Participant ${i + 1}`,
+              role: 'volunteer' as const,
+              joinedAt: new Date().toISOString()
+            }))
+            return { ...event, participantCount: revertedCount, participants: revertedParticipants }
+          }
+          return event
+        }))
+
+        // Revert selected event
+        if (selectedEvent?.id === eventId) {
+          setSelectedEvent(prev => {
+            if (!prev) return null
+            const revertedCount = Math.max(0, isJoined ? prev.participantCount + 1 : prev.participantCount - 1)
+            const revertedParticipants = Array.from({ length: revertedCount }, (_, i) => ({
+              id: `participant-${i}`,
+              name: `Participant ${i + 1}`,
+              role: 'volunteer' as const,
+              joinedAt: new Date().toISOString()
+            }))
+            return { ...prev, participantCount: revertedCount, participants: revertedParticipants }
+          })
+        }
+        
         alert(result.message)
+      } else {
+        // Optionally refresh the events to get actual participant count from DB
+        // This ensures UI stays in sync with the database
+        const { data: allEvents } = await getAllUnifiedEvents()
+        if (allEvents) {
+          const transformedEvents = allEvents.map(transformUnifiedToCleanup)
+          setEvents(transformedEvents)
+          
+          // Update selected event if it matches
+          const updatedSelectedEvent = transformedEvents.find(e => e.id === eventId)
+          if (selectedEvent && updatedSelectedEvent) {
+            setSelectedEvent(updatedSelectedEvent)
+          }
+        }
       }
     } catch (error) {
-      // Revert the UI change if there was an error
+      // Revert all UI changes if there was an error
       setUserParticipations(prev => ({
         ...prev,
         [eventId]: isJoined
       }))
+      
+      // Revert events state
+      setEvents(prev => prev.map(event => {
+        if (event.id === eventId) {
+          const revertedCount = Math.max(0, isJoined ? event.participantCount + 1 : event.participantCount - 1)
+          const revertedParticipants = Array.from({ length: revertedCount }, (_, i) => ({
+            id: `participant-${i}`,
+            name: `Participant ${i + 1}`,
+            role: 'volunteer' as const,
+            joinedAt: new Date().toISOString()
+          }))
+          return { ...event, participantCount: revertedCount, participants: revertedParticipants }
+        }
+        return event
+      }))
+
+      // Revert selected event
+      if (selectedEvent?.id === eventId) {
+        setSelectedEvent(prev => {
+          if (!prev) return null
+          const revertedCount = Math.max(0, isJoined ? prev.participantCount + 1 : prev.participantCount - 1)
+          const revertedParticipants = Array.from({ length: revertedCount }, (_, i) => ({
+            id: `participant-${i}`,
+            name: `Participant ${i + 1}`,
+            role: 'volunteer' as const,
+            joinedAt: new Date().toISOString()
+          }))
+          return { ...prev, participantCount: revertedCount, participants: revertedParticipants }
+        })
+      }
+      
       console.error('Error with event action:', error)
       alert('An error occurred. Please try again.')
     }
@@ -372,6 +510,12 @@ export default function CommunityCleanupMap() {
       return
     }
 
+    // Validate duration is a number
+    if (newEvent.duration && (isNaN(Number(newEvent.duration)) || Number(newEvent.duration) <= 0)) {
+      alert("Duration must be a positive number")
+      return
+    }
+
     const eventData = {
       title: newEvent.title,
       description: newEvent.description,
@@ -381,7 +525,7 @@ export default function CommunityCleanupMap() {
       category: mapCleanupToUnified(newEvent.category),
       max_participants: newEvent.maxParticipants,
       user_id: currentUserId,
-      duration: newEvent.duration || "2 hours",
+      duration: newEvent.duration ? `${newEvent.duration} hours` : "2 hours",
       location_name: newEvent.locationName,
       location_address: newEvent.locationAddress,
       lat: newEvent.lat ? Number.parseFloat(newEvent.lat) : undefined,
@@ -395,7 +539,7 @@ export default function CommunityCleanupMap() {
     }
 
     try {
-      const { data, error } = await createUnifiedEvent(eventData)
+      const { error } = await createUnifiedEvent(eventData)
       if (error) {
         console.error('Error creating event:', error)
         alert('Failed to create event')
@@ -440,7 +584,20 @@ export default function CommunityCleanupMap() {
     <div className="min-h-screen bg-stone-50">
       {/* Full-width Hero Map */}
       <div className="h-[70vh] w-full relative">
-        <MapWrapper events={filteredEvents} categoryColors={categoryColors} onEventSelect={setSelectedEvent} />
+        <MapWrapper 
+          events={filteredEvents.map(event => ({
+            ...event,
+            participants: event.participants || []
+          }))} 
+          categoryColors={categoryColors} 
+          onEventSelect={(event) => {
+            // Convert back to our CleanupEvent format
+            setSelectedEvent({
+              ...event,
+              participantCount: event.participants?.length || 0
+            })
+          }} 
+        />
 
         <div className="absolute top-4 right-4 z-[1000]">
           {!isFilterPanelExpanded ? (
@@ -553,6 +710,9 @@ export default function CommunityCleanupMap() {
       <EventCardsGrid 
         events={filteredEvents.map(transformEventForCards)} 
         loading={loading}
+        onJoinEvent={handleJoinEvent}
+        userParticipations={userParticipations}
+        currentUserId={currentUserId}
         createEventButton={
           <Button
             onClick={() => setIsCreateEventModalOpen(true)}
@@ -618,12 +778,12 @@ export default function CommunityCleanupMap() {
                 <div>
                   <h3 className="font-semibold mb-2 flex items-center gap-2">
                     <Users className="w-5 h-5" />
-                    Participants ({selectedEvent.participants.length}/{selectedEvent.maxParticipants})
+                    Participants ({selectedEvent.participantCount}/{selectedEvent.maxParticipants})
                   </h3>
                   <div className="w-full bg-stone-200 rounded-full h-2 mb-2">
                     <div
                       className="bg-green-500 h-2 rounded-full"
-                      style={{ width: `${(selectedEvent.participants.length / selectedEvent.maxParticipants) * 100}%` }}
+                      style={{ width: `${(selectedEvent.participantCount / selectedEvent.maxParticipants) * 100}%` }}
                     ></div>
                   </div>
                   <div className="flex gap-2">
@@ -703,26 +863,16 @@ export default function CommunityCleanupMap() {
                 </div>
               </div>
 
-              {/* Participants List */}
+              {/* Participants Count */}
               <div>
                 <h3 className="font-semibold mb-3">Registered Participants</h3>
-                <div className="bg-stone-50 rounded-lg p-4 max-h-32 overflow-y-auto">
-                  {selectedEvent.participants.map((participant) => (
-                    <div key={participant.id} className="flex justify-between items-center py-1">
-                      <span className="text-sm">{participant.name}</span>
-                      <Badge
-                        variant={
-                          participant.role === "organizer"
-                            ? "default"
-                            : participant.role === "coordinator"
-                              ? "secondary"
-                              : "outline"
-                        }
-                      >
-                        {participant.role}
-                      </Badge>
-                    </div>
-                  ))}
+                <div className="bg-stone-50 rounded-lg p-4">
+                  <p className="text-stone-600 text-center">
+                    {selectedEvent.participantCount > 0 
+                      ? `${selectedEvent.participantCount} participant${selectedEvent.participantCount !== 1 ? 's' : ''} registered`
+                      : 'No participants yet - be the first to join!'
+                    }
+                  </p>
                 </div>
               </div>
             </ModalContent>
@@ -787,11 +937,21 @@ export default function CommunityCleanupMap() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-stone-700 mb-1">Duration</label>
+                <label className="block text-sm font-medium text-stone-700 mb-1">Duration (hours)</label>
                 <Input
+                  type="number"
+                  min="0.5"
+                  max="24"
+                  step="0.5"
                   value={newEvent.duration}
-                  onChange={(e) => setNewEvent((prev) => ({ ...prev, duration: e.target.value }))}
-                  placeholder="e.g., 2 hours"
+                  onChange={(e) => {
+                    const value = e.target.value
+                    // Only allow numbers and decimal points
+                    if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                      setNewEvent((prev) => ({ ...prev, duration: value }))
+                    }
+                  }}
+                  placeholder="e.g., 2"
                 />
               </div>
             </div>
