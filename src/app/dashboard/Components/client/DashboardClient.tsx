@@ -231,13 +231,6 @@ export default function Dashboard() {
 
   const topUsers = getTopUsers()
 
-  const calendarEvents = [
-    { date: 10, title: "Beach Cleanup", type: "cleanup" as const, participants: 24 },
-    { date: 14, title: "Solar Workshop", type: "workshop" as const, participants: 18 },
-    { date: 20, title: "Tree Planting", type: "planting" as const, participants: 32 },
-    { date: 25, title: "Recycling Drive", type: "cleanup" as const, participants: 15 },
-  ]
-
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
@@ -262,7 +255,7 @@ export default function Dashboard() {
 
           {/* Center Column - Chart */}
           <div className="lg:col-span-2">
-            <QuestCalendar events={calendarEvents} />
+            <QuestCalendar />
           </div>
 
           {/* Right Column - Community Stats */}

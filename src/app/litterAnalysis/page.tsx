@@ -1,14 +1,14 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
-import { ArrowLeft, MapPin, Calendar, Trash2, Recycle, AlertTriangle, CheckCircle } from "lucide-react"
+import { createClient } from "@/utils/supabase/client"
+import { createUserLitterReport } from "@/utils/supabase/functions"
+import { AlertTriangle, ArrowLeft, Calendar, CheckCircle, MapPin, Recycle, Trash2 } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { useCallback, useEffect, useState } from "react"
 import { Button } from "../litterLens/components/ui/Button"
 import { Card, CardContent, CardHeader, CardTitle } from "../litterLens/components/ui/Card"
 import { Badge } from "../litterLens/components/ui/badge"
 import { Separator } from "../litterLens/components/ui/separator"
-import { useRouter } from "next/navigation"
-import { createClient } from "@/utils/supabase/client"
-import { createUserLitterReport, calculateAndUpdateLitterSummary } from "@/utils/supabase/functions"
 
 interface AnalysisData {
   litterType: string

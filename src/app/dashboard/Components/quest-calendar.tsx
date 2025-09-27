@@ -1,26 +1,44 @@
 "use client"
 
-import { useState } from "react"
+import { createClient } from "@/utils/supabase/client"
+import { getDashboardMetricsUnified, getUpcomingUnifiedEvents } from "@/utils/supabase/functions"
+import { useEffect, useState } from "react"
 import { Calendar, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, MapPin, Users } from "./icons"
 import { Button } from "./ui/button"
 import { Card, CardContent, CardHeader } from "./ui/card"
 
 interface CalendarEvent {
-  date: number
+  id?: number
   title: string
-  type: "cleanup" | "workshop" | "planting"
+  description?: string
+  date: string
+  time?: string
+  location?: string
+  category: string
+  max_participants?: number
   participants?: number
+  organizer?: string | null
+  type?: "cleanup" | "workshop" | "planting"
 }
 
 interface QuestCalendarProps {
-  events: CalendarEvent[]
+  onMetricsUpdate?: () => void
 }
 
-export const QuestCalendar = ({ events }: QuestCalendarProps) => {
-  const [currentMonth, setCurrentMonth] = useState(7) // August = 7 (0-indexed)
-  const [currentYear, setCurrentYear] = useState(2025)
+export const QuestCalendar = ({ onMetricsUpdate }: QuestCalendarProps) => {
+  const [currentMonth, setCurrentMonth] = useState(new Date().getMonth())
+  const [currentYear, setCurrentYear] = useState(new Date().getFullYear())
   const [isExpanded, setIsExpanded] = useState(false)
   const [selectedDate, setSelectedDate] = useState<number | null>(null)
+  const [events, setEvents] = useState<CalendarEvent[]>([])
+  const [metrics, setMetrics] = useState({
+    eventsThisMonth: 0,
+    totalParticipants: 0,
+    eventsJoined: 0
+  })
+  const [loading, setLoading] = useState(true)
+  const [currentUser, setCurrentUser] = useState<{ id: string } | null>(null)
+  const supabase = createClient()
 
   const months = [
     "January",
@@ -36,6 +54,68 @@ export const QuestCalendar = ({ events }: QuestCalendarProps) => {
     "November",
     "December",
   ]
+
+  // Check authentication status
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      setCurrentUser(user)
+    }
+    checkUser()
+  }, [supabase.auth])
+
+  useEffect(() => {
+    if (currentUser !== null) {
+      // Load dashboard metrics and events
+      const loadData = async () => {
+        try {
+          setLoading(true)
+          
+          // Load dashboard metrics
+          const dashboardData = await getDashboardMetricsUnified(currentUser?.id)
+          if (!dashboardData.error) {
+            setMetrics({
+              eventsThisMonth: dashboardData.eventsThisMonth,
+              totalParticipants: dashboardData.totalParticipants,
+              eventsJoined: dashboardData.eventsJoined
+            })
+          } else {
+            console.error('Error loading dashboard metrics:', dashboardData.error)
+          }
+
+          // Load upcoming events
+          const eventsData = await getUpcomingUnifiedEvents()
+          if (!eventsData.error && eventsData.data) {
+            // Transform events data to match our interface
+            const transformedEvents = eventsData.data.map(event => ({
+              id: event.id,
+              title: event.title,
+              description: event.description,
+              date: event.date,
+              time: event.time,
+              location: event.location,
+              category: event.category,
+              max_participants: event.max_participants,
+              participants: event.participants || 0,
+              organizer: event.organizer,
+              type: event.category?.toLowerCase().includes('cleanup') ? 'cleanup' as const :
+                    event.category?.toLowerCase().includes('workshop') ? 'workshop' as const :
+                    'planting' as const
+            }))
+            setEvents(transformedEvents)
+          } else {
+            console.error('Error loading events:', eventsData.error)
+          }
+        } catch (error) {
+          console.error('Error in loadData:', error)
+        } finally {
+          setLoading(false)
+        }
+      }
+      
+      loadData()
+    }
+  }, [currentUser, currentMonth, currentYear])
 
   const getDaysInMonth = (month: number, year: number) => {
     return new Date(year, month + 1, 0).getDate()
@@ -68,29 +148,49 @@ export const QuestCalendar = ({ events }: QuestCalendarProps) => {
   }
 
   const renderCalendarDay = (day: number, isCurrentMonth = true) => {
-    const event = events.find((e) => e.date === day)
-    const isToday = day === 15 && currentMonth === 7 && currentYear === 2025
+    // Find events for this specific day
+    const dayEvents = events.filter(event => {
+      const eventDate = new Date(event.date)
+      return eventDate.getDate() === day && 
+             eventDate.getMonth() === currentMonth && 
+             eventDate.getFullYear() === currentYear
+    })
+    
+    const today = new Date()
+    const isToday = day === today.getDate() && 
+                   currentMonth === today.getMonth() && 
+                   currentYear === today.getFullYear()
     const isSelected = selectedDate === day
 
     return (
       <button
         key={day}
         onClick={() => isCurrentMonth && handleDateClick(day)}
-        className={`p-1 sm:p-2 text-center relative rounded-lg transition-all duration-200 hover:bg-emerald-100 border min-h-[2.5rem] sm:min-h-[3rem] flex flex-col items-center justify-center ${
+        className={`p-1 sm:p-2 text-center relative rounded-lg transition-all duration-200 hover:bg-emerald-100 border min-h-[2.5rem] sm:min-h-[3rem] flex flex-col items-center justify-center w-full overflow-hidden ${
           !isCurrentMonth ? "text-gray-400 cursor-default border-transparent" : "cursor-pointer text-gray-900 border-gray-100 hover:border-emerald-300"
         } ${isSelected ? "bg-emerald-200 ring-2 ring-emerald-500 border-emerald-500" : ""} ${isToday ? "bg-emerald-500 text-white border-emerald-500" : ""}`}
         disabled={!isCurrentMonth}
       >
         <span className={`text-xs sm:text-sm font-medium ${isToday ? "font-bold text-white" : isSelected ? "font-semibold text-gray-900" : "text-gray-900"}`}>{day}</span>
-        {event && (
-          <div
-            className={`mt-0.5 sm:mt-1 px-0.5 sm:px-1 py-0.5 rounded text-[10px] sm:text-xs font-medium text-white truncate max-w-full ${
-              event.type === "cleanup" ? "bg-emerald-600" : event.type === "workshop" ? "bg-teal-600" : "bg-green-600"
-            }`}
-            title={event.title}
-          >
-            <span className="hidden sm:inline">{event.title}</span>
-            <span className="sm:hidden">{event.title.slice(0, 3)}...</span>
+        {dayEvents.length > 0 && (
+          <div className="mt-0.5 sm:mt-1 space-y-0.5 w-full">
+            {dayEvents.slice(0, 2).map((event, index) => (
+              <div
+                key={index}
+                className={`px-0.5 sm:px-1 py-0.5 rounded text-[10px] sm:text-xs font-medium text-white w-full overflow-hidden ${
+                  event.type === "cleanup" ? "bg-emerald-600" : event.type === "workshop" ? "bg-teal-600" : "bg-green-600"
+                }`}
+                title={event.title}
+              >
+                <div className="truncate w-full">
+                  <span className="hidden sm:inline">{event.title.length > 12 ? event.title.slice(0, 12) + '...' : event.title}</span>
+                  <span className="sm:hidden">{event.title.slice(0, 3)}...</span>
+                </div>
+              </div>
+            ))}
+            {dayEvents.length > 2 && (
+              <div className="text-[10px] text-gray-600 text-center">+{dayEvents.length - 2}</div>
+            )}
           </div>
         )}
       </button>
@@ -129,9 +229,9 @@ export const QuestCalendar = ({ events }: QuestCalendarProps) => {
     return calendarDays
   }
 
-  const monthEvents = events.length
-  const totalParticipants = events.reduce((sum, event) => sum + (event.participants || 0), 0)
-  const eventsJoined = events.filter((event) => event.date <= 15).length // Assuming today is 15th
+  const monthEvents = loading ? 0 : metrics.eventsThisMonth
+  const totalParticipants = loading ? 0 : metrics.totalParticipants
+  const eventsJoined = loading ? 0 : metrics.eventsJoined
 
   return (
     <Card className="bg-white shadow-lg border border-gray-200">
@@ -182,7 +282,7 @@ export const QuestCalendar = ({ events }: QuestCalendarProps) => {
                   <Calendar className="h-3 w-3 sm:h-4 sm:w-4 text-white" />
                 </div>
                 <div>
-                  <p className="text-base sm:text-lg font-bold text-gray-900">{monthEvents}</p>
+                  <p className="text-base sm:text-lg font-bold text-gray-900">{loading ? "..." : monthEvents}</p>
                   <p className="text-xs text-gray-600">Events This Month</p>
                 </div>
               </div>
@@ -193,7 +293,7 @@ export const QuestCalendar = ({ events }: QuestCalendarProps) => {
                   <Users className="h-3 w-3 sm:h-4 sm:w-4 text-white" />
                 </div>
                 <div>
-                  <p className="text-base sm:text-lg font-bold text-gray-900">{totalParticipants}</p>
+                  <p className="text-base sm:text-lg font-bold text-gray-900">{loading ? "..." : totalParticipants}</p>
                   <p className="text-xs text-gray-600">Total Participants</p>
                 </div>
               </div>
@@ -204,7 +304,7 @@ export const QuestCalendar = ({ events }: QuestCalendarProps) => {
                   <MapPin className="h-3 w-3 sm:h-4 sm:w-4 text-white" />
                 </div>
                 <div>
-                  <p className="text-base sm:text-lg font-bold text-gray-900">{eventsJoined}</p>
+                  <p className="text-base sm:text-lg font-bold text-gray-900">{loading ? "..." : eventsJoined}</p>
                   <p className="text-xs text-gray-600">Events Joined</p>
                 </div>
               </div>
@@ -228,12 +328,18 @@ export const QuestCalendar = ({ events }: QuestCalendarProps) => {
             <h4 className="font-semibold text-emerald-800 mb-1 sm:mb-2 text-sm sm:text-base">
               {months[currentMonth]} {selectedDate}, {currentYear}
             </h4>
-            {events.find((e) => e.date === selectedDate) ? (
-              <div className="space-y-1 sm:space-y-2">
-                {events
-                  .filter((e) => e.date === selectedDate)
-                  .map((event, index) => (
-                    <div key={index} className="flex items-center gap-2">
+            {(() => {
+              const selectedDateEvents = events.filter(event => {
+                const eventDate = new Date(event.date)
+                return eventDate.getDate() === selectedDate &&
+                       eventDate.getMonth() === currentMonth &&
+                       eventDate.getFullYear() === currentYear
+              })
+              
+              return selectedDateEvents.length > 0 ? (
+                <div className="space-y-1 sm:space-y-2">
+                  {selectedDateEvents.map((event, index) => (
+                    <div key={event.id || index} className="flex items-center gap-2">
                       <div
                         className={`w-2 h-2 sm:w-3 sm:h-3 rounded-full ${
                           event.type === "cleanup"
@@ -243,16 +349,25 @@ export const QuestCalendar = ({ events }: QuestCalendarProps) => {
                               : "bg-green-600"
                         }`}
                       />
-                      <span className="text-xs sm:text-sm font-medium">{event.title}</span>
-                      {event.participants && (
-                        <span className="text-xs text-gray-500">({event.participants} participants)</span>
-                      )}
+                      <div className="flex-1">
+                        <span className="text-xs sm:text-sm font-medium">{event.title}</span>
+                        {event.time && (
+                          <span className="text-xs text-gray-500 ml-2">at {event.time}</span>
+                        )}
+                        {event.location && (
+                          <div className="text-xs text-gray-500">{event.location}</div>
+                        )}
+                        {event.participants && (
+                          <span className="text-xs text-gray-500">({event.participants} participants)</span>
+                        )}
+                      </div>
                     </div>
                   ))}
-              </div>
-            ) : (
-              <p className="text-xs sm:text-sm text-gray-500">No events scheduled for this date</p>
-            )}
+                </div>
+              ) : (
+                <p className="text-xs sm:text-sm text-gray-500">No events scheduled for this date</p>
+              )
+            })()}
           </div>
         )}
       </CardContent>
