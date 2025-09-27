@@ -2024,6 +2024,7 @@ export interface UnifiedEvent {
   requirements?: string[] | null;
   expected_trash_collection?: string | null;
   carbon_offset?: string | null;
+  is_litter_analysis_report?: boolean | null;
 }
 
 
@@ -2048,6 +2049,7 @@ export interface UnifiedEventInsert {
   requirements?: string[];
   expected_trash_collection?: string;
   carbon_offset?: string;
+  is_litter_analysis_report?: boolean;
 }
 
 
@@ -2218,159 +2220,3 @@ export async function getDashboardMetricsUnified(userId?: string): Promise<{
 
 
 
-export interface Post {
-  id: string;
-  user_id: string;
-  content: string;
-  image_url?: string | null;
-  created_at: string;
-  name?: string; // From user_profiles.name
-  profile_image_url?: string; // From user_profiles.profile_image_url
-}
-
-export interface PostInsert {
-  user_id: string;
-  content: string;
-  image_url?: string | null;
-}
-
-export interface PostUpdate {
-  content?: string;
-  image_url?: string | null;
-}
-
-//Create new post
-export async function createPost(data: PostInsert) {
-  const { data: result, error } = await supabase
-    .from("posts")
-    .insert(data)
-    .select()
-    .single();
-
-  if (error) {
-    console.error("Error creating post:", error);
-    return { data: null, error };
-  }
-  return { data: result, error: null };
-}
-
-
-//Get all posts function
-export async function getAllPosts(){
-  const {data, error} = await supabase.
-  from('posts')
-   .select(`
-      *,
-      user_profiles (
-        name,
-        profile_image_url
-      )
-    `)
-    .order('created_at', { ascending: false });
-
-    if(error){
-      console.error("Error fetching posts:", error);
-      return {data:[], error};
-
-    }
-    return {data, error:null};
-
-}
-
-
-//Get posts by user_id
-export async function getPostsByUserId(userId: string) {
-  const { data, error } = await supabase
-    .from('posts')
-    .select(`
-      *,
-      user_profiles (
-        name,
-        profile_image_url
-      )
-    `)
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false });
-
-  if (error) {
-    console.error("Error fetching user posts:", error);
-    return { data: [], error };
-  }
-
-  return { data, error: null };
-}
-
-
-//Get single post by ID
-
-export async function getPostById(id:string){
-  const {data,error} = await supabase.
-  from('posts')
-  .select(
-    `
-      *,
-      user_profiles (
-        name,
-        profile_image_url
-      )
-    `
-  )
-  .eq('id', id)
-  .single();
-
-  if (error) {
-    console.error("Error fetching post by ID:", error);
-    return { data: null, error };
-  }
-
-  return { data, error: null };
-}
-
-
-//Update Post
-
-export async function updatePost(id:string, updates:PostUpdate){
-  const {data, error} = await supabase.
-  from('posts')
-  .update(updates)
-  .eq('id', id)
-  .select()
-  .single();
-
-  if(error){
-    console.error("Error updating post:", error);
-    return {data:null, error};
-  }
-  return {data, error:null};
-}
-
-//Delete Post
-export async function deletePost(id:string){
-  const {error} = await supabase.
-  from('posts')
-  .delete()
-  .eq('id', id)
-
-  if(error){
-    console.error("Error deleting post:", error);
-    return {data:null, error};
-  }
-  return {data:true, error:null};
-
-}
-
-
-//Delete Post by userId
-export async function deletePostByUserId(userId:string){
-  const {error} = await supabase.
-  from('posts')
-  .delete()
-  .eq('user_id', userId)
-
-  if(error){
-    console.error("Error deleting posts by userId:", error);
-    return {data:null, error};
-  }
-
-  return {data:true, error:null};
-}

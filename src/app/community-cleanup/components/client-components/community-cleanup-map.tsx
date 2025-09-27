@@ -53,6 +53,7 @@ interface CleanupEvent {
   carbonOffset: string
   createdBy?: string // User ID of the event creator
   needsVolunteers?: boolean // True for events with <25% capacity
+  isLitterAnalysisReport?: boolean // True for events created from litter analysis
 }
 
 const categoryColors = {
@@ -105,6 +106,7 @@ const transformUnifiedToCleanup = (event: UnifiedEvent): CleanupEvent => {
     carbonOffset: event.carbon_offset || '10 kg CO2',
     createdBy: event.user_id || undefined,
     needsVolunteers: false, // Will be set by determineEventStatuses
+    isLitterAnalysisReport: event.is_litter_analysis_report || false,
   }
 }
 

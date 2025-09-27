@@ -36,6 +36,7 @@ interface CleanupEvent {
   requirements: string[]
   expectedTrashCollection: string
   carbonOffset: string
+  isLitterAnalysisReport?: boolean
 }
 
 interface MapWrapperProps {
@@ -100,10 +101,11 @@ const MapWrapper: React.FC<MapWrapperProps> = ({ events, categoryColors, onEvent
     }
   }, [isClient])
 
-  const createCustomIcon = (category: string) => {
+  const createCustomIcon = (category: string, isLitterAnalysisReport?: boolean) => {
     if (!isClient) return undefined // Don't create icons on server
     
-    const color = categoryColors[category as keyof typeof categoryColors]
+    // Use red color for self-reported cleanups (litter analysis reports)
+    const color = isLitterAnalysisReport ? "#DC2626" : categoryColors[category as keyof typeof categoryColors]
     return L.divIcon({
       className: "custom-marker",
       html: `<div style="background-color: ${color}; width: 24px; height: 24px; border-radius: 50%; border: 3px solid white; box-shadow: 0 3px 8px rgba(0,0,0,0.3); position: relative;">
@@ -138,7 +140,7 @@ const MapWrapper: React.FC<MapWrapperProps> = ({ events, categoryColors, onEvent
         <Marker
           key={event.id}
           position={[event.location.lat, event.location.lng]}
-          icon={createCustomIcon(event.category)}
+          icon={createCustomIcon(event.category, event.isLitterAnalysisReport)}
         >
           <Popup>
             <div className="p-3 min-w-[280px]">
