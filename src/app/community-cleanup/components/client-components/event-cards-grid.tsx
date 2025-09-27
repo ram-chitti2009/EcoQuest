@@ -20,17 +20,17 @@ interface CleanupEvent {
   rating?: number
   difficulty?: "Easy" | "Medium" | "Hard"
   duration?: string
+  needsVolunteers?: boolean
 }
 
 interface EventCardProps {
   event: CleanupEvent
-  featured?: boolean
   onJoinEvent?: (eventId: string) => void
   isJoined?: boolean
   currentUserId?: string | null
 }
 
-function EventCard({ event, featured = false, onJoinEvent, isJoined = false, currentUserId }: EventCardProps) {
+function EventCard({ event, onJoinEvent, isJoined = false, currentUserId }: EventCardProps) {
   const [isLiked, setIsLiked] = useState(false)
   const [isBookmarked, setIsBookmarked] = useState(false)
   const [isHovered, setIsHovered] = useState(false)
@@ -100,14 +100,15 @@ function EventCard({ event, featured = false, onJoinEvent, isJoined = false, cur
 
   return (
     <Card
-      className={`group relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:shadow-black/5 hover:-translate-y-1 cursor-pointer bg-gradient-to-br ${typeColors.gradient} border-0 ${featured ? "ring-1 ring-primary/20 shadow-md" : ""} flex flex-col h-full`}
+      className={`group relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:shadow-black/5 hover:-translate-y-1 cursor-pointer bg-gradient-to-br ${typeColors.gradient} border-0 flex flex-col h-full`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {featured && (
+      {/* Status badges - positioned at top-right */}
+      {event.needsVolunteers && (
         <div className="absolute -top-1 -right-1 z-10">
-          <Badge className="bg-gradient-to-r from-amber-400 to-orange-500 text-white border-0 rounded-bl-md rounded-tr-md px-2 py-0.5 text-xs font-medium">
-            ⭐ Featured
+          <Badge className="bg-gradient-to-r from-red-500 to-pink-600 text-white border-0 rounded-bl-md rounded-tr-md px-2 py-0.5 text-xs font-medium shadow-sm">
+            🆘 Needs Volunteers
           </Badge>
         </div>
       )}
@@ -326,13 +327,12 @@ interface EventCardsGridProps {
 }
 
 export default function EventCardsGrid({ events, loading = false, createEventButton, onJoinEvent, userParticipations, currentUserId }: EventCardsGridProps) {
-  // Sort events to show featured ones first
+  // Sort events to prioritize events needing volunteers
   const sortedEvents = [...events].sort((a, b) => {
-    // This is just an example - you'd implement actual featured logic
-    const aFeatured = a.rating && a.rating >= 4.5
-    const bFeatured = b.rating && b.rating >= 4.5
-    if (aFeatured && !bFeatured) return -1
-    if (!aFeatured && bFeatured) return 1
+    // Prioritize events needing volunteers
+    if (a.needsVolunteers && !b.needsVolunteers) return -1
+    if (!a.needsVolunteers && b.needsVolunteers) return 1
+    
     return 0
   })
 
@@ -377,11 +377,10 @@ export default function EventCardsGrid({ events, loading = false, createEventBut
 
         {events.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {sortedEvents.map((event, index) => (
+            {sortedEvents.map((event) => (
               <EventCard 
                 key={event.id} 
                 event={event} 
-                featured={event.rating ? event.rating >= 4.5 : index === 0}
                 onJoinEvent={onJoinEvent}
                 isJoined={userParticipations?.[event.id] || false}
                 currentUserId={currentUserId}

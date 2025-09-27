@@ -52,6 +52,7 @@ interface CleanupEvent {
   expectedTrashCollection: string
   carbonOffset: string
   createdBy?: string // User ID of the event creator
+  needsVolunteers?: boolean // True for events with <25% capacity
 }
 
 const categoryColors = {
@@ -103,6 +104,7 @@ const transformUnifiedToCleanup = (event: UnifiedEvent): CleanupEvent => {
     expectedTrashCollection: event.expected_trash_collection || '50 lbs',
     carbonOffset: event.carbon_offset || '10 kg CO2',
     createdBy: event.user_id || undefined,
+    needsVolunteers: false, // Will be set by determineEventStatuses
   }
 }
 
@@ -127,6 +129,17 @@ const mapCleanupToUnified = (category: CleanupEvent["category"]): 'cleanup' | 'w
     river: 'cleanup'
   }
   return mapping[category] || 'cleanup'
+}
+
+// Helper function to determine event status for needs volunteers
+const determineEventStatuses = (events: CleanupEvent[]): CleanupEvent[] => {
+  return events.map(event => {
+    const participationRate = event.maxParticipants > 0 ? event.participantCount / event.maxParticipants : 0
+    return {
+      ...event,
+      needsVolunteers: participationRate < 0.25 && event.status === 'upcoming'
+    }
+  })
 }
 
 // Create a stable random seed based on event ID to prevent cards from shuffling
@@ -161,6 +174,7 @@ const transformEventForCards = (event: CleanupEvent) => {
     rating: stableRandom1 > 0.5 ? Number((stableRandom2 * 2 + 3).toFixed(1)) : undefined,
     difficulty: ["Easy", "Medium", "Hard"][Math.floor(stableRandom3 * 3)] as "Easy" | "Medium" | "Hard",
     duration: event.duration,
+    needsVolunteers: event.needsVolunteers,
   }
 }
 
@@ -178,6 +192,7 @@ export default function CommunityCleanupMap() {
   const [isGeocodingAddress, setIsGeocodingAddress] = useState(false)
   const [geocodingError, setGeocodingError] = useState<string | null>(null)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState<"all" | "my">("all")
   const [newEvent, setNewEvent] = useState({
     title: "",
     description: "",
@@ -227,7 +242,8 @@ export default function CommunityCleanupMap() {
         } else {
           console.log(`Fetched ${data?.length || 0} unified events:`, data)
           const transformedEvents = (data || []).map(transformUnifiedToCleanup)
-          setEvents(transformedEvents)
+          const eventsWithStatus = determineEventStatuses(transformedEvents)
+          setEvents(eventsWithStatus)
           
           // Check user participation for each event
           if (currentUserId && data) {
@@ -409,10 +425,11 @@ export default function CommunityCleanupMap() {
         const { data: allEvents } = await getAllUnifiedEvents()
         if (allEvents) {
           const transformedEvents = allEvents.map(transformUnifiedToCleanup)
-          setEvents(transformedEvents)
+          const eventsWithStatus = determineEventStatuses(transformedEvents)
+          setEvents(eventsWithStatus)
           
           // Update selected event if it matches
-          const updatedSelectedEvent = transformedEvents.find(e => e.id === eventId)
+          const updatedSelectedEvent = eventsWithStatus.find(e => e.id === eventId)
           if (selectedEvent && updatedSelectedEvent) {
             setSelectedEvent(updatedSelectedEvent)
           }
@@ -539,16 +556,33 @@ export default function CommunityCleanupMap() {
     }
 
     try {
-      const { error } = await createUnifiedEvent(eventData)
+      const { data: createdEvent, error } = await createUnifiedEvent(eventData)
       if (error) {
         console.error('Error creating event:', error)
         alert('Failed to create event')
       } else {
+        // Automatically join the creator to their own event
+        if (createdEvent && currentUserId) {
+          const joinResult = await joinUnifiedEvent(createdEvent.id, currentUserId)
+          console.log('Auto-join creator result:', joinResult)
+        }
+
         // Refresh events list
         const { data: allEvents } = await getAllUnifiedEvents()
         if (allEvents) {
           const transformedEvents = allEvents.map(transformUnifiedToCleanup)
-          setEvents(transformedEvents)
+          const eventsWithStatus = determineEventStatuses(transformedEvents)
+          setEvents(eventsWithStatus)
+          
+          // Update user participation for all events including the new one
+          if (currentUserId) {
+            const participations: Record<string, boolean> = {}
+            for (const event of allEvents) {
+              const hasJoined = await checkUserEventParticipation(event.id, currentUserId)
+              participations[event.id.toString()] = hasJoined
+            }
+            setUserParticipations(participations)
+          }
         }
         setIsCreateEventModalOpen(false)
         // Reset form
@@ -578,7 +612,16 @@ export default function CommunityCleanupMap() {
     }
   }
 
+  // Filter events based on active tab
+  const getFilteredEventsByTab = (events: CleanupEvent[]) => {
+    if (activeTab === "my") {
+      // Only show events user has joined
+      return events.filter(event => userParticipations[event.id])
+    }
+    return events // Show all events
+  }
 
+  const tabFilteredEvents = getFilteredEventsByTab(filteredEvents)
 
   return (
     <div className="min-h-screen bg-stone-50">
@@ -707,8 +750,42 @@ export default function CommunityCleanupMap() {
         </div>
       </div>
 
+      {/* Event Tabs */}
+      <div className="bg-white border-b border-stone-200">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex space-x-8">
+            <button
+              onClick={() => setActiveTab("all")}
+              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200 ${
+                activeTab === "all"
+                  ? "border-green-500 text-green-600"
+                  : "border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-300"
+              }`}
+            >
+              All Events
+              <span className="ml-2 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-green-800 bg-green-100 rounded-full">
+                {filteredEvents.length}
+              </span>
+            </button>
+            <button
+              onClick={() => setActiveTab("my")}
+              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200 ${
+                activeTab === "my"
+                  ? "border-green-500 text-green-600"
+                  : "border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-300"
+              }`}
+            >
+              My Events
+              <span className="ml-2 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-blue-800 bg-blue-100 rounded-full">
+                {filteredEvents.filter(event => userParticipations[event.id]).length}
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
+
       <EventCardsGrid 
-        events={filteredEvents.map(transformEventForCards)} 
+        events={tabFilteredEvents.map(transformEventForCards)} 
         loading={loading}
         onJoinEvent={handleJoinEvent}
         userParticipations={userParticipations}
