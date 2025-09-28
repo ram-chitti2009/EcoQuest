@@ -4,7 +4,7 @@ import { createClient } from "@/utils/supabase/client"
 import { createUnifiedEvent, createUserLitterReport } from "@/utils/supabase/functions"
 import { AlertTriangle, ArrowLeft, Calendar, CheckCircle, MapPin, Recycle, Trash2, X } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { Input } from "../community-cleanup/components/ui/input"
 import { Modal, ModalContent, ModalHeader } from "../community-cleanup/components/ui/modal"
 import { Button } from "../litterLens/components/ui/Button"
@@ -41,6 +41,7 @@ export default function AnalyzePage() {
   const [analysisComplete, setAnalysisComplete] = useState(false)
   const [analysisData, setAnalysisData] = useState<AnalysisData | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const hasProcessedRef = useRef(false)
   
   // Cleanup modal states
   const [isCleanupModalOpen, setIsCleanupModalOpen] = useState(false)
@@ -57,7 +58,7 @@ export default function AnalyzePage() {
   const router = useRouter()
 
   // Function to call the classify-trash API
-  const classifyTrash = useCallback(async (imageFile: string) => {
+  const classifyTrash = async (imageFile: string, fileName: string) => {
     try {
       const token = await getSupabaseToken()
       console.log(token)
@@ -79,7 +80,7 @@ export default function AnalyzePage() {
       const blob = await response.blob()
       
       const formData = new FormData()
-      formData.append('file', blob, imageName)
+      formData.append('file', blob, fileName)
 
       const apiResponse = await fetch('http://localhost:8000/classify-trash', {
         headers, 
@@ -128,7 +129,7 @@ export default function AnalyzePage() {
       setError('Failed to analyze image. Please try again.')
       setIsAnalyzing(false)
     }
-  }, [imageName])
+  }
 
   // Geocoding function to convert address to coordinates (from community cleanup)
   const geocodeAddress = async (address: string): Promise<{lat: number, lng: number} | null> => {
@@ -284,17 +285,19 @@ export default function AnalyzePage() {
     const storedImage = sessionStorage.getItem("litterImage")
     const storedName = sessionStorage.getItem("litterImageName")
 
-    if (storedImage) {
+    if (storedImage && !hasProcessedRef.current) {
       setImageUrl(storedImage)
-      setImageName(storedName || "uploaded-image.jpg")
+      const fileName = storedName || "uploaded-image.jpg"
+      setImageName(fileName)
+      hasProcessedRef.current = true
 
       // Call the API to classify the trash
-      classifyTrash(storedImage)
-    } else {
+      classifyTrash(storedImage, fileName)
+    } else if (!storedImage && !hasProcessedRef.current) {
       // Redirect back if no image
       router.push("/")
     }
-  }, [router, classifyTrash])
+  }, [router])
 
   // Use analysisData if available, otherwise show loading or error
   const displayData = analysisData || {
