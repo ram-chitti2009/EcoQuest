@@ -244,7 +244,8 @@ export default function AnalyzePage() {
           equipment_provided: [],
           requirements: [],
           expected_trash_collection: analysisData.quantity,
-          carbon_offset: analysisData.environmentalImpact.carbonFootprint || '1 kg CO2'
+          carbon_offset: analysisData.environmentalImpact.carbonFootprint || '1 kg CO2',
+          is_litter_analysis_report: true
         }
 
         console.log('Creating cleanup event with data:', eventData)

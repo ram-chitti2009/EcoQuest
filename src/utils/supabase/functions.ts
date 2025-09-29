@@ -2052,6 +2052,30 @@ export interface UnifiedEventInsert {
   is_litter_analysis_report?: boolean;
 }
 
+export interface UnifiedEventUpdate {
+  date?: string;
+  title?: string;
+  time?: string;
+  location?: string;
+  category?: 'cleanup' | 'workshop' | 'planting' | 'seminar';
+  description?: string;
+  participants?: number;
+  max_participants?: number;
+  user_id?: string;
+  duration?: string;
+  location_name?: string;
+  location_address?: string;
+  lat?: number;
+  lng?: number;
+  organizer?: string;
+  status?: 'upcoming' | 'ongoing' | 'completed';
+  equipment_provided?: string[];
+  requirements?: string[];
+  expected_trash_collection?: string;
+  carbon_offset?: string;
+  is_litter_analysis_report?: boolean;
+}
+
 
 export async function getAllUnifiedEvents(): Promise<{ data: UnifiedEvent[] | null; error: any }> {
   try{
@@ -2181,8 +2205,88 @@ export async function leaveUnifiedEvent(eventId: number, userId: string): Promis
     console.error('Error leaving event:', error);
     return { success: false, message: 'Failed to leave event' };
   }
+}
 
+// Get events created from litter analysis
+export async function getLitterAnalysisEvents(): Promise<{ data: UnifiedEvent[] | null; error: any }> {
+  try {
+    const { data, error } = await supabase
+      .from('eco_events')
+      .select('*')
+      .eq('is_litter_analysis_report', true)
+      .order('date', { ascending: true });
 
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    return { data: null, error };
+  }
+}
+
+// Get community-created events (not from litter analysis)
+export async function getCommunityEvents(): Promise<{ data: UnifiedEvent[] | null; error: any }> {
+  try {
+    const { data, error } = await supabase
+      .from('eco_events')
+      .select('*')
+      .eq('is_litter_analysis_report', false)
+      .order('date', { ascending: true });
+
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    return { data: null, error };
+  }
+}
+
+// Get events by type with optional filtering
+export async function getEventsByType(isLitterAnalysis?: boolean): Promise<{ data: UnifiedEvent[] | null; error: any }> {
+  try {
+    let query = supabase.from('eco_events').select('*');
+    
+    if (isLitterAnalysis !== undefined) {
+      query = query.eq('is_litter_analysis_report', isLitterAnalysis);
+    }
+    
+    const { data, error } = await query.order('date', { ascending: true });
+
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    return { data: null, error };
+  }
+}
+
+// Update unified event
+export async function updateUnifiedEvent(eventId: number, updates: UnifiedEventUpdate): Promise<{ data: UnifiedEvent | null; error: any }> {
+  try {
+    const { data, error } = await supabase
+      .from('eco_events')
+      .update(updates)
+      .eq('id', eventId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    return { data: null, error };
+  }
+}
+
+// Delete unified event
+export async function deleteUnifiedEvent(eventId: number): Promise<{ success: boolean; error: any }> {
+  try {
+    const { error } = await supabase
+      .from('eco_events')
+      .delete()
+      .eq('id', eventId);
+
+    if (error) throw error;
+    return { success: true, error: null };
+  } catch (error) {
+    return { success: false, error };
+  }
 }
 
 
@@ -2208,7 +2312,7 @@ export async function getDashboardMetricsUnified(userId?: string): Promise<{
       error: hasError
     };
   } catch (error) {
-    console.error('Error in getDashboardMetricsUnified:', error);
+    console.error('Error in getDashboardMetricsUnified:', error);is
     return {
       eventsThisMonth: 0,
       totalParticipants: 0,
