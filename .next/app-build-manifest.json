@@ -11,6 +11,22 @@
       "static/chunks/main-app.js",
       "static/chunks/app/page.js"
     ],
+    "/landingPage/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/landingPage/page.js"
+    ],
+    "/dashboard/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/dashboard/page.js"
+    ],
+    "/community-cleanup/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/css/app/community-cleanup/page.css",
+      "static/chunks/app/community-cleanup/page.js"
+    ],
     "/litterLens/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
@@ -20,6 +36,11 @@
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/litterAnalysis/page.js"
+    ],
+    "/_not-found/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/_not-found/page.js"
     ]
   }
 }

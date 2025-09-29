@@ -1,10 +1,10 @@
 "use client"
 
 import { createClient } from "@/utils/supabase/client"
-import { createUnifiedEvent, createUserLitterReport } from "@/utils/supabase/functions"
+import { createUnifiedEvent, createUserLitterReport, joinUnifiedEvent } from "@/utils/supabase/functions"
 import { AlertTriangle, ArrowLeft, Calendar, CheckCircle, MapPin, Recycle, Trash2, X } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Input } from "../community-cleanup/components/ui/input"
 import { Modal, ModalContent, ModalHeader } from "../community-cleanup/components/ui/modal"
 import { Button } from "../litterLens/components/ui/Button"
@@ -259,9 +259,27 @@ export default function AnalyzePage() {
         }
 
         console.log('Cleanup event created successfully:', createdEvent)
-        alert('Cleanup report submitted successfully! It will appear as a red dot on the Community Cleanup map.')
+        
+        // Automatically join the user to the cleanup event they created
+        if (createdEvent && createdEvent.id) {
+          try {
+            const joinResult = await joinUnifiedEvent(createdEvent.id, userId)
+            if (joinResult.success) {
+              console.log('User automatically joined their cleanup event:', joinResult)
+              alert('Cleanup report submitted successfully! You have been automatically joined to this cleanup event. It will appear as a red dot on the Community Cleanup map.')
+            } else {
+              console.warn('Failed to auto-join user to cleanup event:', joinResult.message)
+              alert('Cleanup report submitted successfully! It will appear as a red dot on the Community Cleanup map. Note: You may need to manually join the event if you want to participate.')
+            }
+          } catch (joinError) {
+            console.error('Error auto-joining user to cleanup event:', joinError)
+            alert('Cleanup report submitted successfully! It will appear as a red dot on the Community Cleanup map. Note: You may need to manually join the event if you want to participate.')
+          }
+        } else {
+          alert('Cleanup report submitted successfully! It will appear as a red dot on the Community Cleanup map.')
+        }
       } else {
-        alert('Cleanup marked as completed! No map entry created.')
+        alert('Cleanup marked as completed! No map entry was created since you chose not to show it on the map.')
       }
       
       setIsCleanupModalOpen(false)
