@@ -1,7 +1,111 @@
-import { Card, CardHeader, CardContent } from "./ui/card"
+import { getUpcomingUnifiedEvents } from "@/utils/supabase/functions"
+import { useEffect, useState } from "react"
 import { Calendar } from "./icons"
+import { Card, CardContent, CardHeader } from "./ui/card"
+
+interface Event {
+  id: number
+  title: string
+  date: string
+  time: string
+  category: 'cleanup' | 'workshop' | 'planting' | 'seminar'
+  location?: string
+}
+
+const getEventIcon = (category: string) => {
+  switch (category) {
+    case 'cleanup':
+      return '🗑️'
+    case 'workshop':
+      return '☀️'
+    case 'planting':
+      return '🌳'
+    case 'seminar':
+      return '📚'
+    default:
+      return '🌍'
+  }
+}
+
+const getEventBackground = (category: string) => {
+  switch (category) {
+    case 'cleanup':
+      return 'bg-blue-50'
+    case 'workshop':
+      return 'bg-yellow-50'
+    case 'planting':
+      return 'bg-green-50'
+    case 'seminar':
+      return 'bg-purple-50'
+    default:
+      return 'bg-emerald-50'
+  }
+}
+
+const formatEventDateTime = (date: string, time: string) => {
+  try {
+    const eventDate = new Date(date)
+    const today = new Date()
+    const tomorrow = new Date(today)
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    
+    // Format time to 12-hour format
+    const [hours, minutes] = time.split(':')
+    const hour = parseInt(hours)
+    const ampm = hour >= 12 ? 'PM' : 'AM'
+    const hour12 = hour % 12 || 12
+    const formattedTime = `${hour12}:${minutes}${ampm}`
+    
+    if (eventDate.toDateString() === today.toDateString()) {
+      return `Today ${formattedTime}`
+    } else if (eventDate.toDateString() === tomorrow.toDateString()) {
+      return `Tomorrow ${formattedTime}`
+    } else {
+      const month = eventDate.toLocaleDateString('en-US', { month: 'short' })
+      const day = eventDate.getDate()
+      return `${month} ${day}, ${formattedTime}`
+    }
+  } catch (error) {
+    return `${date} ${time}`
+  }
+}
 
 export const UpcomingEventsCard = () => {
+  const [events, setEvents] = useState<Event[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchUpcomingEvents = async () => {
+      try {
+        const { data, error } = await getUpcomingUnifiedEvents()
+        
+        if (error) {
+          console.error('Error fetching upcoming events:', error)
+          return
+        }
+        
+        if (data) {
+          // Take only the first 3 upcoming events
+          const limitedEvents = data.slice(0, 3).map(event => ({
+            id: event.id,
+            title: event.title,
+            date: event.date,
+            time: event.time,
+            category: event.category,
+            location: event.location
+          }))
+          setEvents(limitedEvents)
+        }
+      } catch (error) {
+        console.error('Error fetching upcoming events:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchUpcomingEvents()
+  }, [])
+
   return (
     <Card>
       <CardHeader>
@@ -11,27 +115,34 @@ export const UpcomingEventsCard = () => {
         </h3>
       </CardHeader>
       <CardContent className="space-y-3">
-        <div className="flex items-center gap-3 p-2 bg-emerald-50 rounded-lg">
-          <div className="text-lg">🏖️</div>
-          <div className="flex-1">
-            <p className="text-sm font-medium text-gray-800">Beach Cleanup</p>
-            <p className="text-xs text-gray-600">Tomorrow 2PM</p>
+        {loading ? (
+          <div className="space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="flex items-center gap-3 p-2 bg-gray-100 rounded-lg animate-pulse">
+                <div className="w-6 h-6 bg-gray-300 rounded"></div>
+                <div className="flex-1">
+                  <div className="h-4 bg-gray-300 rounded mb-1"></div>
+                  <div className="h-3 bg-gray-300 rounded w-20"></div>
+                </div>
+              </div>
+            ))}
           </div>
-        </div>
-        <div className="flex items-center gap-3 p-2 bg-yellow-50 rounded-lg">
-          <div className="text-lg">☀️</div>
-          <div className="flex-1">
-            <p className="text-sm font-medium text-gray-800">Solar Workshop</p>
-            <p className="text-xs text-gray-600">Aug 14, 10AM</p>
+        ) : events.length > 0 ? (
+          events.map((event) => (
+            <div key={event.id} className={`flex items-center gap-3 p-2 ${getEventBackground(event.category)} rounded-lg`}>
+              <div className="text-lg">{getEventIcon(event.category)}</div>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-gray-800">{event.title}</p>
+                <p className="text-xs text-gray-600">{formatEventDateTime(event.date, event.time)}</p>
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="text-center py-4">
+            <p className="text-sm text-gray-500">No upcoming events found</p>
+            <p className="text-xs text-gray-400">Check back later for new events!</p>
           </div>
-        </div>
-        <div className="flex items-center gap-3 p-2 bg-green-50 rounded-lg">
-          <div className="text-lg">🌳</div>
-          <div className="flex-1">
-            <p className="text-sm font-medium text-gray-800">Tree Planting</p>
-            <p className="text-xs text-gray-600">Aug 20, 9AM</p>
-          </div>
-        </div>
+        )}
       </CardContent>
     </Card>
   )

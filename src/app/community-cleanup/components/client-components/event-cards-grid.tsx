@@ -36,7 +36,15 @@ function EventCard({ event, onJoinEvent, isJoined = false, currentUserId }: Even
   const [isBookmarked, setIsBookmarked] = useState(false)
   const [isHovered, setIsHovered] = useState(false)
 
-  const getTypeColor = (type: string) => {
+  const getTypeColor = (type: string, isLitterReport?: boolean) => {
+    // Special styling for litter report events
+    if (isLitterReport) {
+      return {
+        badge: "bg-red-50 text-red-700 border-red-200 dark:bg-red-950 dark:text-red-300 dark:border-red-800",
+        gradient: "from-red-50 to-orange-50 dark:from-red-950 dark:to-orange-950",
+      }
+    }
+
     switch (type) {
       case "beach":
         return {
@@ -96,7 +104,7 @@ function EventCard({ event, onJoinEvent, isJoined = false, currentUserId }: Even
     }
   }
 
-  const typeColors = getTypeColor(event.type)
+  const typeColors = getTypeColor(event.type, event.isLitterAnalysisReport)
   const progress = event.maxVolunteers ? (event.volunteers / event.maxVolunteers) * 100 : 0
 
   return (
@@ -280,7 +288,7 @@ function EventCard({ event, onJoinEvent, isJoined = false, currentUserId }: Even
             className={`w-full font-medium py-2 rounded-md shadow-md hover:shadow-lg transition-all duration-300 group/btn border-2 border-white ${
               isJoined 
                 ? 'bg-gradient-to-r from-red-600 to-red-600/90 hover:from-red-600/90 hover:to-red-600 text-white'
-                : 'bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white'
+                : 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white'
             } ${isHovered ? "scale-[1.01]" : ""}`}
           >
             <span className="flex items-center justify-center gap-2 text-sm">

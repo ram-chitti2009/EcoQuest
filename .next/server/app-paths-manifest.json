@@ -1,6 +1,8 @@
 {
   "/_not-found/page": "app/_not-found/page.js",
-  "/favicon.ico/route": "app/favicon.ico/route.js",
   "/community-cleanup/page": "app/community-cleanup/page.js",
-  "/litterLens/page": "app/litterLens/page.js"
+  "/litterLens/page": "app/litterLens/page.js",
+  "/profile/page": "app/profile/page.js",
+  "/litterAnalysis/page": "app/litterAnalysis/page.js",
+  "/dashboard/page": "app/dashboard/page.js"
 }
