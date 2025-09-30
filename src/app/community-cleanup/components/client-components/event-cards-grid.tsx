@@ -21,6 +21,7 @@ interface CleanupEvent {
   difficulty?: "Easy" | "Medium" | "Hard"
   duration?: string
   needsVolunteers?: boolean
+  isLitterAnalysisReport?: boolean
 }
 
 interface EventCardProps {
@@ -162,6 +163,15 @@ function EventCard({ event, onJoinEvent, isJoined = false, currentUserId }: Even
               <Badge variant="secondary" className={`${typeColors.badge} font-medium px-2 py-0.5 text-xs shadow-sm`}>
                 {event.type.charAt(0).toUpperCase() + event.type.slice(1)}
               </Badge>
+              {/* Subtle Event Source Indicator */}
+              <div className="flex items-center">
+                <div 
+                  className={`w-1.5 h-1.5 rounded-full opacity-60 ${
+                    event.isLitterAnalysisReport ? 'bg-red-400' : 'bg-green-400'
+                  }`}
+                  title={event.isLitterAnalysisReport ? 'Litter Report Event' : 'Community Event'}
+                ></div>
+              </div>
               {event.difficulty && (
                 <Badge className={`${getDifficultyColor(event.difficulty)} text-xs px-1.5 py-0.5`}>
                   {event.difficulty}

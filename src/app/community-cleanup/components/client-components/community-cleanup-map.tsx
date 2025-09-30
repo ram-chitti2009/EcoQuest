@@ -177,6 +177,7 @@ const transformEventForCards = (event: CleanupEvent) => {
     difficulty: ["Easy", "Medium", "Hard"][Math.floor(stableRandom3 * 3)] as "Easy" | "Medium" | "Hard",
     duration: event.duration,
     needsVolunteers: event.needsVolunteers,
+    isLitterAnalysisReport: event.isLitterAnalysisReport,
   }
 }
 
@@ -626,7 +627,7 @@ export default function CommunityCleanupMap() {
   const tabFilteredEvents = getFilteredEventsByTab(filteredEvents)
 
   return (
-    <div className="min-h-screen bg-stone-50">
+    <div className="h-full bg-stone-50 overflow-y-auto">
       {/* Full-width Hero Map */}
       <div className="h-[70vh] w-full relative">
         <MapWrapper 
@@ -782,6 +783,24 @@ export default function CommunityCleanupMap() {
                 {filteredEvents.filter(event => userParticipations[event.id]).length}
               </span>
             </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Sleek Event Type Legend */}
+      <div className="bg-white/80 backdrop-blur-sm">
+        <div className="max-w-7xl mx-auto px-4 py-1.5">
+          <div className="flex items-center justify-end gap-4 text-xs text-stone-500">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5">
+                <div className="w-1.5 h-1.5 bg-green-400 rounded-full opacity-75"></div>
+                <span className="font-light">Community</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-1.5 h-1.5 bg-red-400 rounded-full opacity-75"></div>
+                <span className="font-light">Reports</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
