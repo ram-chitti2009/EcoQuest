@@ -1,7 +1,6 @@
 {
-  "/dashboard/page": "app/dashboard/page.js",
-  "/carbon-clash/page": "app/carbon-clash/page.js",
-  "/calendar/page": "app/calendar/page.js",
   "/profile/page": "app/profile/page.js",
+  "/leaderboard/page": "app/leaderboard/page.js",
+  "/dashboard/page": "app/dashboard/page.js",
   "/community-cleanup/page": "app/community-cleanup/page.js"
 }

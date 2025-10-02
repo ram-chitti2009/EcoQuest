@@ -12,9 +12,9 @@ import { Button } from "./components/ui/button"
 import { Card, CardContent, CardHeader } from "./components/ui/card"
 import { Clock, Crown, Star, Trophy, Users } from "./components/ui/icons"
 import { Progress } from "./components/ui/progress"
-
+import Link from "next/link"
 import { createClient } from "@/utils/supabase/client"
-import { getCommunityStats, getLeaderboardWithUserData, Leaderboard } from "@/utils/supabase/functions"
+import { getAllUnifiedEvents, getCommunityStats, getLeaderboardWithUserData, Leaderboard } from "@/utils/supabase/functions"
 import { useCallback, useEffect } from "react"
 
 // Extended interface for leaderboard with joined data
@@ -25,6 +25,80 @@ interface LeaderboardWithStats extends Leaderboard {
     cleanups_participated?: number;
     xp?: number;
   };
+}
+
+interface Event{
+  id: number
+  title: string
+  date: string
+  time: string
+  category: 'cleanup' | 'workshop' | 'planting' | 'seminar'
+  location?: string
+}
+
+const getEventIcon = (category: string) => {
+  switch (category) {
+    case 'cleanup':
+      return '🗑️'
+    case 'workshop':
+      return '☀️'
+    case 'planting':
+      return '🌳'
+    case 'seminar':
+      return '📚'
+    default:
+      return '🌍'
+  }
+}
+
+const getEventBackground = (category: string) => {
+  switch (category) {
+    case 'cleanup':
+      return 'bg-blue-50'
+    case 'workshop':
+      return 'bg-yellow-50'
+    case 'planting':
+      return 'bg-green-50'
+    case 'seminar':
+      return 'bg-purple-50'
+    default:
+      return 'bg-emerald-50'
+  }
+}
+
+const formatEventDateTime = (date: string, time: string) => {
+  try {
+    const eventDate = new Date(date)
+    const today = new Date()
+    const yesterday = new Date(today)
+    yesterday.setDate(yesterday.getDate() - 1)
+    
+    // Format time to 12-hour format
+    const [hours, minutes] = time.split(':')
+    const hour = parseInt(hours)
+    const ampm = hour >= 12 ? 'PM' : 'AM'
+    const hour12 = hour % 12 || 12
+    const formattedTime = `${hour12}:${minutes}${ampm}`
+    
+    if (eventDate.toDateString() === today.toDateString()) {
+      return `Today ${formattedTime}`
+    } else if (eventDate.toDateString() === yesterday.toDateString()) {
+      return `Yesterday ${formattedTime}`
+    } else {
+      // Calculate days ago
+      const diffTime = today.getTime() - eventDate.getTime()
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
+      if (diffDays <= 7) {
+        return `${diffDays} days ago ${formattedTime}`
+      } else {
+        const month = eventDate.toLocaleDateString('en-US', { month: 'short' })
+        const day = eventDate.getDate()
+        return `${month} ${day}, ${formattedTime}`
+      }
+    }
+  } catch {
+    return `${date} ${time}`
+  }
 }
 
 // Function to calculate metric value for ranking
@@ -86,6 +160,55 @@ export default function Component() {
     active_users: 89
   })
   const [loading, setLoading] = useState(true)
+
+  const [events, setEvents] = useState<Event[]>([])
+  
+    useEffect(() => {
+      const fetchRecentEvents = async () => {
+        try {
+          const { data, error } = await getAllUnifiedEvents()
+          
+          if (error) {
+            console.error('Error fetching events:', error)
+            return
+          }
+          
+          if (data) {
+            const now = new Date()
+            const startOfWeek = new Date(now)
+            startOfWeek.setDate(now.getDate() - now.getDay()) // Start of this week (Sunday)
+            startOfWeek.setHours(0, 0, 0, 0)
+            
+            // Filter events that happened this week (from start of week to now)
+            const thisWeekEvents = data.filter(event => {
+              const eventDate = new Date(event.date)
+              return eventDate >= startOfWeek && eventDate <= now
+            })
+            
+            // Sort by date descending (most recent first) and take the first 3
+            const recentEvents = thisWeekEvents
+              .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+              .slice(0, 3)
+              .map(event => ({
+                id: event.id,
+                title: event.title,
+                date: event.date,
+                time: event.time,
+                category: event.category,
+                location: event.location
+              }))
+            
+            setEvents(recentEvents)
+          }
+        } catch (error) {
+          console.error('Error fetching recent events:', error)
+        } finally {
+          setLoading(false)
+        }
+      }
+  
+      fetchRecentEvents()
+    }, [])
 
   // Function to update rankings when metric changes
   const updateRankingsForMetric = useCallback((metric: "carbon" | "events" | "hours" | "points") => {
@@ -362,7 +485,7 @@ export default function Component() {
                 </div>
 
                 {/* Leaderboard List */}
-                <div className="space-y-3 max-h-96 overflow-y-auto">
+                <div className="space-y-3 max-h-96 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                   {leaderboardData.map((entry) => (
                     <div
                       key={entry.id}
@@ -513,40 +636,63 @@ export default function Component() {
 
                 {/* Additional Stats */}
                 <div className="pt-4 border-t border-gray-200">
-                  <h4 className="font-semibold text-gray-800 mb-3 text-center">🏆 This Week&apos;s Highlights</h4>
+                  <h4 className="font-semibold text-gray-800 text-center">🏆 This Week&apos;s Highlights</h4>
                   <div className="space-y-3">
-                    <div className="flex items-center gap-3 p-2 bg-yellow-50 rounded-lg">
-                      <div className="text-lg">🎯</div>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-800">Beach Cleanup</p>
-                        <p className="text-xs text-gray-600">45 participants</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3 p-2 bg-green-50 rounded-lg">
-                      <div className="text-lg">🌳</div>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-800">Tree Planting</p>
-                        <p className="text-xs text-gray-600">127 trees planted</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3 p-2 bg-blue-50 rounded-lg">
-                      <div className="text-lg">♻️</div>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-800">Recycling Drive</p>
-                        <p className="text-xs text-gray-600">2.3 tons collected</p>
-                      </div>
-                    </div>
+                    <CardContent className="space-y-3">
+                     {loading ? (
+                       <div className="space-y-4">
+                         {[1, 2, 3].map((i) => (
+                           <div key={i} className="p-4 flex items-center gap-4 bg-gray-100 rounded-xl animate-pulse min-h-[90px]">
+                             <div className="w-10 h-10 bg-gray-300 rounded-full"></div>
+                             <div className="flex-1">
+                               <div className="h-5 bg-gray-300 rounded mb-2 w-2/3"></div>
+                               <div className="h-4 bg-gray-200 rounded w-1/3"></div>
+                             </div>
+                           </div>
+                         ))}
+                       </div>
+                     ) : events.length > 0 ? (
+                       <div className="space-y-2">
+                         {events.map((event) => (
+                           <div
+                             key={event.id}
+                             className={`p-4 flex items-center justify-between rounded-xl border shadow-sm transition-all duration-300 hover:shadow-lg hover:scale-105 ${getEventBackground(event.category)}`}
+                           >
+                             <div className="flex items-center gap-3">
+                               <div className="text-2xl">{getEventIcon(event.category)}</div>
+                               <div className="flex-1">
+                                 <p className="text-base font-semibold text-gray-800 leading-tight">{event.title}</p>
+                                 <p className="text-xs text-gray-600 leading-tight">{formatEventDateTime(event.date, event.time)}</p>
+                               </div>
+                             </div>
+                             {event.location && (
+                               <div className="text-xs text-gray-500 text-right flex-shrink-0">
+                                 📍 {event.location}
+                               </div>
+                             )}
+                           </div>
+                         ))}
+                       </div>
+                     ) : (
+                       <div className="text-center py-6">
+                         <p className="text-base text-gray-500">No events happened this week</p>
+                         <p className="text-sm text-gray-400">Check back next week for recent activity!</p>
+                       </div>
+                     )}
+                   </CardContent>
                   </div>
                 </div>
 
                 {/* Call to Action */}
-                <div className="pt-4 border-t border-gray-200">
+                <div className="border-t border-gray-200">
                   <div className="text-center p-4 bg-gradient-to-r from-green-400 to-emerald-500 rounded-xl text-white">
                     <h4 className="font-bold mb-1">Join the Movement!</h4>
                     <p className="text-sm opacity-90">Next event: Tomorrow 2PM</p>
-                    <button className="mt-2 px-4 py-2 bg-white text-green-600 rounded-lg font-medium text-sm hover:bg-gray-100 transition-colors">
-                      Sign Up Now
-                    </button>
+                    <Link href="/community-cleanup">
+                      <button className="mt-2 px-4 py-2 bg-white text-green-600 rounded-lg font-medium text-sm hover:bg-gray-100 transition-colors">
+                        Sign Up Now
+                      </button>
+                    </Link>
                   </div>
                 </div>
               </CardContent>
