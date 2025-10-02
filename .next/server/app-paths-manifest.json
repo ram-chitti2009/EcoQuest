@@ -1,5 +1,4 @@
 {
-  "/_not-found/page": "app/_not-found/page.js",
-  "/favicon.ico/route": "app/favicon.ico/route.js",
-  "/QuestLog/page": "app/QuestLog/page.js"
+  "/QuestLog/page": "app/QuestLog/page.js",
+  "/community-cleanup/page": "app/community-cleanup/page.js"
 }

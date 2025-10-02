@@ -11,7 +11,7 @@ import type React from "react"
 import { useEffect, useState } from "react"
 // App-wide header component
 import { createClient } from "@/utils/supabase/client"
-import { UnifiedEvent } from "@/utils/supabase/functions"
+import { UnifiedEvent, VolunteerActivity, getUserVolunteerActivities, createVolunteerActivity } from "@/utils/supabase/functions"
 import Header from "../../../components/Header"
 
 // Function to get user's joined events
@@ -55,25 +55,7 @@ const getUserJoinedEvents = async (userId: string) => {
   }
 }
 
-// Placeholder database functions for volunteer activities
-const getUserCarbonActivities = async () => {
-  // Return empty array - no demo data
-  return {
-    data: [],
-    error: null
-  }
-}
-
-const createCarbonActivity = async (activity: { type: string; quantity: number; hours_logged: number; date: string; user_id: string }) => {
-  // Mock creation for demonstration
-  return {
-    data: {
-      ...activity,
-      id: Date.now().toString(),
-    },
-    error: null
-  }
-}
+// Real database functions are imported from @/utils/supabase/functions
 
 
 // --- UI Utility Components ---
@@ -269,13 +251,7 @@ const ProgressRing: React.FC<ProgressRingProps> = ({ value, max, size = 160 }) =
   )
 }
 
-interface Activity {
-  user_id: string
-  id: string
-  type: string
-  date: string
-  quantity: number
-  hours_logged: number
+interface Activity extends VolunteerActivity {
   icon: React.ReactNode
 }
 
@@ -445,10 +421,11 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ isOpen, onClose, onSubmit
     e.preventDefault()
     if (!selectedEvent || !hours) return
 
+    // Use the event's actual date for when the volunteering happened
     onSubmit({
       type: selectedEvent.title,
       quantity: Number.parseFloat(hours),
-      date: selectedEvent.date,
+      date: selectedEvent.date, // Use the event's actual date
       carbonSaved: Number.parseFloat(hours), // Use hours as the value
     })
 
@@ -604,13 +581,13 @@ export default function CarbonTracker() {
       if (!user) return
 
       // Fetch volunteer activities
-      getUserCarbonActivities().then((result) => {
+      getUserVolunteerActivities(user.id).then((result) => {
         // Check for error and map only if data is present
         if (result.error || !result.data) {
           setActivities([])
           return
         }
-        const mappedActivities = result.data.map((activity: { id: string; user_id: string; type: string; quantity: number; hours_logged: number; date: string }) => ({
+        const mappedActivities = result.data.map((activity: VolunteerActivity) => ({
           ...activity,
           icon: activityIcons[activity.type as keyof typeof activityIcons] || <TreePine className="w-4 h-4" />,
         }))
@@ -653,31 +630,48 @@ export default function CarbonTracker() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
+    // Find the event_id if this activity is from a joined event
+    const relatedEvent = userJoinedEvents.find(event => 
+      event.title === activityData.type && event.date === activityData.date
+    )
+
     // Data for database (no icon field) - map hours to hours_logged
     const dbActivity = {
       user_id: user.id,
+      event_id: relatedEvent?.id || null,
       type: activityData.type,
       date: activityData.date,
-      quantity: activityData.quantity,
-      hours_logged: activityData.carbonSaved, // Use the calculated value from the modal as hours
+      quantity: 1, // Default quantity to 1 (representing 1 volunteer session)
+      hours_logged: parseFloat(activityData.carbonSaved.toString()), // The actual hours volunteered
     }
 
     // Save to backend
-    const result = await createCarbonActivity(dbActivity)
+    console.log('Attempting to create volunteer activity:', dbActivity)
+    const result = await createVolunteerActivity(dbActivity)
     
     if (result.error) {
       console.error('Error creating activity:', result.error)
+      alert(`Error creating activity: ${JSON.stringify(result.error)}`)
       return
     }
 
-    // Create activity with icon for frontend state
-    const newActivity: Activity = {
-      ...result.data!,
-      icon: activityIcons[activityData.type as keyof typeof activityIcons] || <TreePine className="w-4 h-4" />,
-    }
+    console.log('Activity created successfully:', result.data)
 
-    setActivities((prev) => [newActivity, ...prev])
+    // Refetch activities from database to ensure consistency
+    console.log('Refetching activities from database...')
+    const updatedActivities = await getUserVolunteerActivities(user.id)
+    console.log('Updated activities result:', updatedActivities)
     
+    if (updatedActivities.data && !updatedActivities.error) {
+      const mappedActivities = updatedActivities.data.map((activity: VolunteerActivity) => ({
+        ...activity,
+        icon: activityIcons[activity.type as keyof typeof activityIcons] || <TreePine className="w-4 h-4" />,
+      }))
+      console.log('Setting mapped activities:', mappedActivities)
+      setActivities(mappedActivities)
+    } else {
+      console.error('Error fetching updated activities:', updatedActivities.error)
+    }
 
     // Show celebration animation
     setShowCelebration(true)

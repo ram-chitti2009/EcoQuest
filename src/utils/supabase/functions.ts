@@ -2391,3 +2391,156 @@ export async function getDashboardMetricsUnified(userId?: string): Promise<{
 
 
 
+
+export interface VolunteerActivity {
+  id: string
+  user_id: string
+  event_id?: number | null
+  type: string
+  date: string
+  hours_logged: number
+  quantity: number
+  notes?: string | null
+  created_at?: string | null
+  updated_at?: string | null
+}
+
+
+
+export const getUserVolunteerActivities = async (userId:string) => {
+  const supabase = createClient()
+
+
+  try{
+    const {data, error} = await supabase.
+    from('volunteer_activities')
+    .select('*')
+    .eq('user_id', userId)
+    .order('date', {ascending:false});
+    return {data:data||[], error:error||null}
+  }catch(error){
+    console.error("Error fetching volunteer activities:", error)
+    return {data:[], error}
+  }
+}
+
+
+export const createVolunteerActivity = async (activity: {
+  user_id: string
+  event_id?: number | null
+  type: string
+  date: string
+  hours_logged: number // Accepts both integers and floats
+  quantity?: number
+}) => {
+  const supabase = createClient()
+  
+  try {
+    console.log('Creating volunteer activity with data:', activity)
+    
+    const insertData = {
+      user_id: activity.user_id,
+      event_id: activity.event_id || null,
+      type: activity.type,
+      date: activity.date,
+      hours_logged: parseFloat(activity.hours_logged.toString()), // Ensure proper float conversion
+      quantity: parseInt((activity.quantity || 1).toString()), // Ensure quantity is integer
+    }
+    
+    console.log('Insert data prepared:', insertData)
+    
+    const { data, error } = await supabase
+      .from('volunteer_activities')
+      .insert([insertData])
+      .select()
+      .single()
+
+    console.log('Supabase response - data:', data, 'error:', error)
+
+    return { data, error }
+  } catch (error) {
+    console.error('Error creating volunteer activity:', error)
+    return { data: null, error }
+  }
+}
+
+
+export const updateVolunteerActivity = async (
+  activityId: string,
+  updates: Partial<VolunteerActivity>
+) => {
+  const supabase = createClient()
+  
+  try {
+    const { data, error } = await supabase
+      .from('volunteer_activities')
+      .update({
+        ...updates,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', activityId)
+      .select()
+      .single()
+
+    return { data, error }
+  } catch (error) {
+    console.error('Error updating volunteer activity:', error)
+    return { data: null, error }
+  }
+}
+
+
+export const deleteVolunteerActivity = async (activityId: string) => {
+  const supabase = createClient()
+  
+  try {
+    const { error } = await supabase
+      .from('volunteer_activities')
+      .delete()
+      .eq('id', activityId)
+
+    return { error }
+  } catch (error) {
+    console.error('Error deleting volunteer activity:', error)
+    return { error }
+  }
+}
+
+
+
+// ...existing code...
+
+export const getVolunteerStats = async (userId: string, year: number, month?: number) => {
+  const supabase = createClient()
+  
+  try {
+    let query = supabase
+      .from('volunteer_activities')
+      .select('hours_logged, date')
+      .eq('user_id', userId)
+      .gte('date', `${year}-01-01`)
+      .lte('date', `${year}-12-31`)
+
+    if (month) {
+      const monthStr = month.toString().padStart(2, '0')
+      query = query
+        .gte('date', `${year}-${monthStr}-01`)
+        .lte('date', `${year}-${monthStr}-31`)
+    }
+
+    const { data, error } = await query
+
+    if (error) return { totalHours: 0, activityCount: 0, error }
+
+    const totalHours = data.reduce((sum, activity) => sum + Number(activity.hours_logged), 0)
+    
+    return { 
+      totalHours, 
+      activityCount: data.length, 
+      error: null 
+    }
+  } catch (error) {
+    console.error('Error fetching volunteer stats:', error)
+    return { totalHours: 0, activityCount: 0, error }
+  }
+}
