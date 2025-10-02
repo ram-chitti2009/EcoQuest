@@ -14,7 +14,7 @@ export const ImpactMetrics = ({ cleanupEvents, bagsCollected, quizzesCompleted }
           <div className="flex items-center justify-between">
             <div>
               <div className="text-2xl font-bold">{cleanupEvents}</div>
-              <p className="text-emerald-100 text-sm">Cleanups Attended</p>
+              <p className="text-emerald-100 text-sm">Cleanups Joined</p>
             </div>
             <div className="text-3xl">🧹</div>
           </div>
@@ -38,7 +38,7 @@ export const ImpactMetrics = ({ cleanupEvents, bagsCollected, quizzesCompleted }
           <div className="flex items-center justify-between">
             <div>
               <div className="text-2xl font-bold">{quizzesCompleted}</div>
-              <p className="text-green-100 text-sm">Quizzes Completed</p>
+              <p className="text-green-100 text-sm">Correct Quiz Answers</p>
             </div>
             <div className="text-3xl">🧠</div>
           </div>

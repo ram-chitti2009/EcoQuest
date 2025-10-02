@@ -7,6 +7,7 @@ import {
   createUserStatistics,
   fetchAllBadges,
   fetchBadgesByUserId,
+  getCleanupEventsJoinedByUser,
   getUserProfileByUserId,
   getUserStatistics,
   updateUserProfile,
@@ -172,11 +173,16 @@ export default function Component() {
 
         // Fetch user statistics
         const statsResult = await getUserStatistics(user.id)
+        
+        // Fetch actual cleanup events joined count from backend
+        const cleanupEventsResult = await getCleanupEventsJoinedByUser(user.id)
+        const actualCleanupsCount = cleanupEventsResult.count || 0
+        
         if (statsResult.data) {
           setUserStats({
             carbonSaved: statsResult.data.carbon_saved || 0,
             volunteerHours: statsResult.data.volunteer_hours || 0,
-            cleanupsParticipated: statsResult.data.cleanups_participated || 0,
+            cleanupsParticipated: actualCleanupsCount, // Use actual count from events
           })
         } else {
           // Create default stats if none exist
@@ -184,10 +190,17 @@ export default function Component() {
             user_id: user.id,
             carbon_saved: 0,
             volunteer_hours: 0,
-            cleanups_participated: 0,
+            cleanups_participated: actualCleanupsCount, // Use actual count
           }
 
           await createUserStatistics(defaultStats)
+          
+          // Also set the local state
+          setUserStats({
+            carbonSaved: 0,
+            volunteerHours: 0,
+            cleanupsParticipated: actualCleanupsCount,
+          })
         }
 
         // Fetch user badges
@@ -631,7 +644,7 @@ export default function Component() {
                         <div className="flex items-center justify-between">
                           <div>
                             <p className="text-gray-600 text-xs sm:text-sm md:text-base font-medium mb-1 sm:mb-2">
-                              Cleanups
+                              Cleanups Joined
                             </p>
                             <p className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-1">
                               {userStats.cleanupsParticipated}

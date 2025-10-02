@@ -1,6 +1,5 @@
 //functions to query supabase database CRUD OPS
 
-import { constants } from "fs/promises";
 import { createClient } from "./client";
 const supabase = createClient();
 
@@ -1951,6 +1950,74 @@ export async function getEventsJoinedByUser(userId: string): Promise<{ count: nu
     return { count: count || 0, error: null };
   } catch (error) {
     console.error('Error in getEventsJoinedByUser:', error);
+    return { count: 0, error };
+  }
+}
+
+// Get cleanup events joined by a specific user
+export async function getCleanupEventsJoinedByUser(userId: string): Promise<{ count: number; error: any }> {
+  try {
+    if (!userId) {
+      return { count: 0, error: null };
+    }
+
+    // Get all events joined by user with their categories from eco_events table
+    const { data, error } = await supabase
+      .from('event_participants')
+      .select(`
+        event_id,
+        eco_events!event_participants_event_id_fkey(category)
+      `)
+      .eq('user_id', userId);
+
+    if (error) {
+      console.error('Error fetching cleanup events joined by user:', error);
+      
+      // Try alternative approach - get event IDs first, then query events
+      const { data: participantData, error: participantError } = await supabase
+        .from('event_participants')
+        .select('event_id')
+        .eq('user_id', userId);
+
+      if (participantError) {
+        return { count: 0, error: participantError };
+      }
+
+      if (!participantData || participantData.length === 0) {
+        return { count: 0, error: null };
+      }
+
+      const eventIds = participantData.map(p => p.event_id);
+      
+      const { data: eventsData, error: eventsError } = await supabase
+        .from('eco_events')
+        .select('id, category')
+        .in('id', eventIds);
+
+      if (eventsError) {
+        return { count: 0, error: eventsError };
+      }
+
+      // Filter for cleanup events
+      const cleanupCategories = ['park', 'beach', 'street', 'river', 'litter', 'cleanup'];
+      const cleanupCount = eventsData?.filter(event => 
+        cleanupCategories.includes(event.category?.toLowerCase())
+      ).length || 0;
+
+      return { count: cleanupCount, error: null };
+    }
+
+    // Filter for cleanup events based on community cleanup categories
+    const cleanupCategories = ['park', 'beach', 'street', 'river', 'litter', 'cleanup'];
+    const cleanupCount = data?.filter(item => {
+      const event = item.eco_events as any;
+      const category = event?.category?.toLowerCase();
+      return event && cleanupCategories.includes(category);
+    }).length || 0;
+
+    return { count: cleanupCount, error: null };
+  } catch (error) {
+    console.error('Error in getCleanupEventsJoinedByUser:', error);
     return { count: 0, error };
   }
 }

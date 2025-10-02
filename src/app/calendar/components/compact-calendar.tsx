@@ -154,23 +154,24 @@ export function CompactCalendar({ onMetricsUpdate, onMonthChange }: CompactCalen
     }
   }
 
-  const getEventsForDate = (date: string): EcoEvent[] => {
+  const getEventsForDate = (day: number, checkYear: number, checkMonth: number): EcoEvent[] => {
     return ecoEvents.filter((event) => {
-      const eventDateString = event.date.toString().split('T')[0]
-      return eventDateString === date
+      const eventDate = new Date(event.date)
+      return eventDate.getDate() === day && 
+             eventDate.getMonth() === checkMonth && 
+             eventDate.getFullYear() === checkYear
     })
   }
 
   const hasEvents = (day: number, checkYear: number, checkMonth: number): boolean => {
-    const dateString = `${checkYear}-${String(checkMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`
-    return getEventsForDate(dateString).length > 0
+    return getEventsForDate(day, checkYear, checkMonth).length > 0
   }
 
   const handleDateClick = (day: number, clickYear: number, clickMonth: number) => {
-    const dateString = `${clickYear}-${String(clickMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`
-    const events = getEventsForDate(dateString)
+    const events = getEventsForDate(day, clickYear, clickMonth)
 
     if (events.length > 0) {
+      const dateString = `${clickYear}-${String(clickMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`
       setSelectedDate(dateString)
       setShowEventCard(true)
     }
@@ -400,7 +401,11 @@ export function CompactCalendar({ onMetricsUpdate, onMonthChange }: CompactCalen
                 <EventCardSkeleton />
               ) : (
                 <div className="space-y-4">
-                  {getEventsForDate(selectedDate).map((event, index) => {
+                  {(() => {
+                    if (!selectedDate) return []
+                    const [year, month, day] = selectedDate.split('-').map(Number)
+                    return getEventsForDate(day, year, month - 1) // month - 1 because JS months are 0-based
+                  })().map((event, index) => {
                     const userJoined = userParticipations[event.id]
                     const isFull = event.participants >= event.max_participants
                     const categoryConfig = CATEGORY_CONFIG[event.category]
@@ -469,7 +474,7 @@ export function CompactCalendar({ onMetricsUpdate, onMonthChange }: CompactCalen
                               size="sm"
                               onClick={() => handleEventAction(event.id)}
                               disabled={(!userJoined && isFull) || actionLoading === event.id}
-                              variant={userJoined ? 'danger' : isFull ? 'outline' : 'eco'}
+                              variant={userJoined ? 'destructive' : isFull ? 'outline' : 'default'}
                               className={`transition-all duration-300 hover:scale-105 min-w-[100px] ${
                                 actionLoading === event.id ? 'animate-pulse' : ''
                               }`}
@@ -486,7 +491,7 @@ export function CompactCalendar({ onMetricsUpdate, onMonthChange }: CompactCalen
                             <Button
                               size="sm"
                               onClick={() => alert('🌱 Please sign in to join our eco community!')}
-                              variant="eco"
+                              variant="default"
                               className="transition-all duration-300 hover:scale-105"
                             >
                               🌿 Sign In to Join

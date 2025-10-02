@@ -44,10 +44,10 @@ export function UpcomingEvents({ currentMonth: propMonth }: UpcomingEventsProps)
           const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()) // Start of today
           
           const upcomingEvents = (data || []).filter((event: EcoEvent) => {
-            // Parse event date as local date to avoid timezone issues
-            const [year, month, day] = event.date.toString().split('T')[0].split('-')
-            const eventDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
-            return eventDate >= today
+            // Use Date object directly to avoid timezone issues
+            const eventDate = new Date(event.date)
+            const eventDateOnly = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate())
+            return eventDateOnly >= today
           })
           setAllEvents(upcomingEvents)
         }
@@ -65,9 +65,8 @@ export function UpcomingEvents({ currentMonth: propMonth }: UpcomingEventsProps)
 
   // Helper function to format date
   const formatDate = (dateString: string) => {
-    // Parse date as local date to avoid timezone issues
-    const [year, month, day] = dateString.split('T')[0].split('-')
-    const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
+    // Use Date object directly to avoid timezone issues
+    const date = new Date(dateString)
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
   }
 

@@ -2,6 +2,7 @@
 
 import { createClient } from '@/utils/supabase/client'
 import {
+  getCleanupEventsJoinedByUser,
   getCommunityStats,
   getLeaderboardWithUserData,
   getUserProfileByUserId,
@@ -41,7 +42,8 @@ const calculateMetricValue = (entry: LeaderboardWithStats, metric: "carbon" | "e
       const carbon = entry.user_statistics?.carbon_saved || 0
       const hours = entry.user_statistics?.volunteer_hours || 0
       const cleanups = entry.user_statistics?.cleanups_participated || 0
-      return (carbon * 2) + (hours * 10) + (cleanups * 25)
+      const quizAnswers = (entry.user_statistics as any)?.quiz_correct_answers || 0
+      return (carbon * 2) + (hours * 10) + (cleanups * 25) + (quizAnswers * 5)
     default:
       return entry.user_statistics?.carbon_saved || 0
   }
@@ -65,11 +67,6 @@ const rankUsersByMetric = (users: LeaderboardWithStats[], metric: "carbon" | "ev
   return rankedUsers
 }
 
-// Calculate eco points from user statistics
-const calculateEcoPoints = (stats: { carbonSaved: number; volunteerHours: number; cleanupsParticipated: number }) => {
-  return stats.carbonSaved * 2 + stats.volunteerHours * 10 + stats.cleanupsParticipated * 25
-}
-
 // Get user rank from leaderboard data using real-time ranking
 const getUserRank = (leaderboardData: LeaderboardWithStats[], currentUserId: string) => {
   const rankedUsers = rankUsersByMetric(leaderboardData, "points")
@@ -87,6 +84,7 @@ export default function Dashboard() {
     carbonSaved: 0,
     volunteerHours: 0,
     cleanupsParticipated: 0,
+    quizCorrectAnswers: 0,
   })
   const [communityStats, setCommunityStats] = useState({
     total_carbon_saved: 0,
@@ -97,7 +95,6 @@ export default function Dashboard() {
   const [leaderboardData, setLeaderboardData] = useState<LeaderboardWithStats[]>([])
 
   // Derived values
-  const totalEcoPoints = calculateEcoPoints(userStats)
   const currentRank = getUserRank(leaderboardData, currentUserId || "")
 
   // Ensure page starts at the top after all components are loaded
@@ -152,11 +149,17 @@ export default function Dashboard() {
 
         // Fetch user statistics
         const statsResult = await getUserStatistics(user.id)
+        
+        // Fetch actual cleanup events joined count from backend
+        const cleanupEventsResult = await getCleanupEventsJoinedByUser(user.id)
+        const actualCleanupsCount = cleanupEventsResult.count || 0
+        
         if (statsResult.data) {
           setUserStats({
             carbonSaved: statsResult.data.carbon_saved || 0,
             volunteerHours: statsResult.data.volunteer_hours || 0,
-            cleanupsParticipated: statsResult.data.cleanups_participated || 0,
+            cleanupsParticipated: actualCleanupsCount, // Use actual count from events
+            quizCorrectAnswers: statsResult.data.quiz_correct_answers || 0,
           })
         }
 
@@ -224,7 +227,7 @@ export default function Dashboard() {
     totalCarbonSaved: userStats.carbonSaved,
     cleanupEvents: userStats.cleanupsParticipated,
     bagsCollected: Math.round(userStats.cleanupsParticipated * 2.8), // Estimate based on cleanups
-    quizzesCompleted: Math.floor(totalEcoPoints / 100), // Estimate based on points
+    quizzesCompleted: userStats.quizCorrectAnswers, // Actual quiz correct answers from Carbon Clash
     currentRank: currentRank || 999,
     totalUsers: leaderboardData.length,
   }

@@ -1,8 +1,7 @@
 {
-  "/_not-found/page": "app/_not-found/page.js",
-  "/community-cleanup/page": "app/community-cleanup/page.js",
-  "/litterLens/page": "app/litterLens/page.js",
+  "/dashboard/page": "app/dashboard/page.js",
+  "/carbon-clash/page": "app/carbon-clash/page.js",
+  "/calendar/page": "app/calendar/page.js",
   "/profile/page": "app/profile/page.js",
-  "/litterAnalysis/page": "app/litterAnalysis/page.js",
-  "/dashboard/page": "app/dashboard/page.js"
+  "/community-cleanup/page": "app/community-cleanup/page.js"
 }
