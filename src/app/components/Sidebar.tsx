@@ -7,6 +7,7 @@ import {
   ChevronLeft,
   ChevronRight,
   CircleArrowUp,
+  Clock,
   Home,
   Leaf,
   type LucideIcon,
@@ -327,7 +328,7 @@ export const SideBar = () => {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 p-4 overflow-y-auto scrollbar-thin scrollbar-track-teal-800 scrollbar-thumb-teal-600">
+        <nav className="flex-1 p-4 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           {/* Main Navigation */}
           <div className="space-y-1 mb-10">
             {!isCollapsed && (
@@ -393,6 +394,14 @@ export const SideBar = () => {
                 label="Carbon Tracker" 
                 href="/carbon-tracker" 
                 isCollapsed={isCollapsed} 
+              />
+            </div>
+            <div className="mb-2">
+              <NavItem
+                icon={Clock}
+                label="Quest Log"
+                href="/QuestLog"
+                isCollapsed={isCollapsed}
               />
             </div>
             <div className="mb-2">

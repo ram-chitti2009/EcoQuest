@@ -1,33 +1,78 @@
 
-// CarbonTrackerClient: Main client component for the Carbon Tracker feature
-// Allows users to log eco-friendly activities, track monthly/yearly progress, and view activity history
+// QuestLogClient: Main client component for the QuestLog feature
+// Allows users to log volunteer activities, track monthly/yearly progress, and view activity history
 "use client"
 
 
 // Icon imports for activity types and UI
-import { Bike, Plus, Recycle, Settings, Trash2, TreePine, X, Zap } from "lucide-react"
+import { Plus, Settings, TreePine, X } from "lucide-react"
 import Head from "next/head"
 import type React from "react"
 import { useEffect, useState } from "react"
 // App-wide header component
 import { createClient } from "@/utils/supabase/client"
-import { createCarbonActivity, getUserCarbonActivities } from "@/utils/supabase/functions"
+import { UnifiedEvent } from "@/utils/supabase/functions"
 import Header from "../../../components/Header"
 
-// Type definitions
-interface DatabaseActivity {
-  id: string
-  user_id: string
-  type: string
-  date: string
-  quantity: number
-  carbon_saved: number
-  created_at?: string
-  updated_at?: string
+// Function to get user's joined events
+const getUserJoinedEvents = async (userId: string) => {
+  const supabase = createClient()
+  
+  try {
+    // Get event IDs that user has joined
+    const { data: participantData, error: participantError } = await supabase
+      .from('event_participants')
+      .select('event_id')
+      .eq('user_id', userId)
+
+    if (participantError) {
+      console.error('Error fetching user participants:', participantError)
+      return { data: [], error: participantError }
+    }
+
+    if (!participantData || participantData.length === 0) {
+      return { data: [], error: null }
+    }
+
+    const eventIds = participantData.map(p => p.event_id)
+    
+    // Get the actual event details
+    const { data: eventsData, error: eventsError } = await supabase
+      .from('eco_events')
+      .select('*')
+      .in('id', eventIds)
+      .order('date', { ascending: false })
+
+    if (eventsError) {
+      console.error('Error fetching events:', eventsError)
+      return { data: [], error: eventsError }
+    }
+
+    return { data: eventsData || [], error: null }
+  } catch (error) {
+    console.error('Error in getUserJoinedEvents:', error)
+    return { data: [], error }
+  }
 }
 
-interface Activity extends DatabaseActivity {
-  icon: React.ReactNode
+// Placeholder database functions for volunteer activities
+const getUserCarbonActivities = async () => {
+  // Return empty array - no demo data
+  return {
+    data: [],
+    error: null
+  }
+}
+
+const createCarbonActivity = async (activity: { type: string; quantity: number; hours_logged: number; date: string; user_id: string }) => {
+  // Mock creation for demonstration
+  return {
+    data: {
+      ...activity,
+      id: Date.now().toString(),
+    },
+    error: null
+  }
 }
 
 
@@ -103,13 +148,9 @@ interface InputProps {
 }
 
 // Input: Styled input for forms
-const Input: React.FC<InputProps> = ({ type = "text", placeholder, value, onChange, className = "", ...props }) => (
+const Input: React.FC<InputProps> = ({ className = "", ...props }) => (
   <input
-    type={type}
-    placeholder={placeholder}
-    value={value}
-    onChange={onChange}
-    className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-gray-900 ${className}`}
+    className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${className}`}
     {...props}
   />
 )
@@ -127,7 +168,7 @@ const Select: React.FC<SelectProps> = ({ value, onChange, children, className = 
   <select
     value={value}
     onChange={onChange}
-    className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white text-gray-900 ${className}`}
+    className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900 ${className}`}
     {...props}
   >
     {children}
@@ -221,7 +262,7 @@ const ProgressRing: React.FC<ProgressRingProps> = ({ value, max, size = 160 }) =
       <div className="absolute inset-0 flex items-center justify-center">
         <div className="text-center">
           <div className="text-3xl font-bold text-gray-900">{Math.round(value)}</div>
-          <div className="text-sm text-gray-500">kg CO₂</div>
+          <div className="text-sm text-gray-500">hours</div>
         </div>
       </div>
     </div>
@@ -234,7 +275,7 @@ interface Activity {
   type: string
   date: string
   quantity: number
-  carbon_saved: number
+  hours_logged: number
   icon: React.ReactNode
 }
 
@@ -253,7 +294,7 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({ activities }) => {
             <TreePine className="w-16 h-16 mx-auto" />
           </div>
           <h3 className="text-xl font-medium text-gray-900 mb-3">No activities yet</h3>
-          <p className="text-gray-500">Start logging your eco-friendly activities to see your impact!</p>
+          <p className="text-gray-500">Start logging your volunteering hours to measure your impact!</p>
         </CardContent>
       </Card>
     )
@@ -281,8 +322,8 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({ activities }) => {
                 </div>
               </div>
               <div className="text-right">
-                <div className="font-bold text-emerald-600 text-lg">+{activity.carbon_saved.toFixed(1)} kg</div>
-                <div className="text-sm text-gray-500">CO₂ saved</div>
+                <div className="font-bold text-blue-600 text-lg">+{activity.hours_logged.toFixed(1)} hrs</div>
+                <div className="text-sm text-gray-500">Hours logged</div>
               </div>
             </div>
           </CardContent>
@@ -290,6 +331,13 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({ activities }) => {
       ))}
     </div>
   )
+}
+
+interface ActivityModalProps {
+  isOpen: boolean
+  onClose: () => void
+  onSubmit: (data: { type: string; quantity: number; date: string; carbonSaved: number }) => void
+  userJoinedEvents: UnifiedEvent[]
 }
 
 interface SettingsModalProps {
@@ -312,8 +360,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, monthlyT
   }, [monthlyTarget, yearlyTarget])
 
   const handleSave = () => {
-    const monthly = parseFloat(newMonthlyTarget) || 50
-    const yearly = parseFloat(newYearlyTarget) || 600
+    const monthly = parseFloat(newMonthlyTarget) || 20
+    const yearly = parseFloat(newYearlyTarget) || 240
     onSave(monthly, yearly)
     onClose()
   }
@@ -336,7 +384,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, monthlyT
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Monthly Target (kg CO₂)
+              Monthly Target (hours)
             </label>
             <Input
               type="number"
@@ -350,7 +398,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, monthlyT
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Yearly Target (kg CO₂)
+              Yearly Target (hours)
             </label>
             <Input
               type="number"
@@ -386,47 +434,27 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, monthlyT
   )
 }
 
-interface ActivityModalProps {
-  isOpen: boolean
-  onClose: () => void
-  onSubmit: (data: { type: string; quantity: number; date: string; carbonSaved: number }) => void
-}
-
-// ActivityModal: Modal dialog for logging a new activity
-const ActivityModal: React.FC<ActivityModalProps> = ({ isOpen, onClose, onSubmit }) => {
+// ActivityModal: Modal dialog for logging volunteer hours from joined events
+const ActivityModal: React.FC<ActivityModalProps> = ({ isOpen, onClose, onSubmit, userJoinedEvents }) => {
   // Form state
-  const [activityType, setActivityType] = useState("")
-  const [quantity, setQuantity] = useState("")
-  const [date, setDate] = useState(new Date().toISOString().split("T")[0])
-
-  // Available activity types and their carbon savings per unit
-  const activityOptions = [
-    { value: "Cycling (km)", label: "Cycling (km)", carbonPerUnit: 0.5 },
-    { value: "Recycling (kg)", label: "Recycling (kg)", carbonPerUnit: 2.0 },
-    { value: "Community cleanup (hours)", label: "Community cleanup (hours)", carbonPerUnit: 1.5 },
-    { value: "Solar energy (kWh)", label: "Solar energy (kWh)", carbonPerUnit: 0.4 },
-    { value: "Tree planting (trees)", label: "Tree planting (trees)", carbonPerUnit: 22.0 },
-  ]
+  const [selectedEvent, setSelectedEvent] = useState<UnifiedEvent | null>(null)
+  const [hours, setHours] = useState("")
 
   // Handle form submission
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!activityType || !quantity) return
-
-    const selectedActivity = activityOptions.find((option) => option.value === activityType)
-    const carbonSaved = selectedActivity ? selectedActivity.carbonPerUnit * Number.parseFloat(quantity) : 0
+    if (!selectedEvent || !hours) return
 
     onSubmit({
-      type: activityType,
-      quantity: Number.parseFloat(quantity),
-      date,
-      carbonSaved,
+      type: selectedEvent.title,
+      quantity: Number.parseFloat(hours),
+      date: selectedEvent.date,
+      carbonSaved: Number.parseFloat(hours), // Use hours as the value
     })
 
     // Reset form and close modal
-    setActivityType("")
-    setQuantity("")
-    setDate(new Date().toISOString().split("T")[0])
+    setSelectedEvent(null)
+    setHours("")
     onClose()
   }
 
@@ -437,7 +465,7 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ isOpen, onClose, onSubmit
     <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
       <div className="bg-white rounded-2xl max-w-lg w-full p-8 shadow-2xl transform transition-all duration-300 scale-100">
         <div className="flex items-center justify-between mb-8">
-          <h2 className="text-2xl font-bold text-gray-900">Log Activity</h2>
+          <h2 className="text-2xl font-bold text-gray-900">Log Volunteer Hours</h2>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full p-2 transition-all duration-200"
@@ -446,140 +474,164 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ isOpen, onClose, onSubmit
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Activity type dropdown */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-3">Activity Type</label>
-            <Select
-              value={activityType}
-              onChange={(e) => setActivityType(e.target.value)}
-              required
-              className="text-base py-3"
-            >
-              {!activityType && <option value="" disabled hidden>Select an activity</option>}
-              {activityOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </Select>
+        {userJoinedEvents.length === 0 ? (
+          <div className="text-center py-8">
+            <p className="text-gray-500 mb-4">You haven&apos;t joined any events yet.</p>
+            <p className="text-sm text-gray-400">Join events in the Community Cleanup section to start logging volunteer hours!</p>
           </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Event selection dropdown */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-3">Select Event</label>
+              <Select
+                value={selectedEvent?.id.toString() || ""}
+                onChange={(e) => {
+                  const event = userJoinedEvents.find(ev => ev.id.toString() === e.target.value)
+                  setSelectedEvent(event || null)
+                }}
+                required
+                className="text-base py-3"
+              >
+                {!selectedEvent && <option value="" disabled hidden>Choose an event you joined</option>}
+                {userJoinedEvents.map((event) => (
+                  <option key={event.id} value={event.id.toString()}>
+                    {event.title} - {new Date(event.date).toLocaleDateString()}
+                  </option>
+                ))}
+              </Select>
+            </div>
 
-          {/* Quantity input */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-3">Quantity</label>
-            <Input
-              type="number"
-              value={quantity}
-              onChange={(e) => setQuantity(e.target.value)}
-              placeholder="Enter quantity"
-              min="0"
-              step="0.1"
-              required
-              className="text-base py-3"
-            />
-          </div>
+            {/* Hours input */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-3">Hours Volunteered</label>
+              <Input
+                type="number"
+                value={hours}
+                onChange={(e) => setHours(e.target.value)}
+                placeholder="Enter hours (e.g., 2.5)"
+                min="0"
+                step="0.1"
+                required
+                className="text-base py-3"
+              />
+            </div>
 
-          {/* Date input */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-3">Date</label>
-            <Input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              required
-              className="text-base py-3"
-            />
-          </div>
+            {/* Event details display */}
+            {selectedEvent && (
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <h4 className="font-semibold text-blue-900 mb-2">{selectedEvent.title}</h4>
+                <p className="text-sm text-blue-700 mb-1">
+                  <strong>Date:</strong> {new Date(selectedEvent.date).toLocaleDateString()}
+                </p>
+                <p className="text-sm text-blue-700 mb-1">
+                  <strong>Location:</strong> {selectedEvent.location}
+                </p>
+                {selectedEvent.description && (
+                  <p className="text-sm text-blue-600 mt-2">{selectedEvent.description}</p>
+                )}
+              </div>
+            )}
 
-          {/* Action buttons */}
-          <div className="flex space-x-4 pt-6">
-            <Button type="button" variant="outline" onClick={onClose} className="flex-1 py-3 text-base bg-transparent">
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              variant="primary"
-              className="flex-1 py-3 text-base bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800"
-            >
-              Log Activity
-            </Button>
-          </div>
-        </form>
+            {/* Action buttons */}
+            <div className="flex space-x-4 pt-6">
+              <Button type="button" variant="outline" onClick={onClose} className="flex-1 py-3 text-base bg-transparent">
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                variant="primary"
+                className="flex-1 py-3 text-base bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800"
+                disabled={!selectedEvent || !hours}
+              >
+                Log Hours
+              </Button>
+            </div>
+          </form>
+        )}
       </div>
     </div>
   )
 }
 
 
-// Mapping of activity types to icons
+// Define volunteer activity types and their icons
 const activityIcons = {
-  "Cycling (km)": <Bike className="w-4 h-4" />,
-  "Recycling (kg)": <Recycle className="w-4 h-4" />,
-  "Community cleanup (hours)": <Trash2 className="w-4 h-4" />,
-  "Solar energy (kWh)": <Zap className="w-4 h-4" />,
-  "Tree planting (trees)": <TreePine className="w-4 h-4" />,
+  "Community Cleanup": <TreePine className="w-4 h-4" />,
+  "Food Bank": <TreePine className="w-4 h-4" />,
+  "Environmental Cleanup": <TreePine className="w-4 h-4" />,
+  "Tutoring": <TreePine className="w-4 h-4" />,
+  "Animal Shelter": <TreePine className="w-4 h-4" />,
 }
-
-
 // --- Main Carbon Tracker Component ---
 export default function CarbonTracker() {
   // State for activities, modal, celebration animation, and active tab
   const supabase = createClient()
   const [activities, setActivities] = useState<Activity[]>([])
+  const [userJoinedEvents, setUserJoinedEvents] = useState<UnifiedEvent[]>([])
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [showCelebration, setShowCelebration] = useState(false)
   const [activeTab, setActiveTab] = useState("monthly")
   
   // Target settings state
-  const [monthlyTarget, setMonthlyTarget] = useState(50) // kg CO₂
-  const [yearlyTarget, setYearlyTarget] = useState(600) // kg CO₂
-
-  useEffect(() => {
-    // Fetch existing activities from Supabase on mount
-    const fetchActivities = async () => {
-      // get user_id from supabase
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-
-      getUserCarbonActivities(user.id).then((result) => {
-        // Check for error and map only if data is present
-        if (result.error || !result.data) {
-          setActivities([])
-          return
-        }
-        const mappedActivities = result.data.map((activity: DatabaseActivity) => ({
-          ...activity,
-          icon: activityIcons[activity.type as keyof typeof activityIcons] || <Bike className="w-4 h-4" />,
-        }))
-        setActivities(mappedActivities)
-      })
-    }
-
-    fetchActivities()
-  }, [supabase.auth])
+  const [monthlyTarget, setMonthlyTarget] = useState(20) // hours
+  const [yearlyTarget, setYearlyTarget] = useState(240) // hours
 
   // Handle target updates
   const handleTargetUpdate = (monthly: number, yearly: number) => {
     setMonthlyTarget(monthly)
     setYearlyTarget(yearly)
-    // Save to localStorage
-    localStorage.setItem('carbon-tracker-monthly-target', monthly.toString())
-    localStorage.setItem('carbon-tracker-yearly-target', yearly.toString())
+    // Here you could also save to localStorage or database
+    localStorage.setItem('questlog-monthly-target', monthly.toString())
+    localStorage.setItem('questlog-yearly-target', yearly.toString())
   }
 
   // Load targets from localStorage on mount
   useEffect(() => {
-    const savedMonthly = localStorage.getItem('carbon-tracker-monthly-target')
-    const savedYearly = localStorage.getItem('carbon-tracker-yearly-target')
+    const savedMonthly = localStorage.getItem('questlog-monthly-target')
+    const savedYearly = localStorage.getItem('questlog-yearly-target')
     
     if (savedMonthly) setMonthlyTarget(parseInt(savedMonthly))
     if (savedYearly) setYearlyTarget(parseInt(savedYearly))
   }, [])
 
-  // Calculate total carbon saved
-  const totalCarbonSaved = activities.reduce((sum, activity) => sum + activity.carbon_saved, 0)
+  useEffect(() => {
+    // Fetch existing activities and user's joined events from Supabase on mount
+    const fetchData = async () => {
+      // get user_id from supabase
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      // Fetch volunteer activities
+      getUserCarbonActivities().then((result) => {
+        // Check for error and map only if data is present
+        if (result.error || !result.data) {
+          setActivities([])
+          return
+        }
+        const mappedActivities = result.data.map((activity: { id: string; user_id: string; type: string; quantity: number; hours_logged: number; date: string }) => ({
+          ...activity,
+          icon: activityIcons[activity.type as keyof typeof activityIcons] || <TreePine className="w-4 h-4" />,
+        }))
+        setActivities(mappedActivities)
+      })
+
+      // Fetch user's joined events
+      getUserJoinedEvents(user.id).then((result) => {
+        if (result.error || !result.data) {
+          setUserJoinedEvents([])
+          return
+        }
+        setUserJoinedEvents(result.data)
+      })
+    }
+
+    fetchData()
+  }, [supabase.auth])
+
+  // Calculate total hours logged
+  const totalHoursLogged = activities.reduce((sum, activity) => sum + activity.hours_logged, 0)
 
   // Filter activities for the current month
   const currentMonth = new Date().getMonth()
@@ -588,26 +640,26 @@ export default function CarbonTracker() {
     const activityDate = new Date(activity.date)
     return activityDate.getMonth() === currentMonth && activityDate.getFullYear() === currentYear
   })
-  const monthlyCarbonSaved = monthlyActivities.reduce((sum, activity) => sum + activity.carbon_saved, 0)
+  const monthlyHoursLogged = monthlyActivities.reduce((sum, activity) => sum + activity.hours_logged, 0)
 
   // Handle logging a new activity
   const handleLogActivity = async (activityData: {
     type: string
     quantity: number
     date: string
-    carbonSaved: number // Note: this comes from the modal calculation
+    carbonSaved: number // Note: this comes from the modal calculation as hours
   }) => {
     // Get User
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
-    // Data for database (no icon field) - map carbonSaved to carbon_saved
+    // Data for database (no icon field) - map hours to hours_logged
     const dbActivity = {
       user_id: user.id,
       type: activityData.type,
       date: activityData.date,
       quantity: activityData.quantity,
-      carbon_saved: activityData.carbonSaved, // Use the calculated value from the modal
+      hours_logged: activityData.carbonSaved, // Use the calculated value from the modal as hours
     }
 
     // Save to backend
@@ -621,7 +673,7 @@ export default function CarbonTracker() {
     // Create activity with icon for frontend state
     const newActivity: Activity = {
       ...result.data!,
-      icon: activityIcons[activityData.type as keyof typeof activityIcons] || <Bike className="w-4 h-4" />,
+      icon: activityIcons[activityData.type as keyof typeof activityIcons] || <TreePine className="w-4 h-4" />,
     }
 
     setActivities((prev) => [newActivity, ...prev])
@@ -635,15 +687,15 @@ export default function CarbonTracker() {
   return (
     <>
       <Head>
-        <title>Carbon Tracker</title>
-        <meta name="description" content="Track and measure your environmental contributions" />
+        <title>Quest Log</title>
+        <meta name="description" content="Track Your Volunteer Hours!" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
 
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 antialiased">
         <Header 
-          title="Carbon Tracker"
-          centerMessage="Track Your Carbon Footprint!"
+          title="Quest Log"
+          centerMessage="Track Your Volunteer Hours!"
           showTimeDate={true}
           showUserAvatar={true}
         />
@@ -654,44 +706,43 @@ export default function CarbonTracker() {
               {/* Left Column - Metrics and Progress */}
               <div className="space-y-8">
                 <TabsContent value="monthly" activeTab={activeTab}>
-                  <Card className="mb-8 hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-white to-teal-50">
+                  <Card className="mb-8 hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-white to-emerald-50">
                     <CardContent className="p-10 text-center">
-                      <div className="text-6xl font-bold text-emerald-600 mb-4">{monthlyCarbonSaved.toFixed(1)} kg</div>
-                      <div className="text-gray-600 text-lg mb-6">CO₂ Saved • This Month</div>
+                      <div className="text-6xl font-bold text-emerald-600 mb-4">{monthlyHoursLogged.toFixed(1)} hrs</div>
+                      <div className="text-gray-600 text-lg mb-6">Volunteer Hours • This Month</div>
                       <div className="text-gray-500">
-                        Equivalent to {Math.round(monthlyCarbonSaved * 2.2)} miles not driven
+                        Making a positive impact in your community
                       </div>
                     </CardContent>
                   </Card>
 
-                  <Card className="hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-white to-teal-50">
+                  <Card className="hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-white to-emerald-50">
                     <CardContent className="p-8 text-center">
                       <div className="flex flex-col items-center space-y-6">
-                        <ProgressRing value={monthlyCarbonSaved} max={monthlyTarget} />
+                        <ProgressRing value={monthlyHoursLogged} max={monthlyTarget} />
                         <div className="w-full">
                           <div className="flex items-center justify-between mb-2">
                             <h3 className="font-semibold text-gray-900">Monthly Goal Progress</h3>
-                            <Button
-                              variant="outline"
-                              size="sm"
+                            <button
                               onClick={() => setIsSettingsOpen(true)}
-                              className="text-gray-500 hover:text-gray-700 hover:bg-gray-100 p-2"
+                              className="p-1 text-gray-400 hover:text-gray-600 rounded transition-colors"
+                              title="Edit monthly target"
                             >
                               <Settings className="w-4 h-4" />
-                            </Button>
+                            </button>
                           </div>
                           <p className="text-lg font-bold text-emerald-600 mb-1">
-                            {Math.round((monthlyCarbonSaved / monthlyTarget) * 100)}% Complete
+                            {Math.round((monthlyHoursLogged / monthlyTarget) * 100)}% Complete
                           </p>
                           <p className="text-sm text-gray-600 mb-4">
-                            {monthlyCarbonSaved.toFixed(1)} / {monthlyTarget} kg monthly target
+                            {monthlyHoursLogged.toFixed(1)} / {monthlyTarget} hrs monthly target
                           </p>
                           
                           {/* Progress Bar */}
                           <div className="w-full bg-gray-200 rounded-full h-3 mb-4">
                             <div 
-                              className="bg-gradient-to-r from-emerald-500 to-green-500 h-3 rounded-full transition-all duration-500 ease-out"
-                              style={{ width: `${Math.min((monthlyCarbonSaved / monthlyTarget) * 100, 100)}%` }}
+                              className="bg-gradient-to-r from-blue-500 to-blue-600 h-3 rounded-full transition-all duration-500 ease-out"
+                              style={{ width: `${Math.min((monthlyHoursLogged / monthlyTarget) * 100, 100)}%` }}
                             ></div>
                           </div>
 
@@ -699,8 +750,8 @@ export default function CarbonTracker() {
                           <div className="flex justify-between text-xs text-gray-500">
                             <span>Started</span>
                             <span className="font-medium">
-                              {monthlyTarget - monthlyCarbonSaved > 0 
-                                ? `${(monthlyTarget - monthlyCarbonSaved).toFixed(1)} kg to go!` 
+                              {monthlyTarget - monthlyHoursLogged > 0 
+                                ? `${(monthlyTarget - monthlyHoursLogged).toFixed(1)} hrs to go!` 
                                 : '🎉 Goal Achieved!'
                               }
                             </span>
@@ -708,15 +759,15 @@ export default function CarbonTracker() {
                           </div>
 
                           {/* Milestone indicators */}
-                          {monthlyCarbonSaved >= monthlyTarget && (
-                            <div className="mt-4 p-3 bg-emerald-50 rounded-lg border border-emerald-200">
-                              <p className="text-emerald-700 font-medium text-sm">
+                          {monthlyHoursLogged >= monthlyTarget && (
+                            <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                              <p className="text-blue-700 font-medium text-sm">
                                 🎊 Congratulations! You&apos;ve reached your monthly goal!
                               </p>
                             </div>
                           )}
                           
-                          {monthlyCarbonSaved >= monthlyTarget * 0.75 && monthlyCarbonSaved < monthlyTarget && (
+                          {monthlyHoursLogged >= monthlyTarget * 0.75 && monthlyHoursLogged < monthlyTarget && (
                             <div className="mt-4 p-3 bg-amber-50 rounded-lg border border-amber-200">
                               <p className="text-amber-700 font-medium text-sm">
                                 🔥 You&apos;re in the final stretch! 75% complete!
@@ -724,7 +775,7 @@ export default function CarbonTracker() {
                             </div>
                           )}
                           
-                          {monthlyCarbonSaved >= monthlyTarget * 0.5 && monthlyCarbonSaved < monthlyTarget * 0.75 && (
+                          {monthlyHoursLogged >= monthlyTarget * 0.5 && monthlyHoursLogged < monthlyTarget * 0.75 && (
                             <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
                               <p className="text-blue-700 font-medium text-sm">
                                 💪 Halfway there! Keep up the great work!
@@ -738,43 +789,44 @@ export default function CarbonTracker() {
                 </TabsContent>
 
                 <TabsContent value="total" activeTab={activeTab}>
-                  <Card className="hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-white to-teal-50 mb-8 -mt-8">
+                  <Card className="hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-white to-emerald-50 mb-8 -mt-8">
                     <CardContent className="p-10 text-center">
-                      <div className="text-6xl font-bold text-emerald-600 mb-4">{totalCarbonSaved.toFixed(1)} kg</div>
-                      <div className="text-gray-600 text-lg mb-6">CO₂ Saved • Total</div>
+                      <div className="text-6xl font-bold text-emerald-600 mb-4">{totalHoursLogged.toFixed(1)} hrs</div>
+                      <div className="text-gray-600 text-lg mb-6">Volunteer Hours • Total</div>
                       <div className="text-gray-500">
-                        Equivalent to {Math.round(totalCarbonSaved * 2.2)} miles not driven
+                        Making a lasting impact in your community
                       </div>
                     </CardContent>
                   </Card>
 
                   {/* Progress Ring */}
-                  <Card className="hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-white to-teal-50">
+                  <Card className="hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-white to-emerald-50">
                     <CardContent className="p-8 text-center">
                       <div className="flex flex-col items-center space-y-6">
-                        <ProgressRing value={totalCarbonSaved} max={yearlyTarget} />
+                        <ProgressRing value={totalHoursLogged} max={yearlyTarget} />
                         <div className="w-full">
                           <div className="flex items-center justify-between mb-2">
                             <h3 className="font-semibold text-gray-900">Total Goal Progress</h3>
                             <button
                               onClick={() => setIsSettingsOpen(true)}
                               className="p-1 text-gray-400 hover:text-gray-600 rounded transition-colors"
+                              title="Edit yearly target"
                             >
                               <Settings className="w-4 h-4" />
                             </button>
                           </div>
                           <p className="text-lg font-bold text-emerald-600 mb-1">
-                            {Math.round((totalCarbonSaved / yearlyTarget) * 100)}% Complete
+                            {Math.round((totalHoursLogged / yearlyTarget) * 100)}% Complete
                           </p>
                           <p className="text-sm text-gray-600 mb-4">
-                            {totalCarbonSaved.toFixed(1)} / {yearlyTarget} kg yearly target
+                            {totalHoursLogged.toFixed(1)} / {yearlyTarget} hrs yearly target
                           </p>
                           
                           {/* Progress Bar */}
                           <div className="w-full bg-gray-200 rounded-full h-3 mb-4">
                             <div 
-                              className="bg-gradient-to-r from-emerald-500 to-green-500 h-3 rounded-full transition-all duration-500 ease-out"
-                              style={{ width: `${Math.min((totalCarbonSaved / yearlyTarget) * 100, 100)}%` }}
+                              className="bg-gradient-to-r from-blue-500 to-blue-600 h-3 rounded-full transition-all duration-500 ease-out"
+                              style={{ width: `${Math.min((totalHoursLogged / yearlyTarget) * 100, 100)}%` }}
                             ></div>
                           </div>
 
@@ -782,8 +834,8 @@ export default function CarbonTracker() {
                           <div className="flex justify-between text-xs text-gray-500">
                             <span>Started</span>
                             <span className="font-medium">
-                              {yearlyTarget - totalCarbonSaved > 0 
-                                ? `${(yearlyTarget - totalCarbonSaved).toFixed(1)} kg to go!` 
+                              {yearlyTarget - totalHoursLogged > 0 
+                                ? `${(yearlyTarget - totalHoursLogged).toFixed(1)} hrs to go!` 
                                 : '🎉 Goal Achieved!'
                               }
                             </span>
@@ -791,15 +843,15 @@ export default function CarbonTracker() {
                           </div>
 
                           {/* Milestone indicators */}
-                          {totalCarbonSaved >= yearlyTarget && (
-                            <div className="mt-4 p-3 bg-emerald-50 rounded-lg border border-emerald-200">
-                              <p className="text-emerald-700 font-medium text-sm">
+                          {totalHoursLogged >= yearlyTarget && (
+                            <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                              <p className="text-blue-700 font-medium text-sm">
                                 🎊 Congratulations! You&apos;ve reached your yearly goal!
                               </p>
                             </div>
                           )}
                           
-                          {totalCarbonSaved >= yearlyTarget * 0.75 && totalCarbonSaved < yearlyTarget && (
+                          {totalHoursLogged >= yearlyTarget * 0.75 && totalHoursLogged < yearlyTarget && (
                             <div className="mt-4 p-3 bg-amber-50 rounded-lg border border-amber-200">
                               <p className="text-amber-700 font-medium text-sm">
                                 🔥 You&apos;re in the final stretch! 75% complete!
@@ -807,7 +859,7 @@ export default function CarbonTracker() {
                             </div>
                           )}
                           
-                          {totalCarbonSaved >= yearlyTarget * 0.5 && totalCarbonSaved < yearlyTarget * 0.75 && (
+                          {totalHoursLogged >= yearlyTarget * 0.5 && totalHoursLogged < yearlyTarget * 0.75 && (
                             <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
                               <p className="text-blue-700 font-medium text-sm">
                                 💪 Halfway there! Keep up the great work!
@@ -874,7 +926,12 @@ export default function CarbonTracker() {
           <Plus className="w-7 h-7 group-hover:rotate-90 transition-transform duration-300" />
         </button>
 
-        <ActivityModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSubmit={handleLogActivity} />
+        <ActivityModal 
+          isOpen={isModalOpen} 
+          onClose={() => setIsModalOpen(false)} 
+          onSubmit={handleLogActivity}
+          userJoinedEvents={userJoinedEvents}
+        />
         
         <SettingsModal
           isOpen={isSettingsOpen}
