@@ -4,18 +4,17 @@ import Header from "@/app/components/Header"
 import SidebarWrapper from "@/app/components/SidebarWrapper"
 import LoadingScreen from "@/components/LoadingScreen"
 import { useRequireAuth } from "@/hooks/useRequireAuth"
+import { createClient } from "@/utils/supabase/client"
+import { getAllUnifiedEvents, getCommunityStats, getLeaderboardWithActualVolunteerHours, Leaderboard } from "@/utils/supabase/functions"
 import { Atom } from "lucide-react"
-import { useState } from "react"
+import Link from "next/link"
+import { useCallback, useEffect, useState } from "react"
 import { Avatar } from "./components/ui/avatar"
 import { Badge } from "./components/ui/badge"
 import { Button } from "./components/ui/button"
 import { Card, CardContent, CardHeader } from "./components/ui/card"
 import { Clock, Crown, Star, Trophy, Users } from "./components/ui/icons"
 import { Progress } from "./components/ui/progress"
-import Link from "next/link"
-import { createClient } from "@/utils/supabase/client"
-import { getAllUnifiedEvents, getCommunityStats, getLeaderboardWithUserData, Leaderboard } from "@/utils/supabase/functions"
-import { useCallback, useEffect } from "react"
 
 // Extended interface for leaderboard with joined data
 interface LeaderboardWithStats extends Leaderboard {
@@ -235,8 +234,8 @@ export default function Component() {
         setCurrentUserId(user?.id || null)
         console.log("Current user ID:", user?.id)
 
-        // Fetch leaderboard data
-        const leaderboardResult = await getLeaderboardWithUserData()
+        // Fetch leaderboard data with actual volunteer hours from QuestLog activities
+        const leaderboardResult = await getLeaderboardWithActualVolunteerHours()
         if (leaderboardResult.error) {
           console.error("Error fetching leaderboard data:", leaderboardResult.error)
           setLeaderboardData([])

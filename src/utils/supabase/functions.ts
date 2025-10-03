@@ -992,6 +992,73 @@ export async function getCommunityStats() {
     }
 }
 
+// Enhanced leaderboard function with actual volunteer hours from QuestLog activities
+export async function getLeaderboardWithActualVolunteerHours() {
+  try {
+    // First, get the basic leaderboard data with user statistics
+    const { data: leaderboardData, error: leaderboardError } = await supabase
+      .from('leaderboard')
+      .select(`
+        *,
+        user_statistics(
+          carbon_saved,
+          volunteer_hours,
+          cleanups_participated,
+          quiz_correct_answers,
+          xp
+        )
+      `)
+      .order('rank', { ascending: true });
+
+    if (leaderboardError) {
+      console.error("Error fetching leaderboard data:", leaderboardError);
+      return { data: [], error: leaderboardError };
+    }
+
+    if (!leaderboardData) {
+      return { data: [], error: null };
+    }
+
+    // Now, for each user, calculate their actual volunteer hours from activities
+    const enhancedData = await Promise.all(
+      leaderboardData.map(async (entry) => {
+        if (!entry.user_id) {
+          return entry;
+        }
+
+        // Get actual volunteer hours from activities
+        const { data: activitiesData, error: activitiesError } = await supabase
+          .from('volunteer_activities')
+          .select('hours_logged')
+          .eq('user_id', entry.user_id);
+
+        let actualVolunteerHours = 0;
+        if (!activitiesError && activitiesData) {
+          actualVolunteerHours = activitiesData.reduce(
+            (sum, activity) => sum + Number(activity.hours_logged || 0), 
+            0
+          );
+        }
+
+        // Return the entry with updated volunteer hours
+        return {
+          ...entry,
+          user_statistics: {
+            ...entry.user_statistics,
+            volunteer_hours: actualVolunteerHours
+          }
+        };
+      })
+    );
+
+    console.log("Enhanced leaderboard with actual volunteer hours:", enhancedData);
+    return { data: enhancedData, error: null };
+
+  } catch (error) {
+    console.error("Error in getLeaderboardWithActualVolunteerHours:", error);
+    return { data: [], error };
+  }
+}
 
 
 //fetch all achievements
@@ -2542,5 +2609,29 @@ export const getVolunteerStats = async (userId: string, year: number, month?: nu
   } catch (error) {
     console.error('Error fetching volunteer stats:', error)
     return { totalHours: 0, activityCount: 0, error }
+  }
+}
+
+// Get total volunteer hours for a user from all logged activities
+export const getTotalVolunteerHours = async (userId: string) => {
+  const supabase = createClient()
+  
+  try {
+    const { data, error } = await supabase
+      .from('volunteer_activities')
+      .select('hours_logged')
+      .eq('user_id', userId)
+
+    if (error) {
+      console.error('Error fetching volunteer hours:', error)
+      return { totalHours: 0, error }
+    }
+
+    const totalHours = data.reduce((sum, activity) => sum + Number(activity.hours_logged), 0)
+    
+    return { totalHours, error: null }
+  } catch (error) {
+    console.error('Error calculating total volunteer hours:', error)
+    return { totalHours: 0, error }
   }
 }

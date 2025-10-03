@@ -8,6 +8,7 @@ import {
   fetchAllBadges,
   fetchBadgesByUserId,
   getCleanupEventsJoinedByUser,
+  getTotalVolunteerHours,
   getUserProfileByUserId,
   getUserStatistics,
   updateUserProfile,
@@ -178,10 +179,14 @@ export default function Component() {
         const cleanupEventsResult = await getCleanupEventsJoinedByUser(user.id)
         const actualCleanupsCount = cleanupEventsResult.count || 0
         
+        // Fetch actual volunteer hours from QuestLog activities
+        const volunteerHoursResult = await getTotalVolunteerHours(user.id)
+        const actualVolunteerHours = volunteerHoursResult.totalHours || 0
+        
         if (statsResult.data) {
           setUserStats({
             carbonSaved: statsResult.data.carbon_saved || 0,
-            volunteerHours: statsResult.data.volunteer_hours || 0,
+            volunteerHours: actualVolunteerHours, // Use actual hours from QuestLog activities
             cleanupsParticipated: actualCleanupsCount, // Use actual count from events
           })
         } else {
@@ -189,7 +194,7 @@ export default function Component() {
           const defaultStats = {
             user_id: user.id,
             carbon_saved: 0,
-            volunteer_hours: 0,
+            volunteer_hours: actualVolunteerHours, // Use actual hours
             cleanups_participated: actualCleanupsCount, // Use actual count
           }
 
@@ -198,7 +203,7 @@ export default function Component() {
           // Also set the local state
           setUserStats({
             carbonSaved: 0,
-            volunteerHours: 0,
+            volunteerHours: actualVolunteerHours, // Use actual hours from QuestLog activities
             cleanupsParticipated: actualCleanupsCount,
           })
         }
