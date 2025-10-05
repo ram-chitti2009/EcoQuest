@@ -5,6 +5,7 @@ import {
   getCleanupEventsJoinedByUser,
   getCommunityStats,
   getLeaderboardWithUserData,
+  getUserLitterSummaries,
   getUserProfileByUserId,
   getUserStatistics,
   type Leaderboard
@@ -86,6 +87,9 @@ export default function Dashboard() {
     cleanupsParticipated: 0,
     quizCorrectAnswers: 0,
   })
+  const [litterData, setLitterData] = useState({
+    totalItems: 0,
+  })
   const [communityStats, setCommunityStats] = useState({
     total_carbon_saved: 0,
     total_volunteer_hours: 0,
@@ -163,6 +167,19 @@ export default function Dashboard() {
           })
         }
 
+        // Fetch litter summary data for items reported
+        const litterResult = await getUserLitterSummaries(user.id)
+        if (litterResult.data) {
+          const litterSummary = Array.isArray(litterResult.data) ? litterResult.data[0] : litterResult.data
+          setLitterData({
+            totalItems: litterSummary?.total_items || 0,
+          })
+        } else {
+          setLitterData({
+            totalItems: 0,
+          })
+        }
+
         // Fetch community stats
         const communityResult = await getCommunityStats()
         if (communityResult.data) {
@@ -226,7 +243,7 @@ export default function Dashboard() {
   const impactData = {
     totalCarbonSaved: userStats.carbonSaved,
     cleanupEvents: userStats.cleanupsParticipated,
-    bagsCollected: Math.round(userStats.cleanupsParticipated * 2.8), // Estimate based on cleanups
+    itemsReported: litterData.totalItems, // Actual items reported from LitterLens
     quizzesCompleted: userStats.quizCorrectAnswers, // Actual quiz correct answers from Carbon Clash
     currentRank: currentRank || 999,
     totalUsers: leaderboardData.length,
@@ -244,7 +261,7 @@ export default function Dashboard() {
         />
         <ImpactMetrics
           cleanupEvents={impactData.cleanupEvents}
-          bagsCollected={impactData.bagsCollected}
+          itemsReported={impactData.itemsReported}
           quizzesCompleted={impactData.quizzesCompleted}
         />
 

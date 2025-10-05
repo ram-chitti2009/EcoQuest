@@ -929,10 +929,10 @@ export async function getCommunityStats() {
             .from('user_statistics')
             .select('carbon_saved');
 
-        // Get total volunteer hours
+        // Get total volunteer hours from actual volunteer activities
         const { data: hoursData, error: hoursError } = await supabase
-            .from('user_statistics')
-            .select('volunteer_hours');
+            .from('volunteer_activities')
+            .select('hours_logged');
 
         // Get total cleanups
         const { data: cleanupsData, error: cleanupsError } = await supabase
@@ -963,7 +963,7 @@ export async function getCommunityStats() {
         }
 
         const totalCarbon = carbonData?.reduce((sum, item) => sum + (item.carbon_saved || 0), 0) || 0;
-        const totalHours = hoursData?.reduce((sum, item) => sum + (item.volunteer_hours || 0), 0) || 0;
+        const totalHours = hoursData?.reduce((sum, item) => sum + (Number(item.hours_logged) || 0), 0) || 0;
         const totalCleanups = cleanupsData?.reduce((sum, item) => sum + (item.cleanups_participated || 0), 0) || 0;
         const totalXp = xpData?.reduce((sum, item) => sum + (item.xp || 0), 0) || 0;
 

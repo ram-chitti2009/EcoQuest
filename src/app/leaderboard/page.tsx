@@ -625,7 +625,7 @@ export default function Component() {
                         <div className="text-2xl font-bold bg-gradient-to-r from-purple-500 to-pink-600 bg-clip-text text-transparent">
                           {communityStats.total_volunteer_hours}
                         </div>
-                        <p className="text-xs text-gray-600 font-medium">Volunteer Hours</p>
+                        <p className="text-xs text-gray-600 font-medium">Total Volunteer Hours</p>
                       </div>
                     </div>
                     <Progress value={65} color="purple" className="h-2" />
