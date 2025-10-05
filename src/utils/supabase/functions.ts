@@ -992,7 +992,7 @@ export async function getCommunityStats() {
     }
 }
 
-// Enhanced leaderboard function with actual volunteer hours from QuestLog activities
+// Enhanced leaderboard function with actual volunteer hours from QuestLog activities and actual cleanup events
 export async function getLeaderboardWithActualVolunteerHours() {
   try {
     // First, get the basic leaderboard data with user statistics
@@ -1019,7 +1019,7 @@ export async function getLeaderboardWithActualVolunteerHours() {
       return { data: [], error: null };
     }
 
-    // Now, for each user, calculate their actual volunteer hours from activities
+    // Now, for each user, calculate their actual volunteer hours and cleanup events from backend
     const enhancedData = await Promise.all(
       leaderboardData.map(async (entry) => {
         if (!entry.user_id) {
@@ -1040,18 +1040,30 @@ export async function getLeaderboardWithActualVolunteerHours() {
           );
         }
 
-        // Return the entry with updated volunteer hours
+        // Get actual cleanup events joined from event_participants
+        const { data: participantsData, error: participantsError } = await supabase
+          .from('event_participants')
+          .select('event_id')
+          .eq('user_id', entry.user_id);
+
+        let actualCleanupsJoined = 0;
+        if (!participantsError && participantsData) {
+          actualCleanupsJoined = participantsData.length;
+        }
+
+        // Return the entry with updated volunteer hours and cleanup events
         return {
           ...entry,
           user_statistics: {
             ...entry.user_statistics,
-            volunteer_hours: actualVolunteerHours
+            volunteer_hours: actualVolunteerHours,
+            cleanups_participated: actualCleanupsJoined
           }
         };
       })
     );
 
-    console.log("Enhanced leaderboard with actual volunteer hours:", enhancedData);
+    console.log("Enhanced leaderboard with actual volunteer hours and cleanup events:", enhancedData);
     return { data: enhancedData, error: null };
 
   } catch (error) {
