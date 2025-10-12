@@ -38,6 +38,8 @@ export const QuestCalendar = ({ onMetricsUpdate }: QuestCalendarProps) => {
   })
   const [loading, setLoading] = useState(true)
   const [currentUser, setCurrentUser] = useState<{ id: string } | null>(null)
+  const [userParticipations, setUserParticipations] = useState<{ [key: number]: boolean }>({})
+  const [actionLoading, setActionLoading] = useState<number | null>(null)
   const supabase = createClient()
 
   const months = [
@@ -63,6 +65,80 @@ export const QuestCalendar = ({ onMetricsUpdate }: QuestCalendarProps) => {
     }
     checkUser()
   }, [supabase.auth])
+
+  // Check user participations for events
+  useEffect(() => {
+    const checkUserParticipations = async () => {
+      if (!currentUser || events.length === 0) return
+
+      try {
+        const eventIds = events.map(event => event.id).filter(id => id !== undefined)
+        
+        if (eventIds.length > 0) {
+          const { data: participations, error } = await supabase
+            .from('community_cleanup_participants')
+            .select('event_id')
+            .eq('user_id', currentUser.id)
+            .in('event_id', eventIds)
+
+          if (!error && participations) {
+            const participationMap: { [key: number]: boolean } = {}
+            participations.forEach(p => {
+              participationMap[p.event_id] = true
+            })
+            setUserParticipations(participationMap)
+          }
+        }
+      } catch (error) {
+        console.error('Error checking user participations:', error)
+      }
+    }
+
+    checkUserParticipations()
+  }, [currentUser, events, supabase])
+
+  // Handle join/leave event
+  const handleEventAction = async (eventId: number) => {
+    if (!currentUser || !eventId) return
+
+    setActionLoading(eventId)
+    
+    try {
+      const isJoined = userParticipations[eventId]
+      
+      if (isJoined) {
+        // Leave event
+        const { error } = await supabase
+          .from('community_cleanup_participants')
+          .delete()
+          .eq('event_id', eventId)
+          .eq('user_id', currentUser.id)
+
+        if (!error) {
+          setUserParticipations(prev => ({ ...prev, [eventId]: false }))
+          onMetricsUpdate?.()
+        }
+      } else {
+        // Join event
+        const { error } = await supabase
+          .from('community_cleanup_participants')
+          .insert({
+            event_id: eventId,
+            user_id: currentUser.id,
+            joined_at: new Date().toISOString()
+          })
+
+        if (!error) {
+          setUserParticipations(prev => ({ ...prev, [eventId]: true }))
+          onMetricsUpdate?.()
+        }
+      }
+    } catch (error) {
+      console.error('Error handling event action:', error)
+    } finally {
+      setActionLoading(null)
+    }
+  }
 
   useEffect(() => {
     if (currentUser !== null) {
@@ -150,7 +226,9 @@ export const QuestCalendar = ({ onMetricsUpdate }: QuestCalendarProps) => {
   const renderCalendarDay = (day: number, isCurrentMonth = true) => {
     // Find events for this specific day
     const dayEvents = events.filter(event => {
-      const eventDate = new Date(event.date)
+      // Parse date in local timezone to avoid UTC offset issues
+      const eventDateParts = event.date.split('-')
+      const eventDate = new Date(parseInt(eventDateParts[0]), parseInt(eventDateParts[1]) - 1, parseInt(eventDateParts[2]))
       return eventDate.getDate() === day && 
              eventDate.getMonth() === currentMonth && 
              eventDate.getFullYear() === currentYear
@@ -330,7 +408,9 @@ export const QuestCalendar = ({ onMetricsUpdate }: QuestCalendarProps) => {
             </h4>
             {(() => {
               const selectedDateEvents = events.filter(event => {
-                const eventDate = new Date(event.date)
+                // Parse date in local timezone to avoid UTC offset issues
+                const eventDateParts = event.date.split('-')
+                const eventDate = new Date(parseInt(eventDateParts[0]), parseInt(eventDateParts[1]) - 1, parseInt(eventDateParts[2]))
                 return eventDate.getDate() === selectedDate &&
                        eventDate.getMonth() === currentMonth &&
                        eventDate.getFullYear() === currentYear
@@ -338,31 +418,66 @@ export const QuestCalendar = ({ onMetricsUpdate }: QuestCalendarProps) => {
               
               return selectedDateEvents.length > 0 ? (
                 <div className="space-y-1 sm:space-y-2">
-                  {selectedDateEvents.map((event, index) => (
-                    <div key={event.id || index} className="flex items-center gap-2">
-                      <div
-                        className={`w-2 h-2 sm:w-3 sm:h-3 rounded-full ${
-                          event.type === "cleanup"
-                            ? "bg-emerald-600"
-                            : event.type === "workshop"
-                              ? "bg-teal-600"
-                              : "bg-green-600"
-                        }`}
-                      />
-                      <div className="flex-1">
-                        <span className="text-xs sm:text-sm font-medium">{event.title}</span>
-                        {event.time && (
-                          <span className="text-xs text-gray-500 ml-2">at {event.time}</span>
-                        )}
-                        {event.location && (
-                          <div className="text-xs text-gray-500">{event.location}</div>
-                        )}
-                        {event.participants && (
-                          <span className="text-xs text-gray-500">({event.participants} participants)</span>
+                  {selectedDateEvents.map((event, index) => {
+                    const userJoined = event.id ? userParticipations[event.id] : false
+                    const isFull = event.max_participants && event.participants && event.participants >= event.max_participants
+                    
+                    return (
+                      <div key={event.id || index} className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
+                        <div
+                          className={`w-2 h-2 sm:w-3 sm:h-3 rounded-full ${
+                            event.type === "cleanup"
+                              ? "bg-emerald-600"
+                              : event.type === "workshop"
+                                ? "bg-teal-600"
+                                : "bg-green-600"
+                          }`}
+                        />
+                        <div className="flex-1">
+                          <span className="text-xs sm:text-sm font-medium">{event.title}</span>
+                          {event.time && (
+                            <span className="text-xs text-gray-500 ml-2">at {event.time}</span>
+                          )}
+                          {event.location && (
+                            <div className="text-xs text-gray-500">{event.location}</div>
+                          )}
+                          {event.participants && (
+                            <span className="text-xs text-gray-500">({event.participants} participants)</span>
+                          )}
+                        </div>
+                        
+                        {/* Join/Leave Event Button */}
+                        {currentUser && event.id && (
+                          <Button
+                            size="sm"
+                            onClick={() => {
+                              if (!(!userJoined && isFull) && actionLoading !== event.id) {
+                                handleEventAction(event.id!)
+                              }
+                            }}
+                            variant={isFull ? 'outline' : 'default'}
+                            className={`transition-all duration-300 hover:scale-105 min-w-[80px] text-xs ${
+                              actionLoading === event.id ? 'animate-pulse' : ''
+                            } ${
+                              (!userJoined && isFull) || actionLoading === event.id
+                                ? 'bg-gray-300 text-gray-500 cursor-not-allowed hover:bg-gray-300'
+                                : userJoined 
+                                  ? 'bg-red-600 hover:bg-red-700 text-white border-red-600 hover:border-red-700' 
+                                  : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                            }`}
+                          >
+                            {actionLoading === event.id ? (
+                              <div className="flex items-center gap-1">
+                                <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                              </div>
+                            ) : (
+                              userJoined ? 'Leave Event' : isFull ? 'Full' : 'Join Event'
+                            )}
+                          </Button>
                         )}
                       </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               ) : (
                 <p className="text-xs sm:text-sm text-gray-500">No events scheduled for this date</p>

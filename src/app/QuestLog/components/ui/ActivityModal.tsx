@@ -1,11 +1,11 @@
 "use client"
 
+import { Bike, Recycle, Trash2, TreePine, Zap } from "lucide-react"
 import React from "react"
-import { Modal } from "./Modal"
 import { Button } from "./Button"
 import { Input } from "./Input"
+import { Modal } from "./Modal"
 import { Select } from "./Select"
-import { Bike, Recycle, Trash2, TreePine, Zap } from "lucide-react"
 
 const activityTypes = [
   { value: "biking", label: "Cycling (km)", icon: <Bike className="w-4 h-4" />, carbonPerUnit: 0.21 },
@@ -29,7 +29,10 @@ interface ActivityModalProps {
 export function ActivityModal({ isOpen, onClose, onSubmit }: ActivityModalProps) {
   const [selectedActivity, setSelectedActivity] = React.useState("")
   const [quantity, setQuantity] = React.useState("")
-  const [date, setDate] = React.useState(new Date().toISOString().split("T")[0])
+  const [date, setDate] = React.useState(() => {
+    const now = new Date()
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString().split("T")[0]
+  })
 
   const handleSubmit = () => {
     if (!selectedActivity || !quantity) return
@@ -49,7 +52,8 @@ export function ActivityModal({ isOpen, onClose, onSubmit }: ActivityModalProps)
     // Reset form
     setSelectedActivity("")
     setQuantity("")
-    setDate(new Date().toISOString().split("T")[0])
+    const now = new Date()
+    setDate(new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString().split("T")[0])
     onClose()
   }
 

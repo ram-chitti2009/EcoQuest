@@ -4,6 +4,7 @@ import Header from "@/app/components/Header"
 import SidebarWrapper from "@/app/components/SidebarWrapper"
 import LoadingScreen from "@/components/LoadingScreen"
 import { useRequireAuth } from "@/hooks/useRequireAuth"
+import { parseLocalDate } from "@/utils/dateUtils"
 import { createClient } from "@/utils/supabase/client"
 import { getAllUnifiedEvents, getCommunityStats, getLeaderboardWithActualVolunteerHours, Leaderboard } from "@/utils/supabase/functions"
 import { Atom } from "lucide-react"
@@ -68,7 +69,8 @@ const getEventBackground = (category: string) => {
 
 const formatEventDateTime = (date: string, time: string) => {
   try {
-    const eventDate = new Date(date)
+    // Parse date in local timezone to avoid UTC offset issues
+    const eventDate = parseLocalDate(date)
     const today = new Date()
     const yesterday = new Date(today)
     yesterday.setDate(yesterday.getDate() - 1)
@@ -184,13 +186,18 @@ export default function Component() {
             
             // Filter events that happened in the past 7 days (rolling week)
             const thisWeekEvents = data.filter(event => {
-              const eventDate = new Date(event.date)
+              // Parse date in local timezone to avoid UTC offset issues
+              const eventDate = parseLocalDate(event.date)
               return eventDate >= sevenDaysAgo && eventDate <= now
             })
             
             // Sort by date descending (most recent first) and take the first 3
             const recentEvents = thisWeekEvents
-              .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+              .sort((a, b) => {
+                const dateA = parseLocalDate(a.date)
+                const dateB = parseLocalDate(b.date)
+                return dateB.getTime() - dateA.getTime()
+              })
               .slice(0, 3)
               .map(event => ({
                 id: event.id,

@@ -1,22 +1,23 @@
 "use client"
 
+import { parseLocalDate } from "@/utils/dateUtils"
 import { createClient } from "@/utils/supabase/client"
 import {
-  checkUserEventParticipation,
-  getEcoEventsByMonth,
-  joinEcoEvent,
-  leaveEcoEvent
+    checkUserEventParticipation,
+    getEcoEventsByMonth,
+    joinEcoEvent,
+    leaveEcoEvent
 } from "@/utils/supabase/functions"
 import {
-  ChevronLeft,
-  ChevronRight,
-  Clock,
-  Leaf,
-  MapPin,
-  Sparkles,
-  TreePine,
-  Users,
-  X
+    ChevronLeft,
+    ChevronRight,
+    Clock,
+    Leaf,
+    MapPin,
+    Sparkles,
+    TreePine,
+    Users,
+    X
 } from "lucide-react"
 import { useEffect, useState } from "react"
 import { CATEGORY_CONFIG, DAY_NAMES, MONTH_NAMES } from "./constants/calendar"
@@ -156,7 +157,8 @@ export function CompactCalendar({ onMetricsUpdate, onMonthChange }: CompactCalen
 
   const getEventsForDate = (day: number, checkYear: number, checkMonth: number): EcoEvent[] => {
     return ecoEvents.filter((event) => {
-      const eventDate = new Date(event.date)
+      // Parse date in local timezone to avoid UTC offset issues
+      const eventDate = parseLocalDate(event.date)
       return eventDate.getDate() === day && 
              eventDate.getMonth() === checkMonth && 
              eventDate.getFullYear() === checkYear

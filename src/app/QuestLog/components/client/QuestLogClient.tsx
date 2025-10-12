@@ -11,7 +11,7 @@ import type React from "react"
 import { useEffect, useState } from "react"
 // App-wide header component
 import { createClient } from "@/utils/supabase/client"
-import { UnifiedEvent, VolunteerActivity, getUserVolunteerActivities, createVolunteerActivity } from "@/utils/supabase/functions"
+import { UnifiedEvent, VolunteerActivity, createVolunteerActivity, getUserVolunteerActivities } from "@/utils/supabase/functions"
 import Header from "../../../components/Header"
 
 // Function to get user's joined events
@@ -294,7 +294,12 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({ activities }) => {
                   <div className="font-semibold text-gray-900 text-lg">
                     {activity.type}: {activity.quantity}
                   </div>
-                  <div className="text-gray-500">{new Date(activity.date).toLocaleDateString()}</div>
+                  <div className="text-gray-500">{(() => {
+                    // Parse date in local timezone to avoid UTC offset issues
+                    const dateParts = activity.date.split('-')
+                    const localDate = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, parseInt(dateParts[2]))
+                    return localDate.toLocaleDateString()
+                  })()}</div>
                 </div>
               </div>
               <div className="text-right">
@@ -473,7 +478,12 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ isOpen, onClose, onSubmit
                 {!selectedEvent && <option value="" disabled hidden>Choose an event you joined</option>}
                 {userJoinedEvents.map((event) => (
                   <option key={event.id} value={event.id.toString()}>
-                    {event.title} - {new Date(event.date).toLocaleDateString()}
+                    {event.title} - {(() => {
+                      // Parse date in local timezone to avoid UTC offset issues
+                      const dateParts = event.date.split('-')
+                      const localDate = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, parseInt(dateParts[2]))
+                      return localDate.toLocaleDateString()
+                    })()}
                   </option>
                 ))}
               </Select>
@@ -499,7 +509,12 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ isOpen, onClose, onSubmit
               <div className="bg-blue-50 p-4 rounded-lg">
                 <h4 className="font-semibold text-blue-900 mb-2">{selectedEvent.title}</h4>
                 <p className="text-sm text-blue-700 mb-1">
-                  <strong>Date:</strong> {new Date(selectedEvent.date).toLocaleDateString()}
+                  <strong>Date:</strong> {(() => {
+                    // Parse date in local timezone to avoid UTC offset issues
+                    const dateParts = selectedEvent.date.split('-')
+                    const localDate = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, parseInt(dateParts[2]))
+                    return localDate.toLocaleDateString()
+                  })()}
                 </p>
                 <p className="text-sm text-blue-700 mb-1">
                   <strong>Location:</strong> {selectedEvent.location}
