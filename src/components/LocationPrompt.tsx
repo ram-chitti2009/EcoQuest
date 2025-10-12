@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { X, MapPin, Shield } from 'lucide-react';
 import { useLocation } from '@/hooks/useLocation';
 import { createClient } from '@/utils/supabase/client';
 import { updateUserProfile } from '@/utils/supabase/functions';
+import { MapPin, Shield, X } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
 
 interface LocationPromptProps {
   onDismiss?: () => void;
@@ -39,6 +39,9 @@ export const LocationPrompt: React.FC<LocationPromptProps> = ({
         // Show prompt if no location is saved or permission not granted
         if (!profile?.latitude || !profile?.longitude || !profile?.location_permission_granted) {
           setIsVisible(true);
+        } else {
+          // User already has location saved, don't show prompt
+          setIsVisible(false);
         }
       }
     };
@@ -61,6 +64,23 @@ export const LocationPrompt: React.FC<LocationPromptProps> = ({
           
           onLocationGranted?.(location.latitude, location.longitude);
           setIsVisible(false);
+          
+          // Force a re-check to ensure prompt stays hidden
+          setTimeout(() => {
+            const recheckUserProfile = async () => {
+              const { data: profile } = await supabase
+                .from('user_profiles')
+                .select('latitude, longitude, location_permission_granted')
+                .eq('id', user.id)
+                .single();
+              
+              if (profile?.latitude && profile?.longitude && profile?.location_permission_granted) {
+                setIsVisible(false);
+              }
+            };
+            recheckUserProfile();
+          }, 1000);
+          
         } catch (err) {
           console.error('Error saving location:', err);
         } finally {
@@ -70,7 +90,7 @@ export const LocationPrompt: React.FC<LocationPromptProps> = ({
     };
 
     saveLocation();
-  }, [location, user, saving, onLocationGranted]);
+  }, [location, user, saving, onLocationGranted, supabase]);
 
   const handleDismiss = () => {
     setIsVisible(false);
