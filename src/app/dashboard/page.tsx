@@ -1,11 +1,10 @@
 "use client";
+import { LocationPrompt } from "@/components/LocationPrompt";
 import SidebarWrapper from "../components/SidebarWrapper";
 import DashboardClient from "./Components/client/DashboardClient";
 
-import SurveyGate from "./components/SurveyGate";
-
-import { useRequireAuth } from "@/hooks/useRequireAuth";
 import LoadingScreen from "@/components/LoadingScreen";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
 
 export default function DashboardPage() {
   const checking = useRequireAuth();
@@ -16,13 +15,12 @@ export default function DashboardPage() {
   }
 
   return (
-    <SurveyGate>
-      <div className="flex">
-        <SidebarWrapper loading={false} />
-        <main className="flex-1">
-          <DashboardClient />
-        </main>
-      </div>
-    </SurveyGate>
+    <div className="flex">
+      <SidebarWrapper loading={false} />
+      <main className="flex-1">
+        <DashboardClient />
+      </main>
+      <LocationPrompt />
+    </div>
   );
 }
