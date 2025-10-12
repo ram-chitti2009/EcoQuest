@@ -241,7 +241,7 @@ export const SideBar = () => {
       const { error } = await supabase.auth.signOut()
       if (error) throw error
       
-      router.push('/landingPage')
+      router.push('/ecoQuestLandingPage')
     } catch (error) {
       console.error('Logout error:', error)
     }
@@ -441,7 +441,7 @@ export const SideBar = () => {
             onClick={handleLogout}
             icon={LogOutIcon}
             label="Log Out"
-            href="/landingPage"
+            href="/ecoQuestLandingPage"
             isCollapsed={isCollapsed}
           />
         </div>

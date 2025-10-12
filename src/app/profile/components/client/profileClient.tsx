@@ -41,8 +41,8 @@ const LEVEL_SYSTEM = [
 ]
 
 // Calculate total eco points from user statistics
-const calculateEcoPoints = (stats: { carbonSaved: number; volunteerHours: number; cleanupsParticipated: number }) => {
-  return stats.carbonSaved * 2 + stats.volunteerHours * 10 + stats.cleanupsParticipated * 25
+const calculateEcoPoints = (stats: { carbonSaved: number; volunteerHours: number; cleanupsParticipated: number; correctQuizAnswers: number }) => {
+  return stats.carbonSaved * 0.7 + stats.volunteerHours * 5 + stats.cleanupsParticipated * 12 + stats.correctQuizAnswers * 1
 }
 
 // Get user level based on eco points
@@ -76,6 +76,7 @@ export default function Component() {
     carbonSaved: 0,
     volunteerHours: 0,
     cleanupsParticipated: 0,
+    correctQuizAnswers: 0,
   })
   const [recentBadges, setRecentBadges] = useState<
     { id: number; name: string; icon: React.ComponentType<{ className?: string }>; earned: boolean }[]
@@ -188,6 +189,7 @@ export default function Component() {
             carbonSaved: statsResult.data.carbon_saved || 0,
             volunteerHours: actualVolunteerHours, // Use actual hours from QuestLog activities
             cleanupsParticipated: actualCleanupsCount, // Use actual count from events
+            correctQuizAnswers: statsResult.data.quiz_correct_answers || 0,
           })
         } else {
           // Create default stats if none exist
@@ -205,6 +207,7 @@ export default function Component() {
             carbonSaved: 0,
             volunteerHours: actualVolunteerHours, // Use actual hours from QuestLog activities
             cleanupsParticipated: actualCleanupsCount,
+            correctQuizAnswers: 0,
           })
         }
 

@@ -4,7 +4,8 @@ import { createClient } from '@/utils/supabase/client'
 import {
   getCleanupEventsJoinedByUser,
   getCommunityStats,
-  getLeaderboardWithUserData,
+  getLeaderboardWithActualVolunteerHours,
+  getTotalVolunteerHours,
   getUserLitterSummaries,
   getUserProfileByUserId,
   getUserStatistics,
@@ -19,7 +20,6 @@ import { ImpactMetrics } from "../impact-metrics"
 import { LeaderboardCard } from "../leaderboard-card"
 import { QuestCalendar } from "../quest-calendar"
 import { UpcomingEventsCard } from "../upcoming-events-card"
-import { LocationPrompt } from "@/components/LocationPrompt"
 
 // Extended interface for leaderboard with joined user statistics
 interface LeaderboardWithStats extends Leaderboard {
@@ -27,6 +27,7 @@ interface LeaderboardWithStats extends Leaderboard {
     carbon_saved?: number;
     volunteer_hours?: number;
     cleanups_participated?: number;
+    quiz_correct_answers?: number;
   };
 }
 
@@ -40,12 +41,12 @@ const calculateMetricValue = (entry: LeaderboardWithStats, metric: "carbon" | "e
     case "hours":
       return entry.user_statistics?.volunteer_hours || 0
     case "points":
-      // Calculate points based on available statistics
+      // Calculate points based on available statistics using new formula
       const carbon = entry.user_statistics?.carbon_saved || 0
       const hours = entry.user_statistics?.volunteer_hours || 0
       const cleanups = entry.user_statistics?.cleanups_participated || 0
-      const quizAnswers = (entry.user_statistics as any)?.quiz_correct_answers || 0
-      return (carbon * 2) + (hours * 10) + (cleanups * 25) + (quizAnswers * 5)
+      const quizAnswers = entry.user_statistics?.quiz_correct_answers || 0
+      return (carbon * 0.7) + (hours * 5) + (cleanups * 12) + (quizAnswers * 1)
     default:
       return entry.user_statistics?.carbon_saved || 0
   }
@@ -159,10 +160,14 @@ export default function Dashboard() {
         const cleanupEventsResult = await getCleanupEventsJoinedByUser(user.id)
         const actualCleanupsCount = cleanupEventsResult.count || 0
         
+        // Fetch actual volunteer hours from QuestLog activities
+        const volunteerHoursResult = await getTotalVolunteerHours(user.id)
+        const actualVolunteerHours = volunteerHoursResult.totalHours || 0
+        
         if (statsResult.data) {
           setUserStats({
             carbonSaved: statsResult.data.carbon_saved || 0,
-            volunteerHours: statsResult.data.volunteer_hours || 0,
+            volunteerHours: actualVolunteerHours, // Use actual hours from QuestLog activities
             cleanupsParticipated: actualCleanupsCount, // Use actual count from events
             quizCorrectAnswers: statsResult.data.quiz_correct_answers || 0,
           })
@@ -187,8 +192,8 @@ export default function Dashboard() {
           setCommunityStats(communityResult.data)
         }
 
-        // Fetch real-time leaderboard data with user statistics
-        const leaderboardResult = await getLeaderboardWithUserData()
+        // Fetch real-time leaderboard data with actual volunteer hours from QuestLog activities
+        const leaderboardResult = await getLeaderboardWithActualVolunteerHours()
         if (leaderboardResult.error) {
           console.error("Error fetching leaderboard data:", leaderboardResult.error)
           setLeaderboardData([])
@@ -216,6 +221,7 @@ export default function Dashboard() {
     const topThree = leaderboardData
       .slice(0, 3) // Already ranked, so take top 3
       .map((entry, index) => {
+        // Use consistent leaderboard data for all users (same as actual leaderboard page)
         const ecoPoints = calculateMetricValue(entry, "points")
         return {
           name: entry.name || "User",
@@ -287,17 +293,6 @@ export default function Dashboard() {
         </div>
 
         <ActionCards />
-
-        {/* Location Permission Prompt */}
-        <LocationPrompt
-          onLocationGranted={(lat, lng) => {
-            console.log('Location granted on dashboard:', { lat, lng });
-            // You could trigger a refresh of location-based data here
-          }}
-          onDismiss={() => {
-            console.log('Location prompt dismissed on dashboard');
-          }}
-        />
       </div>
     </div>
   )

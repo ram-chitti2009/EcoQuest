@@ -13,12 +13,12 @@ import EventCardsGrid from "./event-cards-grid"
 import MapWrapper from "./map-wrapper"; // Declare the MapWrapper variable
 // Add these imports at the top of your file
 import {
-  checkUserEventParticipation,
-  createUnifiedEvent,
-  getAllUnifiedEvents,
-  joinUnifiedEvent,
-  leaveUnifiedEvent,
-  type UnifiedEvent
+    checkUserEventParticipation,
+    createUnifiedEvent,
+    getAllUnifiedEvents,
+    joinUnifiedEvent,
+    leaveUnifiedEvent,
+    type UnifiedEvent
 } from '@/utils/supabase/functions'
 
 interface Participant {
@@ -102,7 +102,7 @@ const transformUnifiedToCleanup = (event: UnifiedEvent): CleanupEvent => {
     status: (event.status as "upcoming" | "ongoing" | "completed") || 'upcoming',
     equipmentProvided: event.equipment_provided || [],
     requirements: event.requirements || [],
-    expectedTrashCollection: event.expected_trash_collection || '50 lbs',
+    expectedTrashCollection: event.expected_trash_collection ? event.expected_trash_collection.toString() + ' lbs' : '50 lbs',
     carbonOffset: event.carbon_offset || '10 kg CO2',
     createdBy: event.user_id || undefined,
     needsVolunteers: false, // Will be set by determineEventStatuses
@@ -554,7 +554,7 @@ export default function CommunityCleanupMap() {
       status: 'upcoming' as const,
       equipment_provided: newEvent.equipmentProvided.split(',').map(s => s.trim()).filter(Boolean),
       requirements: newEvent.requirements.split(',').map(s => s.trim()).filter(Boolean),
-      expected_trash_collection: newEvent.expectedTrashCollection || "50 lbs",
+      expected_trash_collection: parseFloat(newEvent.expectedTrashCollection.match(/\d+\.?\d*/)?.[0] || '50'),
       carbon_offset: newEvent.carbonOffset || "10 kg CO2"
     }
 

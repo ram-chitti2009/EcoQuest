@@ -14,7 +14,7 @@ import { Progress } from "../ui/Progress"
 
 // Supabase imports for leaderboard integration
 import { createClient } from "@/utils/supabase/client"
-import { getLeaderboardWithUserData, Leaderboard, createUserQuizReport, getLeaderboardWithXp, persistQuizReport, getUserStatistics } from "@/utils/supabase/functions"
+import { getLeaderboardWithActualVolunteerHours, getUserStatistics, Leaderboard, persistQuizReport } from "@/utils/supabase/functions"
 
 
 // Type for quiz questions
@@ -61,7 +61,7 @@ const calculateEcoPoints = (entry: LeaderboardWithStats): number => {
   const hours = entry.user_statistics?.volunteer_hours || 0
   const cleanups = entry.user_statistics?.cleanups_participated || 0
   const quizAnswers = entry.user_statistics?.quiz_correct_answers || 0
-  return (carbon * 2) + (hours * 10) + (cleanups * 25) + (quizAnswers * 100)
+  return (carbon * 0.7) + (hours * 5) + (cleanups * 12) + (quizAnswers * 1)
 }
 
 // Function to rank users by eco points
@@ -78,10 +78,10 @@ const getPerformanceLevel = (score: number, totalQuestions: number) => {
   return { level: "Eco Learner", color: "bg-blue-500", icon: Zap }
 }
 
-// Calculate XP based on score, with bonus for perfect score
-const calculateXP = (score: number, totalQuestions: number) => {
-  const baseXP = score * 100
-  return baseXP
+// Calculate eco points based on score
+const calculateXP = (score: number) => {
+  // Base points: 1 eco point per correct answer
+  return score * 1
 }
 
 // Main quiz component
@@ -103,6 +103,7 @@ export default function CarbonClashQuiz() {
   const [quizQuestions, setQuizQuestions] = useState<Question[]>([])
   const [questionsLoading, setQuestionsLoading] = useState(true)
   const [questionsError, setQuestionsError] = useState<string | null>(null)
+  const [reportSubmitted, setReportSubmitted] = useState(false) // Prevent duplicate submissions
 
   // Leaderboard state management
   const [leaderboardData, setLeaderboardData] = useState<LeaderboardWithStats[]>([])
@@ -116,7 +117,7 @@ export default function CarbonClashQuiz() {
     const fetchLeaderboardData = useCallback(async () => {
     try {
       setLoading(true)
-      const result = await getLeaderboardWithUserData()
+      const result = await getLeaderboardWithActualVolunteerHours()
       
       if (result.error) {
         console.error("Error fetching leaderboard data:", result.error)
@@ -217,10 +218,11 @@ export default function CarbonClashQuiz() {
  
 
   useEffect(() => {
-    if (gameState === "results") {
+    if (gameState === "results" && !reportSubmitted) {
     const fetchAndCreateReport = async () => {
       try {
         setXpLoading(true)
+        setReportSubmitted(true) // Mark as submitted to prevent duplicates
         const { data: { user } } = await supabase.auth.getUser()
         setCurrentUserId(user?.id ?? "")
         console.log("User ID:", user?.id, "Score:", score)
@@ -250,7 +252,7 @@ export default function CarbonClashQuiz() {
     }
     fetchAndCreateReport()
     }
-  }, [gameState, score, supabase.auth, fetchLeaderboardData])
+  }, [gameState, score, reportSubmitted, supabase.auth, fetchLeaderboardData])
 
   // Start/restart the quiz
   const startQuiz = () => {
@@ -271,18 +273,17 @@ export default function CarbonClashQuiz() {
     setProgressAnimation(0)
     setUserXp(null) // Reset XP data for new quiz
     setXpLoading(false)
+    setReportSubmitted(false) // Reset report submission flag
     setGameState("quiz")
   }
 
   // Share functionality for quiz results
   const handleShare = async () => {
-    const earnedXP = calculateXP(score, quizQuestions.length)
-    const streakBonus = maxStreak >= 3 ? maxStreak * 10 : 0
-    const totalXP = earnedXP + streakBonus
+    const totalXP = calculateXP(score)
     const performance = getPerformanceLevel(score, quizQuestions.length)
     const percentage = Math.round((score / quizQuestions.length) * 100)
 
-    const shareText = `🌱 I just scored ${score}/${quizQuestions.length} (${percentage}%) on Carbon Clash - EcoQuest's environmental quiz! 🌍\n\nEarned ${totalXP} XP and reached ${performance.level} level! 💚\n\nTest your eco-knowledge too!`
+    const shareText = `🌱 I just scored ${score}/${quizQuestions.length} (${percentage}%) on Carbon Clash - EcoQuest's environmental quiz! 🌍\n\nEarned ${totalXP.toFixed(1)} eco points and reached ${performance.level} level! 💚\n\nTest your eco-knowledge too!`
     const shareUrl = window.location.href
 
     // Try to use native Web Share API (mobile-friendly)
@@ -582,8 +583,8 @@ export default function CarbonClashQuiz() {
                 <div className="flex items-center gap-4 text-center">
                   <Flame className="w-12 h-12" />
                   <div>
-                    <div className="text-3xl font-black">STREAK BONUS!</div>
-                    <div className="text-xl font-bold">+{streak * 10} XP</div>
+                    <div className="text-3xl font-black">STREAK!</div>
+                    <div className="text-xl font-bold">{streak} in a row!</div>
                   </div>
                 </div>
               </div>
@@ -686,9 +687,7 @@ export default function CarbonClashQuiz() {
 
       {gameState === "results" && (() => {
         // Calculate XP, performance, and leaderboard for results
-        const earnedXP = calculateXP(score, quizQuestions.length)
-        const streakBonus = maxStreak >= 3 ? maxStreak * 10 : 0
-        const totalXP = earnedXP + streakBonus
+        const totalXP = calculateXP(score)
         const performance = getPerformanceLevel(score, quizQuestions.length)
         const percentage = Math.round((score / quizQuestions.length) * 100)
 
@@ -723,7 +722,7 @@ export default function CarbonClashQuiz() {
             return {
               key: entry.user_id || index,
               name: isCurrentUser ? "You" : (entry.name || "Anonymous"),
-              score: "Quiz", // Show generic text for real users
+              score: ecoPoints.toFixed(1), // Show eco points like main leaderboard
               points: ecoPoints,
               isCurrentUser
             }
@@ -777,18 +776,13 @@ export default function CarbonClashQuiz() {
                     ) : (
                       <>
                         <div className="text-5xl font-black text-emerald-700 mb-2 animate-pulse">
-                          {userXp !== null ? userXp : `+${totalXP}`}
+                          +{totalXP.toFixed(1)}
                         </div>
                         <div className="text-xl font-bold text-gray-700">
-                          {userXp !== null ? "TOTAL XP" : "XP EARNED"}
+                          ECOPOINTS GAINED
                         </div>
-                        {userXp !== null && (
-                          <div className="text-lg text-emerald-600 font-bold mt-2">
-                            +{score * 100} from this quiz!
-                          </div>
-                        )}
-                        {streakBonus > 0 && (
-                          <div className="text-lg text-orange-600 font-bold mt-2">+{streakBonus} streak bonus!</div>
+                        {maxStreak >= 3 && (
+                          <div className="text-sm text-orange-600 font-medium mt-1">🔥 {maxStreak}-answer streak!</div>
                         )}
                       </>
                     )}

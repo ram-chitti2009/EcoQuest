@@ -102,7 +102,7 @@ export default function AnalyzePage() {
             user_id: userId,
             litter_type: result.litterType,
             confidence: result.confidence,
-            quantity: result.quantity,
+            quantity: parseFloat(result.quantity.match(/\d+\.?\d*/)?.[0] || '1'),
             recyclable: result.recyclable,
             hazard_level: result.hazardLevel,
             recommendations: result.recommendations,
@@ -243,7 +243,7 @@ export default function AnalyzePage() {
           status: 'completed' as const,
           equipment_provided: [],
           requirements: [],
-          expected_trash_collection: analysisData.quantity,
+          expected_trash_collection: parseFloat(analysisData.quantity.match(/\d+\.?\d*/)?.[0] || '1'),
           carbon_offset: analysisData.environmentalImpact.carbonFootprint || '1 kg CO2',
           is_litter_analysis_report: true
         }
@@ -678,4 +678,3 @@ export default function AnalyzePage() {
     </div>
   )
 }
-

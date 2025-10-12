@@ -85,16 +85,32 @@ export const UpcomingEventsCard = () => {
         }
         
         if (data) {
-          // Take only the first 3 upcoming events
-          const limitedEvents = data.slice(0, 3).map(event => ({
-            id: event.id,
-            title: event.title,
-            date: event.date,
-            time: event.time,
-            category: event.category,
-            location: event.location
-          }))
-          setEvents(limitedEvents)
+          const now = new Date()
+          
+          // Filter and sort events to get the 3 closest upcoming events
+          const upcomingEvents = data
+            .filter(event => {
+              // Create a full datetime for comparison
+              const eventDateTime = new Date(`${event.date}T${event.time}`)
+              return eventDateTime > now
+            })
+            .sort((a, b) => {
+              // Sort by full datetime (date + time) to get truly closest events
+              const dateTimeA = new Date(`${a.date}T${a.time}`)
+              const dateTimeB = new Date(`${b.date}T${b.time}`)
+              return dateTimeA.getTime() - dateTimeB.getTime()
+            })
+            .slice(0, 3) // Take the 3 closest
+            .map(event => ({
+              id: event.id,
+              title: event.title,
+              date: event.date,
+              time: event.time,
+              category: event.category,
+              location: event.location
+            }))
+          
+          setEvents(upcomingEvents)
         }
       } catch (error) {
         console.error('Error fetching upcoming events:', error)

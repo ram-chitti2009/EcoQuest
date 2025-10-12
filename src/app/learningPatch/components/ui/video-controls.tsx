@@ -1,6 +1,6 @@
 "use client"
 
-import { Bookmark, Check, Copy, ExternalLink, Heart, MessageCircle, MoreHorizontal, Share } from "lucide-react"
+import { Bookmark, Check, Copy, ExternalLink, MoreHorizontal, Share } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 
 interface Video {
@@ -10,21 +10,17 @@ interface Video {
   creator: string
   creatorAvatar: string
   videoUrl: string
-  likes: number
-  comments: number
   shares: number
-  isLiked: boolean
   isSaved: boolean
 }
 
 interface VideoControlsProps {
   video: Video
-  onLike: (liked: boolean) => void
   onSave: (saved: boolean) => void
   onShare?: (shared: boolean) => void
 }
 
-export function VideoControls({ video, onLike, onSave, onShare }: VideoControlsProps) {
+export function VideoControls({ video, onSave, onShare }: VideoControlsProps) {
   const [showShareMenu, setShowShareMenu] = useState(false)
   const [copySuccess, setCopySuccess] = useState(false)
   const [shareAnimating, setShareAnimating] = useState(false)
@@ -47,10 +43,6 @@ export function VideoControls({ video, onLike, onSave, onShare }: VideoControlsP
       document.removeEventListener('mousedown', handleClickOutside)
     }
   }, [showShareMenu])
-
-  const handleLike = () => {
-    onLike(!video.isLiked)
-  }
 
   const handleSave = () => {
     onSave(!video.isSaved)
@@ -153,27 +145,6 @@ export function VideoControls({ video, onLike, onSave, onShare }: VideoControlsP
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Like button */}
-      <div className="flex flex-col items-center gap-1">
-        <button
-          onClick={handleLike}
-          className={`w-12 h-12 rounded-full flex items-center justify-center backdrop-blur-sm transition-all ${
-            video.isLiked ? "bg-red-500/20 text-red-500" : "bg-black/30 text-white hover:bg-black/50"
-          }`}
-        >
-          <Heart className={`w-6 h-6 ${video.isLiked ? "fill-current" : ""}`} />
-        </button>
-        <span className="text-white text-xs font-medium">{formatCount(video.likes)}</span>
-      </div>
-
-      {/* Comment button */}
-      <div className="flex flex-col items-center gap-1">
-        <button className="w-12 h-12 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/50 transition-colors">
-          <MessageCircle className="w-6 h-6" />
-        </button>
-        <span className="text-white text-xs font-medium">{formatCount(video.comments)}</span>
-      </div>
-
       {/* Share button */}
       <div className="flex flex-col items-center gap-1 relative">
         <button
@@ -182,12 +153,7 @@ export function VideoControls({ video, onLike, onSave, onShare }: VideoControlsP
         >
           <Share className="w-6 h-6" />
         </button>
-        <span className={`text-white text-xs font-medium transition-all duration-300 ${
-          shareAnimating ? 'text-green-400 scale-110' : ''
-        }`}>
-          {formatCount(video.shares)}
-        </span>
-
+        
         {/* Share menu */}
         {showShareMenu && (
           <div 

@@ -1,7 +1,7 @@
 "use client"
 
-import Image from "next/image"
 import { Plus } from "lucide-react"
+import Image from "next/image"
 
 interface Video {
   id: string
@@ -10,10 +10,7 @@ interface Video {
   creator: string
   creatorAvatar: string
   videoUrl: string
-  likes: number
-  comments: number
   shares: number
-  isLiked: boolean
   isSaved: boolean
 }
 

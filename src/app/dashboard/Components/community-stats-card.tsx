@@ -1,4 +1,4 @@
-import { Card, CardHeader, CardContent } from "./ui/card"
+import { Card, CardContent, CardHeader } from "./ui/card"
 import { Progress } from "./ui/progress"
 
 interface CommunityStats {
@@ -13,6 +13,14 @@ interface CommunityStatsCardProps {
 }
 
 export const CommunityStatsCard = ({ stats }: CommunityStatsCardProps) => {
+  // Calculate monthly goals based on total users
+  const carbonMonthlyGoal = 300 * stats.active_users
+  const volunteerHoursYearlyGoal = 75 * stats.active_users
+  
+  // Calculate progress percentages
+  const carbonProgress = carbonMonthlyGoal > 0 ? Math.min((stats.total_carbon_saved / carbonMonthlyGoal) * 100, 100) : 0
+  const volunteerProgress = volunteerHoursYearlyGoal > 0 ? Math.min((stats.total_volunteer_hours / volunteerHoursYearlyGoal) * 100, 100) : 0
+
   return (
     <Card>
       <CardHeader>
@@ -29,7 +37,8 @@ export const CommunityStatsCard = ({ stats }: CommunityStatsCardProps) => {
               <p className="text-xs text-gray-600">kg CO₂ Saved</p>
             </div>
           </div>
-          <Progress value={78} color="green" className="h-2" />
+          <Progress value={carbonProgress} color="green" className="h-2" />
+          <p className="text-xs text-gray-500 mt-1">{Math.round(carbonProgress)}% of yearly goal ({carbonMonthlyGoal} kg)</p>
         </div>
 
         <div className="p-3 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-xl">
@@ -40,7 +49,7 @@ export const CommunityStatsCard = ({ stats }: CommunityStatsCardProps) => {
               <p className="text-xs text-gray-600">Active Heroes</p>
             </div>
           </div>
-          <Progress value={89} color="blue" className="h-2" />
+          <Progress value={100} color="blue" className="h-2" />
         </div>
 
         <div className="p-3 bg-gradient-to-br from-purple-100 to-pink-100 rounded-xl">
@@ -51,7 +60,8 @@ export const CommunityStatsCard = ({ stats }: CommunityStatsCardProps) => {
               <p className="text-xs text-gray-600">Volunteer Hours</p>
             </div>
           </div>
-          <Progress value={65} color="purple" className="h-2" />
+          <Progress value={volunteerProgress} color="purple" className="h-2" />
+          <p className="text-xs text-gray-500 mt-1">{Math.round(volunteerProgress)}% of yearly goal ({volunteerHoursYearlyGoal} hrs)</p>
         </div>
       </CardContent>
     </Card>

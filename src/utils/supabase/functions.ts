@@ -1097,7 +1097,7 @@ export interface UserLitterReport {
   user_id: string;
   litter_type: string;
   confidence: number;
-  quantity: string;
+  quantity: number;
   recyclable: boolean;
   hazard_level: string;
   recommendations: string[];
@@ -1115,7 +1115,7 @@ export interface UserLitterReportInsert {
   user_id: string;
   litter_type: string;
   confidence: number;
-  quantity: string;
+  quantity: number;
   recyclable: boolean;
   hazard_level: string;
   recommendations: string[];
@@ -1130,7 +1130,7 @@ export interface UserLitterReportInsert {
 export interface UserLitterReportUpdate {
   litter_type?: string;
   confidence?: number;
-  quantity?: string;
+  quantity?: number;
   recyclable?: boolean;
   hazard_level?: string;
   recommendations?: string[];
@@ -2180,7 +2180,7 @@ export interface UnifiedEvent {
   status?: string | null;
   equipment_provided?: string[] | null;
   requirements?: string[] | null;
-  expected_trash_collection?: string | null;
+  expected_trash_collection?: number | null;
   carbon_offset?: string | null;
   is_litter_analysis_report?: boolean | null;
 }
@@ -2205,7 +2205,7 @@ export interface UnifiedEventInsert {
   status?: 'upcoming' | 'ongoing' | 'completed';
   equipment_provided?: string[];
   requirements?: string[];
-  expected_trash_collection?: string;
+  expected_trash_collection?: number;
   carbon_offset?: string;
   is_litter_analysis_report?: boolean;
 }
@@ -2229,7 +2229,7 @@ export interface UnifiedEventUpdate {
   status?: 'upcoming' | 'ongoing' | 'completed';
   equipment_provided?: string[];
   requirements?: string[];
-  expected_trash_collection?: string;
+  expected_trash_collection?: number;
   carbon_offset?: string;
   is_litter_analysis_report?: boolean;
 }

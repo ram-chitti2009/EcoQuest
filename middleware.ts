@@ -1,7 +1,7 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextRequest, NextResponse } from 'next/server';
 
-const PUBLIC_PATHS = ['/', '/login', '/signup', '/dashboard', '/landingPage'];
+const PUBLIC_PATHS = ['/', '/login', '/signup', '/dashboard', '/ecoQuestLandingPage'];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -40,10 +40,10 @@ export async function middleware(request: NextRequest) {
 
   const { data: { session } } = await supabase.auth.getSession();
 
-  // If not authenticated, redirect to login
+  // If not authenticated, redirect to ecoQuestLandingPage
   if (!session) {
-    const loginUrl = new URL('/login', request.url);
-    return NextResponse.redirect(loginUrl);
+    const landingUrl = new URL('/ecoQuestLandingPage', request.url);
+    return NextResponse.redirect(landingUrl);
   }
 
   return NextResponse.next();

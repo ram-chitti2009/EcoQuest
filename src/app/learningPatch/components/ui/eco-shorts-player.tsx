@@ -13,10 +13,7 @@ interface VideoData {
   creator: string
   creatorAvatar: string
   videoUrl: string
-  likes: number
-  comments: number
   shares: number
-  isLiked: boolean
   isSaved: boolean
   duration?: string
 }
@@ -48,10 +45,7 @@ const fetchVideoMetadata = async (videoUrl: string): Promise<Partial<VideoData>>
       creatorAvatar: `https://img.youtube.com/vi/${videoId}/default.jpg`,
       videoUrl: `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&controls=0&modestbranding=1&rel=0`,
       description: `${data.title} by ${data.author_name}`,
-      likes: Math.floor(Math.random() * 100000) + 1000,
-      comments: Math.floor(Math.random() * 1000) + 50,
       shares: Math.floor(Math.random() * 5000) + 100,
-      isLiked: false,
       isSaved: false,
     }
   } catch (error) {
@@ -64,10 +58,7 @@ const fetchVideoMetadata = async (videoUrl: string): Promise<Partial<VideoData>>
       creatorAvatar: `https://img.youtube.com/vi/${videoId}/default.jpg`,
       videoUrl: `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&controls=0&modestbranding=1&rel=0`,
       description: "Video description",
-      likes: 1000,
-      comments: 50,
       shares: 100,
-      isLiked: false,
       isSaved: false,
     }
   }
@@ -170,14 +161,13 @@ export function EcoShortsPlayer() {
 
   const currentVideo = videos[currentVideoIndex]
 
-  const handleVideoInteraction = (videoId: string, action: "like" | "save" | "share", value: boolean) => {
+  const handleVideoInteraction = (videoId: string, action: "save" | "share", value: boolean) => {
     setVideos((prev) =>
       prev.map((video) =>
         video.id === videoId
           ? {
               ...video,
-              [action === "like" ? "isLiked" : action === "save" ? "isSaved" : "isShared"]: action === "share" ? undefined : value,
-              likes: action === "like" ? (value ? video.likes + 1 : video.likes - 1) : video.likes,
+              [action === "save" ? "isSaved" : "isShared"]: action === "share" ? undefined : value,
               shares: action === "share" ? video.shares + 1 : video.shares,
             }
           : video,
@@ -372,13 +362,12 @@ export function EcoShortsPlayer() {
             opacity: isTransitioning ? 0 : 1,
           }}
         >
-          <VideoCard video={currentVideo} isActive={true} />
+          <VideoCard video={currentVideo} />
 
           {/* Mobile Video Controls */}
           <div className="absolute right-4 top-1/2 transform -translate-y-1/2 z-20">
             <VideoControls
               video={currentVideo}
-              onLike={(liked) => handleVideoInteraction(currentVideo.id, "like", liked)}
               onSave={(saved) => handleVideoInteraction(currentVideo.id, "save", saved)}
               onShare={() => handleVideoInteraction(currentVideo.id, "share", true)}
             />
@@ -396,7 +385,6 @@ export function EcoShortsPlayer() {
         <div className="flex flex-col justify-center">
           <VideoControls
             video={currentVideo}
-            onLike={(liked) => handleVideoInteraction(currentVideo.id, "like", liked)}
             onSave={(saved) => handleVideoInteraction(currentVideo.id, "save", saved)}
             onShare={() => handleVideoInteraction(currentVideo.id, "share", true)}
           />
@@ -414,7 +402,7 @@ export function EcoShortsPlayer() {
             opacity: isTransitioning ? 0 : 1,
           }}
         >
-          <VideoCard video={currentVideo} isActive={true} />
+          <VideoCard video={currentVideo} />
 
           <div className="absolute bottom-4 left-4 right-4 z-20">
             <VideoInfo video={currentVideo} />

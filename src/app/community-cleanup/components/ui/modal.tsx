@@ -17,7 +17,7 @@ const Modal = forwardRef<HTMLDivElement, ModalProps>(({ isOpen, onClose, childre
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[2000] p-4">
-      <div ref={ref} className={`bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto scrollbar-hide ${className}`}>
+      <div ref={ref} className={`bg-white text-black rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto scrollbar-hide ${className}`}>
         {children}
       </div>
     </div>
@@ -27,7 +27,7 @@ const Modal = forwardRef<HTMLDivElement, ModalProps>(({ isOpen, onClose, childre
 const ModalHeader = forwardRef<HTMLDivElement, { children: React.ReactNode; onClose?: () => void; className?: string }>(
   ({ children, onClose, className = "" }, ref) => {
     return (
-      <div ref={ref} className={`flex justify-between items-start p-6 pb-4 ${className}`}>
+      <div ref={ref} className={`flex justify-between items-start p-6 pb-4 text-black ${className}`}>
         <div className="flex-1">{children}</div>
         {onClose && (
           <button onClick={onClose} className="text-stone-500 hover:text-stone-700 ml-4">
@@ -42,7 +42,7 @@ const ModalHeader = forwardRef<HTMLDivElement, { children: React.ReactNode; onCl
 const ModalContent = forwardRef<HTMLDivElement, { children: React.ReactNode; className?: string }>(
   ({ children, className = "" }, ref) => {
     return (
-      <div ref={ref} className={`px-6 pb-6 ${className}`}>
+      <div ref={ref} className={`px-6 pb-6 text-black ${className}`}>
         {children}
       </div>
     )

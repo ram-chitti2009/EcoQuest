@@ -92,9 +92,10 @@ const ecoLevels = [
 ]
 
 const pointCalculations = [
-  { activity: "Carbon Saved", multiplier: 2, unit: "kg CO₂", description: "Every kilogram of CO₂ saved", icon: Leaf, color: "text-green-600", bgColor: "bg-green-50", borderColor: "border-green-200" },
-  { activity: "Volunteer Hours", multiplier: 10, unit: "hours", description: "Each hour of volunteer work", icon: Users, color: "text-blue-600", bgColor: "bg-blue-50", borderColor: "border-blue-200" },
-  { activity: "Cleanups Participated", multiplier: 25, unit: "events", description: "Each cleanup event joined", icon: Recycle, color: "text-purple-600", bgColor: "bg-purple-50", borderColor: "border-purple-200" },
+  { activity: "Carbon Saved", multiplier: 0.7, unit: "kg CO₂", description: "Every kilogram of CO₂ saved", icon: Leaf, color: "text-green-600", bgColor: "bg-green-50", borderColor: "border-green-200" },
+  { activity: "Volunteer Hours", multiplier: 5, unit: "hours", description: "Each hour of volunteer work", icon: Users, color: "text-blue-600", bgColor: "bg-blue-50", borderColor: "border-blue-200" },
+  { activity: "Cleanups Participated", multiplier: 12, unit: "events", description: "Each cleanup event joined", icon: Recycle, color: "text-purple-600", bgColor: "bg-purple-50", borderColor: "border-purple-200" },
+  { activity: "Correct Quiz Answers", multiplier: 1, unit: "answers", description: "Each correct quiz answer", icon: Target, color: "text-orange-600", bgColor: "bg-orange-50", borderColor: "border-orange-200" },
 ]
 
 interface AchievementsModalProps {
@@ -108,6 +109,8 @@ interface AchievementsModalProps {
 
 export function AchievementsModal({ userStats, ecoPoints }: AchievementsModalProps) {
   // userStats can be used for future achievement calculations
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _userStats = userStats; // Keep for future use
   const [isAchievementsOpen, setIsAchievementsOpen] = useState(false)
   const [isLevelsOpen, setIsLevelsOpen] = useState(false)
   const earnedCount = allAchievements.filter((achievement) => achievement.earned).length
@@ -332,7 +335,7 @@ export function AchievementsModal({ userStats, ecoPoints }: AchievementsModalPro
                     </div>
                     How Points Are Calculated
                   </h3>
-                  <div className="grid gap-4 md:grid-cols-3">
+                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                     {pointCalculations.map((calc, index) => {
                       const IconComponent = calc.icon
                       return (

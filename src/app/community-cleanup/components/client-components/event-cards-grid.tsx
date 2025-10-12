@@ -40,38 +40,36 @@ function EventCard({ event, onJoinEvent, isJoined = false, currentUserId }: Even
     // Special styling for litter report events
     if (isLitterReport) {
       return {
-        badge: "bg-red-50 text-red-700 border-red-200 dark:bg-red-950 dark:text-red-300 dark:border-red-800",
-        gradient: "from-red-50 to-orange-50 dark:from-red-950 dark:to-orange-950",
+        badge: "bg-red-50 text-red-700 border-red-200",
+        gradient: "from-red-50 to-orange-50",
       }
     }
 
     switch (type) {
       case "beach":
         return {
-          badge: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-800",
-          gradient: "from-blue-50 to-cyan-50 dark:from-blue-950 dark:to-cyan-950",
+          badge: "bg-blue-50 text-blue-700 border-blue-200",
+          gradient: "from-blue-50 to-cyan-50",
         }
       case "park":
         return {
-          badge:
-            "bg-green-50 text-green-700 border-green-200 dark:bg-green-950 dark:text-green-300 dark:border-green-800",
-          gradient: "from-green-50 to-emerald-50 dark:from-green-950 dark:to-emerald-950",
+          badge: "bg-green-50 text-green-700 border-green-200",
+          gradient: "from-green-50 to-emerald-50",
         }
       case "river":
         return {
-          badge: "bg-cyan-50 text-cyan-700 border-cyan-200 dark:bg-cyan-950 dark:text-cyan-300 dark:border-cyan-800",
-          gradient: "from-cyan-50 to-blue-50 dark:from-cyan-950 dark:to-blue-950",
+          badge: "bg-cyan-50 text-cyan-700 border-cyan-200",
+          gradient: "from-cyan-50 to-blue-50",
         }
       case "street":
         return {
-          badge:
-            "bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-900 dark:text-slate-300 dark:border-slate-700",
-          gradient: "from-slate-50 to-gray-50 dark:from-slate-900 dark:to-gray-900",
+          badge: "bg-slate-50 text-slate-700 border-slate-200",
+          gradient: "from-slate-50 to-gray-50",
         }
       default:
         return {
-          badge: "bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-900 dark:text-gray-300 dark:border-gray-700",
-          gradient: "from-gray-50 to-slate-50 dark:from-gray-900 dark:to-slate-900",
+          badge: "bg-gray-50 text-gray-700 border-gray-200",
+          gradient: "from-gray-50 to-slate-50",
         }
     }
   }
@@ -91,16 +89,16 @@ function EventCard({ event, onJoinEvent, isJoined = false, currentUserId }: Even
     }
   }
 
-  const getDifficultyColor = (difficulty?: string) => {
+  const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
       case "Easy":
-        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+        return "bg-green-100 text-green-800"
       case "Medium":
-        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
+        return "bg-yellow-100 text-yellow-800"
       case "Hard":
-        return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
+        return "bg-red-100 text-red-800"
       default:
-        return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200"
+        return "bg-gray-100 text-gray-800"
     }
   }
 
@@ -186,17 +184,17 @@ function EventCard({ event, onJoinEvent, isJoined = false, currentUserId }: Even
                 </Badge>
               )}
             </div>
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white group-hover:text-primary transition-colors duration-200 leading-tight mb-1">
+            <h3 className="text-lg font-bold text-gray-900 group-hover:text-primary transition-colors duration-200 leading-tight mb-1">
               {event.title}
             </h3>
             <div className="flex items-center gap-3">
               {event.organizer && (
-                <p className="text-xs text-gray-600 dark:text-gray-300 font-medium">By {event.organizer}</p>
+                <p className="text-xs text-gray-600 font-medium">By {event.organizer}</p>
               )}
               {event.rating && (
                 <div className="flex items-center gap-1">
                   <Star className="w-3 h-3 text-yellow-500 fill-current" />
-                  <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">{event.rating}</span>
+                  <span className="text-xs font-semibold text-gray-700">{event.rating}</span>
                 </div>
               )}
             </div>
@@ -207,35 +205,35 @@ function EventCard({ event, onJoinEvent, isJoined = false, currentUserId }: Even
       <CardContent className="flex flex-col flex-1 pb-4">
         <div className="space-y-3 flex-1">
           <div className="grid grid-cols-2 gap-2">
-            <div className="flex items-center gap-2 p-2 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-md border border-white/50 dark:border-gray-700/50">
+            <div className="flex items-center gap-2 p-2 bg-white/60 backdrop-blur-sm rounded-md border border-white/50">
               <div className="w-6 h-6 bg-primary/10 rounded-md flex items-center justify-center">
                 <Calendar className="w-3 h-3 text-primary" />
               </div>
               <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">
+                <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">
                   {event.date}
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 p-2 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-md border border-white/50 dark:border-gray-700/50">
+            <div className="flex items-center gap-2 p-2 bg-white/60 backdrop-blur-sm rounded-md border border-white/50">
               <div className="w-6 h-6 bg-secondary/10 rounded-md flex items-center justify-center">
                 <Clock className="w-3 h-3 text-secondary" />
               </div>
               <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">
+                <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">
                   {event.time}
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 p-2 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-md border border-white/50 dark:border-gray-700/50">
+          <div className="flex items-center gap-2 p-2 bg-white/60 backdrop-blur-sm rounded-md border border-white/50">
             <div className="w-6 h-6 bg-accent/10 rounded-md flex items-center justify-center">
               <MapPin className="w-3 h-3 text-accent" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold text-gray-900 dark:text-white truncate">{event.location}</p>
+              <p className="text-xs font-semibold text-gray-900 truncate">{event.location}</p>
             </div>
           </div>
 
@@ -243,7 +241,7 @@ function EventCard({ event, onJoinEvent, isJoined = false, currentUserId }: Even
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Users className="w-3 h-3 text-primary" />
-                <span className="text-xs font-semibold text-gray-900 dark:text-white">
+                <span className="text-xs font-semibold text-gray-900">
                   {event.volunteers} {event.maxVolunteers && `/ ${event.maxVolunteers}`} volunteers
                 </span>
               </div>
@@ -268,8 +266,8 @@ function EventCard({ event, onJoinEvent, isJoined = false, currentUserId }: Even
           </div>
 
           {event.description && (
-            <div className="p-2 bg-white/40 dark:bg-gray-800/40 backdrop-blur-sm rounded-md border border-white/50 dark:border-gray-700/50">
-              <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed line-clamp-1">{event.description}</p>
+            <div className="p-2 bg-white/40 backdrop-blur-sm rounded-md border border-white/50">
+              <p className="text-xs text-gray-700 leading-relaxed line-clamp-1">{event.description}</p>
             </div>
           )}
         </div>
@@ -309,7 +307,7 @@ function EventCard({ event, onJoinEvent, isJoined = false, currentUserId }: Even
 
 function EventCardSkeleton() {
   return (
-    <Card className="overflow-hidden animate-pulse bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 border-0">
+    <Card className="overflow-hidden animate-pulse bg-gradient-to-br from-gray-50 to-gray-100 border-0">
       <CardHeader className="pb-4">
         <div className="flex items-start justify-between">
           <div className="flex-1 space-y-3">
@@ -410,8 +408,8 @@ export default function EventCardsGrid({ events, loading = false, createEventBut
             <div className="w-24 h-24 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-full flex items-center justify-center mx-auto mb-6">
               <span className="text-4xl">🌍</span>
             </div>
-            <h3 className="text-2xl font-bold text-foreground mb-3">No events found</h3>
-            <p className="text-muted-foreground text-lg max-w-md mx-auto leading-relaxed">
+            <h3 className="text-2xl font-bold text-black mb-3">No events found</h3>
+            <p className="text-black text-lg max-w-md mx-auto leading-relaxed">
               We couldn&#39;t find any cleanup events matching your criteria. Try adjusting your filters or check back
               later for new opportunities.
             </p>

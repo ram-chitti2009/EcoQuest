@@ -9,19 +9,10 @@ interface Video {
   creator: string
   creatorAvatar: string
   videoUrl: string
-  likes: number
-  comments: number
-  shares: number
-  isLiked: boolean
   isSaved: boolean
 }
 
-interface VideoCardProps {
-  video: Video
-  isActive: boolean
-}
-
-export function VideoCard({ video, isActive }: VideoCardProps) {
+export function VideoCard({ video }: { video: Video }) {
   const [isPlaying, setIsPlaying] = useState(true) // Default to true for autoplay
   const [isMuted, setIsMuted] = useState(true) // Start muted for autoplay compliance
 

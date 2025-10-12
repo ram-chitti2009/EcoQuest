@@ -22,6 +22,7 @@ interface LeaderboardWithStats extends Leaderboard {
     carbon_saved?: number;
     volunteer_hours?: number;
     cleanups_participated?: number;
+    quiz_correct_answers?: number;
     xp?: number;
   };
 }
@@ -110,9 +111,12 @@ const calculateMetricValue = (entry: LeaderboardWithStats, metric: "carbon" | "e
     case "hours":
       return entry.user_statistics?.volunteer_hours || 0
     case "points":
-      // Use the pre-calculated XP from the database instead of calculating manually
-      console.log("calculateMetricValue for points - entry:", entry.name, "xp:", entry.user_statistics?.xp)
-      return entry.user_statistics?.xp || 0
+      // Calculate eco points using the new formula: 0.7×carbon + 5×hours + 12×cleanups + 1×quiz
+      const carbon = entry.user_statistics?.carbon_saved || 0
+      const hours = entry.user_statistics?.volunteer_hours || 0
+      const cleanups = entry.user_statistics?.cleanups_participated || 0
+      const quizAnswers = entry.user_statistics?.quiz_correct_answers || 0
+      return (carbon * 0.7) + (hours * 5) + (cleanups * 12) + (quizAnswers * 1)
     default:
       return entry.user_statistics?.carbon_saved || 0
   }
@@ -174,14 +178,14 @@ export default function Component() {
           
           if (data) {
             const now = new Date()
-            const startOfWeek = new Date(now)
-            startOfWeek.setDate(now.getDate() - now.getDay()) // Start of this week (Sunday)
-            startOfWeek.setHours(0, 0, 0, 0)
+            const sevenDaysAgo = new Date(now)
+            sevenDaysAgo.setDate(now.getDate() - 7) // 7 days ago from today
+            sevenDaysAgo.setHours(0, 0, 0, 0)
             
-            // Filter events that happened this week (from start of week to now)
+            // Filter events that happened in the past 7 days (rolling week)
             const thisWeekEvents = data.filter(event => {
               const eventDate = new Date(event.date)
-              return eventDate >= startOfWeek && eventDate <= now
+              return eventDate >= sevenDaysAgo && eventDate <= now
             })
             
             // Sort by date descending (most recent first) and take the first 3
@@ -298,9 +302,8 @@ export default function Component() {
       case "hours":
         return `${entry.user_statistics?.volunteer_hours || 0} volunteer hours`
       case "points":
-        console.log("Points case - entry.user_statistics:", entry.user_statistics)
-        console.log("XP value:", entry.user_statistics?.xp)
-        return `${entry.user_statistics?.xp || 0} eco points`
+        const calculatedPoints = calculateMetricValue(entry, "points")
+        return `${calculatedPoints.toFixed(1)} eco points`
       default:
         return `${entry.user_statistics?.carbon_saved || 0} kg CO₂ saved`
     }
@@ -586,7 +589,7 @@ export default function Component() {
                 <h3 className="text-2xl font-bold text-center bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
                   🌟 Community Impact
                 </h3>
-                <p className="text-sm text-gray-600 text-center">This Month&apos;s Achievements</p>
+                <p className="text-sm text-gray-600 text-center">This Year&apos;s Achievements</p>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="space-y-4">
@@ -600,8 +603,15 @@ export default function Component() {
                         <p className="text-xs text-gray-600 font-medium">kg CO₂ Saved</p>
                       </div>
                     </div>
-                    <Progress value={78} color="green" className="h-2" />
-                    <p className="text-xs text-gray-500 mt-1">78% of monthly goal</p>
+                    <Progress value={(() => {
+                      const carbonYearlyGoal = 1200 * communityStats.active_users;
+                      return carbonYearlyGoal > 0 ? Math.min((communityStats.total_carbon_saved / carbonYearlyGoal) * 100, 100) : 0;
+                    })()} color="green" className="h-2" />
+                    <p className="text-xs text-gray-500 mt-1">{(() => {
+                      const carbonYearlyGoal = 300 * communityStats.active_users;
+                      const progress = carbonYearlyGoal > 0 ? Math.min((communityStats.total_carbon_saved / carbonYearlyGoal) * 100, 100) : 0;
+                      return Math.round(progress);
+                    })()}% of yearly goal ({300 * communityStats.active_users} kg)</p>
                   </div>
 
                   <div className="p-4 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-xl border border-blue-200 hover:shadow-lg transition-all duration-300 hover:scale-105">
@@ -614,8 +624,8 @@ export default function Component() {
                         <p className="text-xs text-gray-600 font-medium">Active Heroes</p>
                       </div>
                     </div>
-                    <Progress value={89} color="blue" className="h-2" />
-                    <p className="text-xs text-gray-500 mt-1">+12 new this week</p>
+                    <Progress value={100} color="blue" className="h-2" />
+                    <p className="text-xs text-gray-500 mt-1"></p>
                   </div>
 
                   <div className="p-4 bg-gradient-to-br from-purple-100 to-pink-100 rounded-xl border border-purple-200 hover:shadow-lg transition-all duration-300 hover:scale-105">
@@ -628,8 +638,15 @@ export default function Component() {
                         <p className="text-xs text-gray-600 font-medium">Total Volunteer Hours</p>
                       </div>
                     </div>
-                    <Progress value={65} color="purple" className="h-2" />
-                    <p className="text-xs text-gray-500 mt-1">65% of monthly target</p>
+                    <Progress value={(() => {
+                      const volunteerYearlyGoal = 75 * communityStats.active_users;
+                      return volunteerYearlyGoal > 0 ? Math.min((communityStats.total_volunteer_hours / volunteerYearlyGoal) * 100, 100) : 0;
+                    })()} color="purple" className="h-2" />
+                    <p className="text-xs text-gray-500 mt-1">{(() => {
+                      const volunteerYearlyGoal = 75 * communityStats.active_users;
+                      const progress = volunteerYearlyGoal > 0 ? Math.min((communityStats.total_volunteer_hours / volunteerYearlyGoal) * 100, 100) : 0;
+                      return Math.round(progress);
+                    })()}% of yearly target ({75 * communityStats.active_users} hrs)</p>
                   </div>
                 </div>
 
