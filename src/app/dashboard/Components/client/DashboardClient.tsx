@@ -19,6 +19,7 @@ import { ImpactMetrics } from "../impact-metrics"
 import { LeaderboardCard } from "../leaderboard-card"
 import { QuestCalendar } from "../quest-calendar"
 import { UpcomingEventsCard } from "../upcoming-events-card"
+import { LocationPrompt } from "@/components/LocationPrompt"
 
 // Extended interface for leaderboard with joined user statistics
 interface LeaderboardWithStats extends Leaderboard {
@@ -286,6 +287,17 @@ export default function Dashboard() {
         </div>
 
         <ActionCards />
+
+        {/* Location Permission Prompt */}
+        <LocationPrompt
+          onLocationGranted={(lat, lng) => {
+            console.log('Location granted on dashboard:', { lat, lng });
+            // You could trigger a refresh of location-based data here
+          }}
+          onDismiss={() => {
+            console.log('Location prompt dismissed on dashboard');
+          }}
+        />
       </div>
     </div>
   )

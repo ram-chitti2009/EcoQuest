@@ -190,6 +190,10 @@ export interface UserProfile {
   profile_image_url?: string | null;
   city?: string | null;
   country?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  location_permission_granted?: boolean | null;
+  location_updated_at?: string | null;
   member_since?: string | null;
   created_at?: string | null;
   updated_at?: string | null;
@@ -203,6 +207,10 @@ export interface UserProfileInsert{
     profile_image_url? : string | null;
     city? : string|null,
     country?: string|null,
+    latitude?: number | null;
+    longitude?: number | null;
+    location_permission_granted?: boolean | null;
+    location_updated_at?: string | null;
     member_since? : string|null
 }
 
@@ -213,7 +221,11 @@ export interface UserProfileUpdate{
     about?:string|null;
     profile_image_url? : string | null;
     city? : string|null,
-    country? : string|null
+    country? : string|null,
+    latitude?: number | null;
+    longitude?: number | null;
+    location_permission_granted?: boolean | null;
+    location_updated_at?: string | null;
 }
 //read all rows
 
@@ -2647,3 +2659,245 @@ export const getTotalVolunteerHours = async (userId: string) => {
     return { totalHours: 0, error }
   }
 }
+
+//Grid cells and Ecosim interfaces
+
+export interface GridCell {
+
+  id:string;
+  lat_min:number;
+  lat_max:number;
+  lng_min:number;
+  lng_max:number;
+  trash_density:number;
+  greenery_score:number;
+  cleanliness_score:number;
+  carbon_emissions:number;
+  last_updated:string|null;
+}
+
+
+export interface MapBound{
+  latMIn:number;
+  latMax:number;
+  lngMin:number;
+  lngMax:number
+}
+
+export interface GridCellUpdate{
+  trash_density?:number;
+  cleanliness_score?:number;
+  greenery_score?:number;
+  carbon_emissions?:number
+}
+
+export interface EcoSimMetrics{
+  avgTrash:number;
+  avgCleanliness:number;
+  avgGreenery:number;
+  avgCarbon:number;
+  totalCells:number; 
+}
+
+
+//Grid Cells PostGREST functions
+
+
+/**
+ * Fetch grid cells within specified map bounds.
+ * Essential for ecosim chorolpeth map visualization
+ */
+
+export async function getGridCellsInBounds(bounds: MapBound): Promise<GridCell[]> {
+  try {
+    const { data, error } = await supabase
+      .from('grid_cells')
+      .select('*')
+      .gte('lat_min', bounds.latMin)
+      .lte('lat_max', bounds.latMax)
+      .gte('lng_min', bounds.lngMin)
+      .lte('lng_max', bounds.lngMax)
+      .order('lat_min', { ascending: true });
+
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching grid cells in bounds:', error);
+    throw error;
+  }
+}
+
+
+/**
+ * Find the grid cell containing the specified latitude and longitude.
+ * used when users click on map or when activities are occuring at a specific location
+ */
+
+export async function getGridCellAtCoordinate(lat:number, lng:number):Promise<GridCell|null>{
+  try{
+    const {data, error} = await supabase.
+    from('grid_cells')
+    .select('*')
+    .lte('lat_min', lat)
+    .gte('lat_max', lat)
+    .lte('lng_min', lng)
+    .gte('lng_max', lng)
+    .limit(1)
+    .single();
+
+
+    if(error&&error.code!=='PGRST116') throw error; // Ignore "no rows found" error
+
+    return data || null;
+  }
+  catch{
+    console.error("Error fetching grid cell at coordinate:", {lat, lng});
+    return null;
+  }
+}
+
+
+/**
+ * Get a specified grid cell by ID
+ * Used for detailed cell inspection or updates
+ */
+
+export async function getGridCellById(cellId:string):Promise<GridCell|null>{
+  try{
+    const {data, error} = await supabase.
+    from('grid_cells')
+    .select('*')
+    .eq('id', cellId)
+    .single();
+
+    if (error && error.code !== 'PGRST116') throw error;
+    return data || null;
+  } catch (error) {
+    console.error('Error fetching grid cell by ID:', { cellId, error });
+    return null;
+  }
+}
+
+/**
+ * Manually update grid cell metrics
+ * Used for ecosim testing, manual simulations, or admin operations
+ */
+
+export async function updateGridCell(cellId:string, updates:GridCellUpdate):Promise<GridCell|null>{
+  try{
+    const {data, error} = await supabase.
+    from('grid_cells')
+    .update({
+      ...updates,
+      last_updated: new Date().toISOString()
+    })
+    .eq('id', cellId)
+    .select()
+    .single();
+    if(error) throw error;
+    return data || null;
+  }
+  catch(error){
+    console.error("Error updating grid cell:", { cellId, updates, error });
+    throw error;
+  }
+
+}
+
+
+/**
+ * Batch update multiple grid cells at once
+ * useful for area wide environmental changes or bulk simulations
+ */
+
+
+export async function updateMultipleGridCells(updates:Array<{id:string} & GridCellUpdate>):Promise<GridCell[]>{
+  try{
+    const promises = updates.map(({id, ...update}) => updateGridCell(id, update));
+    const results = await Promise.all(promises);
+
+    return results.filter(Boolean) as GridCell[];
+
+  } catch (error) {
+    console.error("Error updating multiple grid cells:", { updates, error });
+    throw error;
+  }
+}
+
+/**
+ * Get aggregated metrics for a region (For ecosim summary stats)
+ * returns average values across all grid cells
+ */
+export async function getRegionMetrics(bounds: MapBound): Promise<EcoSimMetrics | null> {
+  try {
+    const { data, error } = await supabase
+      .from('grid_cells')
+      .select('trash_density, cleanliness_score, greenery_score, carbon_emissions')
+      .gte('lat_min', bounds.latMIn)
+      .lte('lat_max', bounds.latMax)
+      .gte('lng_min', bounds.lngMin)
+      .lte('lng_max', bounds.lngMax);
+
+    if (error) throw error;
+
+    if (!data || data.length === 0) {
+      return {
+        avgTrash: 0,
+        avgCleanliness: 0,
+        avgGreenery: 0,
+        avgCarbon: 0,
+        totalCells: 0
+      };
+    }
+
+    const totalCells = data.length;
+    const avgTrash = data.reduce((sum, cell) => sum + cell.trash_density, 0) / totalCells;
+    const avgCleanliness = data.reduce((sum, cell) => sum + cell.cleanliness_score, 0) / totalCells;
+    const avgGreenery = data.reduce((sum, cell) => sum + cell.greenery_score, 0) / totalCells;
+    const avgCarbon = data.reduce((sum, cell) => sum + (cell.carbon_emissions || 0), 0) / totalCells;
+
+    return {
+      avgTrash: avgTrash,
+      avgCleanliness: avgCleanliness,
+      avgGreenery: avgGreenery,
+      avgCarbon: avgCarbon,
+      totalCells: totalCells
+    };
+  } catch (error) {
+    console.error("Error fetching region metrics:", { bounds, error });
+    throw error;
+  }
+}
+
+
+/**
+ * Subscribe to real-time grid cell updates for live EcoSim visualization
+ * Returns unsubscribe function
+ */
+
+export function subscribeToGridCellUpdates(
+  onUpdate: (updatedCell: GridCell) => void,
+  bounds?: MapBound
+): () => void {
+  const channel = supabase
+    .channel('grid-cells-realtime')
+    .on(
+      'postgres_changes',
+      {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'grid_cells',
+        filter: bounds ? `lat_min=gte.${bounds.latMIn}&lat_max=lte.${bounds.latMax}&lng_min=gte.${bounds.lngMin}&lng_max=lte.${bounds.lngMax}` : undefined
+      },
+      (payload) => {
+        const updatedCell = payload.new as GridCell;
+        onUpdate(updatedCell);
+      }
+    )
+    .subscribe();
+
+  return () => {
+    channel.unsubscribe();
+  };
+}
+
