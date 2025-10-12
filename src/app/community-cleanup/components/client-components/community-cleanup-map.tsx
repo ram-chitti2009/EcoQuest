@@ -1,5 +1,6 @@
 "use client"
 
+import { parseLocalDate } from "@/utils/dateUtils"
 import { createClient } from '@/utils/supabase/client'
 import { Calendar, Leaf, MapPin, Search, SlidersHorizontal, Trash2, UserPlus, Users, X } from "lucide-react"
 import { useEffect, useState } from "react"
@@ -13,12 +14,12 @@ import EventCardsGrid from "./event-cards-grid"
 import MapWrapper from "./map-wrapper"; // Declare the MapWrapper variable
 // Add these imports at the top of your file
 import {
-    checkUserEventParticipation,
-    createUnifiedEvent,
-    getAllUnifiedEvents,
-    joinUnifiedEvent,
-    leaveUnifiedEvent,
-    type UnifiedEvent
+  checkUserEventParticipation,
+  createUnifiedEvent,
+  getAllUnifiedEvents,
+  joinUnifiedEvent,
+  leaveUnifiedEvent,
+  type UnifiedEvent
 } from '@/utils/supabase/functions'
 
 interface Participant {
@@ -165,7 +166,7 @@ const transformEventForCards = (event: CleanupEvent) => {
   return {
     id: event.id,
     title: event.title,
-    date: new Date(event.date).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+    date: parseLocalDate(event.date).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
     time: event.time,
     location: event.location.name,
     type: event.category as "beach" | "park" | "street" | "river",
@@ -543,7 +544,7 @@ export default function CommunityCleanupMap() {
       time: newEvent.time,
       location: newEvent.locationName,
       category: mapCleanupToUnified(newEvent.category),
-      max_participants: newEvent.maxParticipants,
+      max_participants: Number(newEvent.maxParticipants) > 0 ? Number(newEvent.maxParticipants) : 20,
       user_id: currentUserId,
       duration: newEvent.duration ? `${newEvent.duration} hours` : "2 hours",
       location_name: newEvent.locationName,
@@ -1160,10 +1161,15 @@ export default function CommunityCleanupMap() {
                 <label className="block text-sm font-medium text-stone-700 mb-1">Max Participants</label>
                 <Input
                   type="number"
-                  value={newEvent.maxParticipants}
-                  onChange={(e) =>
-                    setNewEvent((prev) => ({ ...prev, maxParticipants: Number.parseInt(e.target.value) || 20 }))
-                  }
+                  value={newEvent.maxParticipants === 0 ? '' : newEvent.maxParticipants}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    // Allow empty string for controlled input, otherwise set as number
+                    setNewEvent((prev) => ({
+                      ...prev,
+                      maxParticipants: value === '' ? 0 : Math.max(1, Number(value))
+                    }));
+                  }}
                   min="1"
                 />
               </div>

@@ -8,7 +8,6 @@ const sidebarRoutes = [
   "/litterLens",
   "/carbon-clash",
   "/eco-echo",
-  "/community",
   "/interview-ai",
   "/research-hub",
   "/carbon-tracker",

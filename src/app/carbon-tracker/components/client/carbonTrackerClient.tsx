@@ -10,6 +10,7 @@ import Head from "next/head"
 import type React from "react"
 import { useEffect, useState } from "react"
 // App-wide header component
+import { parseLocalDate } from "@/utils/dateUtils"
 import { createClient } from "@/utils/supabase/client"
 import { createCarbonActivity, getUserCarbonActivities } from "@/utils/supabase/functions"
 import Header from "../../../components/Header"
@@ -220,7 +221,7 @@ const ProgressRing: React.FC<ProgressRingProps> = ({ value, max, size = 160 }) =
       {/* Center value display */}
       <div className="absolute inset-0 flex items-center justify-center">
         <div className="text-center">
-          <div className="text-3xl font-bold text-gray-900">{Math.round(value)}</div>
+          <div className="text-3xl font-bold text-gray-900">{value.toFixed(1)}</div>
           <div className="text-sm text-gray-500">kg CO₂</div>
         </div>
       </div>
@@ -277,7 +278,7 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({ activities }) => {
                   <div className="font-semibold text-gray-900 text-lg">
                     {activity.type}: {activity.quantity}
                   </div>
-                  <div className="text-gray-500">{new Date(activity.date).toLocaleDateString()}</div>
+                  <div className="text-gray-500">{parseLocalDate(activity.date).toLocaleDateString()}</div>
                 </div>
               </div>
               <div className="text-right">
@@ -585,7 +586,7 @@ export default function CarbonTracker() {
   const currentMonth = new Date().getMonth()
   const currentYear = new Date().getFullYear()
   const monthlyActivities = activities.filter((activity) => {
-    const activityDate = new Date(activity.date)
+    const activityDate = parseLocalDate(activity.date)
     return activityDate.getMonth() === currentMonth && activityDate.getFullYear() === currentYear
   })
   const monthlyCarbonSaved = monthlyActivities.reduce((sum, activity) => sum + activity.carbon_saved, 0)

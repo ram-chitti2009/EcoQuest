@@ -1,3 +1,4 @@
+import { parseLocalDate } from "@/utils/dateUtils"
 import { getUpcomingUnifiedEvents } from "@/utils/supabase/functions"
 import { useEffect, useState } from "react"
 import { Calendar } from "./icons"
@@ -44,7 +45,8 @@ const getEventBackground = (category: string) => {
 
 const formatEventDateTime = (date: string, time: string) => {
   try {
-    const eventDate = new Date(date)
+    // Parse date in local timezone to avoid UTC offset issues
+    const eventDate = parseLocalDate(date)
     const today = new Date()
     const tomorrow = new Date(today)
     tomorrow.setDate(tomorrow.getDate() + 1)
@@ -65,7 +67,7 @@ const formatEventDateTime = (date: string, time: string) => {
       const day = eventDate.getDate()
       return `${month} ${day}, ${formattedTime}`
     }
-  } catch (error) {
+  } catch {
     return `${date} ${time}`
   }
 }
@@ -90,14 +92,21 @@ export const UpcomingEventsCard = () => {
           // Filter and sort events to get the 3 closest upcoming events
           const upcomingEvents = data
             .filter(event => {
-              // Create a full datetime for comparison
-              const eventDateTime = new Date(`${event.date}T${event.time}`)
-              return eventDateTime > now
+              // Create a full datetime for comparison using local date parsing
+              const eventDate = parseLocalDate(event.date)
+              const [hours, minutes] = event.time.split(':')
+              eventDate.setHours(parseInt(hours), parseInt(minutes))
+              return eventDate > now
             })
             .sort((a, b) => {
               // Sort by full datetime (date + time) to get truly closest events
-              const dateTimeA = new Date(`${a.date}T${a.time}`)
-              const dateTimeB = new Date(`${b.date}T${b.time}`)
+              const dateTimeA = parseLocalDate(a.date)
+              const [hoursA, minutesA] = a.time.split(':')
+              dateTimeA.setHours(parseInt(hoursA), parseInt(minutesA))
+              
+              const dateTimeB = parseLocalDate(b.date)
+              const [hoursB, minutesB] = b.time.split(':')
+              dateTimeB.setHours(parseInt(hoursB), parseInt(minutesB))
               return dateTimeA.getTime() - dateTimeB.getTime()
             })
             .slice(0, 3) // Take the 3 closest

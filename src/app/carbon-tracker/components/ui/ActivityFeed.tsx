@@ -1,6 +1,7 @@
-import type React from "react"
-import { Card, CardHeader, CardContent, CardTitle } from "./Card"
+import { parseLocalDate } from "@/utils/dateUtils"
 import { Calendar, Leaf } from "lucide-react"
+import type React from "react"
+import { Card, CardContent, CardHeader, CardTitle } from "./Card"
 
 interface Activity {
   id: string
@@ -44,7 +45,7 @@ export function ActivityFeed({ activities }: ActivityFeedProps) {
                   <p className="font-medium text-gray-900 mb-1">{activity.type}</p>
                   <div className="flex items-center gap-2 text-sm text-gray-600">
                     <Calendar className="w-3 h-3" />
-                    {new Date(activity.date).toLocaleDateString("en-US", {
+                    {parseLocalDate(activity.date).toLocaleDateString("en-US", {
                       month: "short",
                       day: "numeric",
                     })}

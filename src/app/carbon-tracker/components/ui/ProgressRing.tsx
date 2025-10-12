@@ -32,8 +32,8 @@ export function ProgressRing({ value, max, size = 120, strokeWidth = 8, classNam
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">
         <div className="text-center">
-          <div className="text-lg font-bold text-gray-900">{value.toFixed(1)}</div>
-          <div className="text-xs text-gray-500">of {max} kg</div>
+          <div className="text-lg font-bold text-gray-900">{Number(value).toFixed(1)}</div>
+          <div className="text-xs text-gray-500">of {Number(max).toFixed(1)} kg</div>
         </div>
       </div>
     </div>

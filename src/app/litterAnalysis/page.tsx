@@ -225,11 +225,13 @@ export default function AnalyzePage() {
         }
 
         // Create a cleanup event using the same structure as community cleanup
+        const now = new Date()
+        const localDate = new Date(now.getFullYear(), now.getMonth(), now.getDate())
         const eventData = {
           title: trashName || `Cleaned up ${analysisData.litterType}`,
           description: `Cleaned up ${analysisData.quantity} of ${analysisData.litterType}. ${analysisData.recommendations.join(' ')}`,
-          date: new Date().toISOString().split('T')[0],
-          time: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }),
+          date: localDate.toISOString().split('T')[0],
+          time: now.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }),
           location: cleanupLocation.name,
           category: 'cleanup' as const,
           max_participants: parseInt(participantsNeeded) || 1,
@@ -374,7 +376,7 @@ export default function AnalyzePage() {
           <div className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
+                <CardTitle className="flex items-center space-x-2 text-black">
                   <span>Uploaded Image</span>
                   <Badge variant="outline">{imageName}</Badge>
                 </CardTitle>
@@ -427,7 +429,7 @@ export default function AnalyzePage() {
               <Card>
                 <CardContent className="p-8 text-center">
                   <div className="animate-spin w-12 h-12 border-4 border-green-600 border-t-transparent rounded-full mx-auto mb-4"></div>
-                  <h3 className="text-lg font-semibold mb-2">Analyzing Image...</h3>
+                  <h3 className="text-lg text-black font-semibold mb-2">Analyzing Image...</h3>
                   <p className="text-gray-600">
                     Our AI is identifying the litter type and generating disposal recommendations.
                   </p>
