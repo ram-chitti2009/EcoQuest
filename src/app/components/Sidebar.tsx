@@ -12,7 +12,6 @@ import {
   Leaf,
   type LucideIcon,
   Menu,
-  MessageCircleMore,
   Mic,
   Settings,
   Trash2,
@@ -417,14 +416,6 @@ export const SideBar = () => {
                 icon={Calendar} 
                 label="Calendar Tracker" 
                 href="/calendar" 
-                isCollapsed={isCollapsed} 
-              />
-            </div>
-            <div>
-              <NavItem 
-                icon={MessageCircleMore} 
-                label="Community Hub" 
-                href="/community" 
                 isCollapsed={isCollapsed} 
               />
             </div>

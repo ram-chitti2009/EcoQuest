@@ -1,8 +1,9 @@
 "use client"
 
+import { parseLocalDate } from "@/utils/dateUtils"
 import { getEcoEventsByMonth, type EcoEvent } from "@/utils/supabase/functions"
 import { ChevronRight, Clock, MapPin } from "lucide-react"
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from 'react'
 import { Badge } from "./ui/badge"
 import { Button } from "./ui/button"
 import { Card, CardContent, CardHeader } from "./ui/card"
@@ -44,10 +45,9 @@ export function UpcomingEvents({ currentMonth: propMonth }: UpcomingEventsProps)
           const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()) // Start of today
           
           const upcomingEvents = (data || []).filter((event: EcoEvent) => {
-            // Use Date object directly to avoid timezone issues
-            const eventDate = new Date(event.date)
-            const eventDateOnly = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate())
-            return eventDateOnly >= today
+            // Parse date in local timezone to avoid UTC offset issues
+            const eventDate = parseLocalDate(event.date)
+            return eventDate >= today
           })
           setAllEvents(upcomingEvents)
         }
@@ -65,8 +65,8 @@ export function UpcomingEvents({ currentMonth: propMonth }: UpcomingEventsProps)
 
   // Helper function to format date
   const formatDate = (dateString: string) => {
-    // Use Date object directly to avoid timezone issues
-    const date = new Date(dateString)
+    // Parse date in local timezone to avoid UTC offset issues
+    const date = parseLocalDate(dateString)
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
   }
 
