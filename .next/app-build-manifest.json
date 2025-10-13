@@ -11,9 +11,11 @@
       "static/chunks/main-app.js",
       "static/chunks/app/page.js"
     ],
-    "/ecoQuestLandingPage/page": [
+    "/EcoSim/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
+      "static/css/app/EcoSim/page.css",
+      "static/chunks/app/EcoSim/page.js"
       "static/chunks/app/ecoQuestLandingPage/page.js"
     ],
     "/dashboard/page": [

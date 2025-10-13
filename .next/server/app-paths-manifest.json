@@ -1,4 +1,6 @@
 {
+  "/EcoSim/page": "app/EcoSim/page.js",
+  "/page": "app/page.js"
   "/_not-found/page": "app/_not-found/page.js",
   "/carbon-tracker/page": "app/carbon-tracker/page.js",
   "/community-cleanup/page": "app/community-cleanup/page.js",

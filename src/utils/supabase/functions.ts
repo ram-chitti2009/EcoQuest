@@ -2678,7 +2678,7 @@ export interface GridCell {
 
 
 export interface MapBound{
-  latMIn:number;
+  latMin:number;
   latMax:number;
   lngMin:number;
   lngMax:number
@@ -2833,7 +2833,7 @@ export async function getRegionMetrics(bounds: MapBound): Promise<EcoSimMetrics 
     const { data, error } = await supabase
       .from('grid_cells')
       .select('trash_density, cleanliness_score, greenery_score, carbon_emissions')
-      .gte('lat_min', bounds.latMIn)
+      .gte('lat_min', bounds.latMin)
       .lte('lat_max', bounds.latMax)
       .gte('lng_min', bounds.lngMin)
       .lte('lng_max', bounds.lngMax);
@@ -2887,7 +2887,7 @@ export function subscribeToGridCellUpdates(
         event: 'UPDATE',
         schema: 'public',
         table: 'grid_cells',
-        filter: bounds ? `lat_min=gte.${bounds.latMIn}&lat_max=lte.${bounds.latMax}&lng_min=gte.${bounds.lngMin}&lng_max=lte.${bounds.lngMax}` : undefined
+        filter: bounds ? `lat_min=gte.${bounds.latMin}&lat_max=lte.${bounds.latMax}&lng_min=gte.${bounds.lngMin}&lng_max=lte.${bounds.lngMax}` : undefined
       },
       (payload) => {
         const updatedCell = payload.new as GridCell;
@@ -2901,3 +2901,201 @@ export function subscribeToGridCellUpdates(
   };
 }
 
+
+
+//EcoSim Simulation Functions
+
+export async function getEcoSimGrid(lat:number, lng:number, radius=0.5){
+  const {data, error} = await supabase.
+  from('grid_cells')
+  .select('*')
+  .gte('lat_min', lat - radius)
+  .lte('lat_max', lat + radius)
+  .gte('lng_min', lng - radius)
+  .lte('lng_max', lng + radius)
+
+  if(error){
+    console.error("Error fetching ecosim grid:", {lat, lng, radius, error});
+    return {data:[], error}
+  }
+  return {data: data||[], error:null}
+}
+
+
+//dynamic comparsion(the subtle transition)
+export async function getEcoSimDyanmicComparison(lat:number, lng:number, radius=0.5){
+  const{data, error} = await supabase.
+  from('grid_cells_history')
+  .select('*')
+  .gte('lat_min', lat - radius)
+  .lte('lat_max', lat + radius)
+  .gte('lng_min', lng - radius)
+  .lte('lng_max', lng + radius)
+  .order('recorded_at', {ascending:false})
+
+  if(error) throw error;
+
+  const grouped : Record<string, any[]>={};
+
+  data?.forEach(cell=>{
+    if(!grouped[cell.grid_cell_id]) grouped[cell.grid_cell_id] = [];
+    grouped[cell.grid_cell_id].push(cell);
+  });
+
+  const baseline:any[]=[];
+  const current:any[] = [];
+
+  Object.values(grouped).forEach(versions=>{
+    current.push(versions[0]);
+    if(versions[1]) baseline.push(versions[1]);
+  });
+
+  return {current, baseline};
+}
+
+
+export async function getEcoSimCustomerComparison(
+  lat:number,
+  lng:number,
+  startDate:string,
+  endDate:string,
+  radius=0.5
+) {
+  const {data, error} = await supabase
+    .from('grid_cells')
+    .select('*')
+    .gte('lat_min', lat - radius)
+    .lte('lat_max', lat + radius)
+    .gte('lng_min', lng - radius)
+    .lte('lng_max', lng + radius)
+    .gte('recorded_at', startDate)
+    .lte('recorded_at', endDate);
+
+  if(error){
+    console.error("Error fetching custom comparison:", {lat, lng, radius, startDate, endDate, error});
+    return {data:[], error}
+  }
+
+  return {data, error: null};
+}
+
+//GeoJSON converstion utility
+
+export function convertToGeoJSON(gridCells: any[]) {
+  return {
+    type: "FeatureCollection",
+    features: gridCells.map(cell => ({
+      type: "Feature",
+      geometry: {
+        type: "Polygon",
+        coordinates: [[
+          [cell.lng_min, cell.lat_min],
+          [cell.lng_min, cell.lat_max],
+          [cell.lng_max, cell.lat_max],
+          [cell.lng_max, cell.lat_min],
+          [cell.lng_min, cell.lat_min],
+        ]],
+      },
+      properties: cell,
+    })),
+  };
+}
+
+
+export async function getEcoSimSummary(lat: number, lng: number, radius = 0.5) {
+  const { data, error } = await supabase
+    .from("grid_cells")
+    .select(`
+      avg(trash_density),
+      avg(cleanliness_score),
+      avg(greenery_score),
+      avg(carbon_emissions)
+    `)
+    .gte("lat_min", lat - radius)
+    .lte("lat_max", lat + radius)
+    .gte("lng_min", lng - radius)
+    .lte("lng_max", lng + radius);
+
+  if (error) {
+    console.error("Error fetching summary:", error);
+    return null;
+  }
+
+  return data?.[0] || null;
+}
+
+
+export function normalizeMetric(value: number, min: number, max: number, higherIsBetter: boolean = true) {
+  let ratio = (value - min) / (max - min);
+  if (!higherIsBetter) ratio = 1 - ratio; // lower is better
+  return Math.min(Math.max(ratio, 0), 1);
+}
+
+
+export function combinedEcoScore(cell:GridCell){
+  const weight={
+    trash_density:0.3,
+    cleanliness_score:0.3,
+    greenery_score:0.2,
+    carbon_emissions:0.2
+
+  }
+
+  const normalizedScores = {
+    trash_density: normalizeMetric(cell.trash_density, 0, 100),
+    cleanliness_score: normalizeMetric(cell.cleanliness_score, 0, 100),
+    greenery_score: normalizeMetric(cell.greenery_score, 0, 100),
+    carbon_emissions: normalizeMetric(cell.carbon_emissions, 0, 100, false),
+  };
+
+  const trash = normalizedScores.trash_density;
+  const cleanliness = normalizedScores.cleanliness_score;
+  const greenery = normalizedScores.greenery_score;
+  const carbon = normalizedScores.carbon_emissions;
+
+  const score =
+    trash * weight.trash_density +
+    cleanliness * weight.cleanliness_score +
+    greenery * weight.greenery_score +
+    carbon * weight.carbon_emissions;
+
+  return score; // 0 = worst, 1 = best
+}
+
+
+export function ecoScoreToColor(score: number) {
+  const hue = 120;
+  const saturation = 70;
+  const lightness = 90 - score * 50; // 1 → light, 0 → dark
+  return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+}
+
+
+export function gridCellToGeoJSONFeature(cell: GridCell) {
+  const score = combinedEcoScore(cell);
+  return {
+    type: "Feature",
+    geometry: {
+      type: "Polygon",
+      coordinates: [[
+        [cell.lng_min, cell.lat_min],
+        [cell.lng_min, cell.lat_max],
+        [cell.lng_max, cell.lat_max],
+        [cell.lng_max, cell.lat_min],
+        [cell.lng_min, cell.lat_min],
+      ]],
+    },
+    properties: {
+      ...cell,
+      ecoScore: score,
+      color: ecoScoreToColor(score),
+    },
+  };
+}
+
+export function gridCellsToGeoJSON(cells: GridCell[]) {
+  return {
+    type: "FeatureCollection",
+    features: cells.map(gridCellToGeoJSONFeature),
+  };
+}
