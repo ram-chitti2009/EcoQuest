@@ -1,4 +1,24 @@
 "use client"
+
+// === MONITOR ICON ===
+const MonitorIcon = forwardRef<SVGSVGElement, React.ComponentProps<LucideIcon>>((props, ref) => (
+  <svg
+    ref={ref}
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <rect x="3" y="4" width="18" height="14" rx="2" strokeWidth="2" />
+    <path d="M8 20h8" strokeWidth="2" />
+    <path d="M12 16v4" strokeWidth="2" />
+  </svg>
+))
+MonitorIcon.displayName = "MonitorIcon"
+
 import { type ClassValue, clsx } from "clsx"
 import {
   BookOpen,
@@ -354,6 +374,14 @@ export const SideBar = () => {
                 href="/community-cleanup" 
                 isCollapsed={isCollapsed} 
               />
+            </div>
+            <div className="mb-2">
+                <NavItem
+                  icon={MonitorIcon}
+                  label="EcoSim"
+                  href="/EcoSim"
+                  isCollapsed={isCollapsed}
+                />
             </div>
             <div className="mb-2">
               <NavItem 

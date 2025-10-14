@@ -13,6 +13,7 @@ const sidebarRoutes = [
   "/carbon-tracker",
   "/QuestLog",
   "/community-cleanup",
+  "/EcoSim",
   "/test-prep",
   "/learningPatch",
   "/leaderboard",
