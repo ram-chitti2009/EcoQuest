@@ -162,6 +162,8 @@ export default function EcoSimPage() {
   const [viewMode, setViewMode] = useState<ViewMode>("live")
   const [isAnalyticsCollapsed, setIsAnalyticsCollapsed] = useState(false)
   const [timePeriod, setTimePeriod] = useState<TimePeriod>("week")
+  const [compareSearchQuery, setCompareSearchQuery] = useState("")
+  const [isCompareSearching, setIsCompareSearching] = useState(false)
   const [currentBounds, setCurrentBounds] = useState({
     latMin: -90,
     latMax: 90,
@@ -245,6 +247,43 @@ export default function EcoSimPage() {
     }
     loadInitialMetrics()
   }, [currentBounds])
+
+  // Search functionality for compare mode
+  const searchLocationInCompareMode = async (query: string) => {
+    if (!query.trim()) return
+
+    setIsCompareSearching(true)
+    try {
+      // Use browser's built-in fetch to get the Mapbox token from environment
+      const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN
+      if (!token) {
+        console.error("Mapbox token not available")
+        return
+      }
+
+      const response = await fetch(
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${token}&limit=1`
+      )
+      const data = await response.json()
+      
+      if (data.features && data.features.length > 0) {
+        const [lng, lat] = data.features[0].center
+        // Since we can't directly control the maps, we'll update the center prop
+        // This would require modifying the component structure, so for now we'll log the coordinates
+        console.log("Location found for compare mode:", { lat, lng, query })
+        alert(`Found location: ${data.features[0].place_name}\nCoordinates: ${lat.toFixed(4)}, ${lng.toFixed(4)}`)
+      }
+    } catch (error) {
+      console.error("Error searching location in compare mode:", error)
+    } finally {
+      setIsCompareSearching(false)
+    }
+  }
+
+  const handleCompareSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    searchLocationInCompareMode(compareSearchQuery)
+  }
 
   return (
     <div
@@ -336,7 +375,7 @@ export default function EcoSimPage() {
             {viewMode === "live" ? (
               // Single map view for live mode
               <div style={{ width: "100%", height: "750px", borderRadius: "0", overflow: "hidden" }}>
-                <EcoSimMap onBoundsChange={handleBoundsChange} />
+                <EcoSimMap onBoundsChange={handleBoundsChange} showLocationSearch={true} />
               </div>
             ) : (
               // Side-by-side comparison view
@@ -344,7 +383,7 @@ export default function EcoSimPage() {
                 {/* Baseline Map (Left) */}
                 <div style={{ width: "50%", height: "100%", position: "relative", borderRight: "2px solid #10b981" }}>
                   <div style={{ width: "100%", height: "100%", overflow: "hidden" }}>
-                    <EcoSimMap onBoundsChange={handleBoundsChange} />
+                    <EcoSimMap onBoundsChange={handleBoundsChange} showLocationSearch={false} />
                   </div>
                   <div
                     style={{
@@ -367,7 +406,7 @@ export default function EcoSimPage() {
                 {/* Community Impact Map (Right) */}
                 <div style={{ width: "50%", height: "100%", position: "relative" }}>
                   <div style={{ width: "100%", height: "100%", overflow: "hidden" }}>
-                    <EcoSimMap onBoundsChange={handleBoundsChange} />
+                    <EcoSimMap onBoundsChange={handleBoundsChange} showLocationSearch={false} />
                   </div>
                   <div
                     style={{
@@ -443,11 +482,15 @@ export default function EcoSimPage() {
                 boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
                 border: "1px solid rgba(255, 255, 255, 0.5)",
                 animation: "slideUp 0.5s ease-out 0.2s both",
+                zIndex: 100,
               }}
             >
               <div style={{ display: "flex", gap: "0.5rem" }}>
                 <button
-                  onClick={() => setViewMode("live")}
+                  onClick={() => {
+                    console.log("Live button clicked!")
+                    setViewMode("live")
+                  }}
                   style={{
                     display: "flex",
                     alignItems: "center",
@@ -462,6 +505,8 @@ export default function EcoSimPage() {
                     transform: viewMode === "live" ? "scale(1.05)" : "scale(1)",
                     border: "none",
                     cursor: "pointer",
+                    zIndex: 1000,
+                    position: "relative",
                   }}
                   onMouseEnter={(e) => {
                     if (viewMode !== "live") {
@@ -480,7 +525,10 @@ export default function EcoSimPage() {
                   <span style={{ fontSize: "0.875rem" }}>Live View</span>
                 </button>
                 <button
-                  onClick={() => setViewMode("compare")}
+                  onClick={() => {
+                    console.log("Compare button clicked!")
+                    setViewMode("compare")
+                  }}
                   style={{
                     display: "flex",
                     alignItems: "center",
@@ -495,6 +543,8 @@ export default function EcoSimPage() {
                     transform: viewMode === "compare" ? "scale(1.05)" : "scale(1)",
                     border: "none",
                     cursor: "pointer",
+                    zIndex: 1000,
+                    position: "relative",
                   }}
                   onMouseEnter={(e) => {
                     if (viewMode !== "compare") {
@@ -520,8 +570,8 @@ export default function EcoSimPage() {
                 position: "absolute",
                 top: "1.5rem",
                 left: "1.5rem",
-                background: "rgba(255, 255, 255, 0.4)",
-                backdropFilter: "blur(10px)",
+                background: "rgba(255, 255, 255, 1)",
+                backdropFilter: "blur(100px)",
                 borderRadius: "1.5rem",
                 padding: "1.5rem",
                 boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
@@ -530,6 +580,7 @@ export default function EcoSimPage() {
                 border: "1px solid rgba(255, 255, 255, 0.5)",
                 animation: "slideUp 0.5s ease-out 0.1s both",
                 transition: "all 0.3s ease",
+                zIndex: 200,
               }}
             >
               {/* Header with pulse indicator and collapse button */}
@@ -557,12 +608,39 @@ export default function EcoSimPage() {
                     <p style={{ fontWeight: "bold", color: "#1f2937", fontSize: "1.125rem" }}>EcoSim Analytics</p>
                     {!isAnalyticsCollapsed && (
                       <p style={{ fontSize: "0.75rem", color: "#6b7280" }}>
-                        {currentBounds.latMin >= 39.8 &&
-                        currentBounds.latMax <= 40.2 &&
-                        currentBounds.lngMin >= -75.6 &&
-                        currentBounds.lngMax <= -75.0
-                          ? "Chester County, PA"
-                          : "Current Region"}
+                        {(() => {
+                          // Chester County bounds
+                          const chesterBounds = {
+                            latMin: 39.72,
+                            latMax: 40.23,
+                            lngMin: -76.01,
+                            lngMax: -75.33,
+                          };
+
+                          // Check if viewport intersects with Chester County
+                          const viewIntersectsChester = !(
+                            currentBounds.latMax < chesterBounds.latMin ||
+                            currentBounds.latMin > chesterBounds.latMax ||
+                            currentBounds.lngMax < chesterBounds.lngMin ||
+                            currentBounds.lngMin > chesterBounds.lngMax
+                          );
+
+                          // Check if viewport is entirely within Chester County
+                          const viewWithinChester = (
+                            currentBounds.latMin >= chesterBounds.latMin &&
+                            currentBounds.latMax <= chesterBounds.latMax &&
+                            currentBounds.lngMin >= chesterBounds.lngMin &&
+                            currentBounds.lngMax <= chesterBounds.lngMax
+                          );
+
+                          if (viewWithinChester) {
+                            return "Chester County, PA";
+                          } else if (viewIntersectsChester) {
+                            return "Chester County, PA + Region";
+                          } else {
+                            return "Current Region";
+                          }
+                        })()}
                       </p>
                     )}
                   </div>
@@ -1027,50 +1105,6 @@ export default function EcoSimPage() {
                   <span style={{ color: "rgba(31, 41, 55, 0.8)", fontWeight: 500, fontSize: "0.875rem" }}>
                     Critical
                   </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Impact Message */}
-            <div
-              style={{
-                position: "absolute",
-                bottom: "1.5rem",
-                left: "1.5rem",
-                background: "rgba(255, 255, 255, 0.4)",
-                backdropFilter: "blur(10px)",
-                borderRadius: "1rem",
-                padding: "1rem",
-                maxWidth: "20rem",
-                boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
-                border: "1px solid rgba(255, 255, 255, 0.5)",
-                animation: "slideUp 0.5s ease-out 0.4s both",
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "flex-start", gap: "0.75rem" }}>
-                <div
-                  style={{
-                    padding: "0.5rem",
-                    background: "rgba(16, 185, 129, 0.1)",
-                    borderRadius: "0.5rem",
-                  }}
-                >
-                  <Leaf
-                    style={{
-                      width: "1.25rem",
-                      height: "1.25rem",
-                      color: "#10b981",
-                      animation: "float 3s ease-in-out infinite",
-                    }}
-                  />
-                </div>
-                <div>
-                  <p style={{ fontSize: "0.75rem", fontWeight: 600, color: "#1f2937", marginBottom: "0.25rem" }}>
-                    Community Impact
-                  </p>
-                  <p style={{ fontSize: "0.75rem", color: "#6b7280", lineHeight: "1.5" }}>
-                    Every action creates ripples of change. Together, we&#39;re growing a healthier planet.
-                  </p>
                 </div>
               </div>
             </div>

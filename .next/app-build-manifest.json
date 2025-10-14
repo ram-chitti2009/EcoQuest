@@ -6,6 +6,17 @@
       "static/css/app/layout.css",
       "static/chunks/app/layout.js"
     ],
+    "/EcoSim/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/EcoSim/page.js"
+    ],
+    "/community-cleanup/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/css/app/community-cleanup/page.css",
+      "static/chunks/app/community-cleanup/page.js"
+    ],
     "/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
@@ -21,10 +32,15 @@
       "static/chunks/main-app.js",
       "static/chunks/app/dashboard/page.js"
     ],
-    "/EcoSim/page": [
+    "/litterLens/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/EcoSim/page.js"
+      "static/chunks/app/litterLens/page.js"
+    ],
+    "/litterAnalysis/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/litterAnalysis/page.js"
     ],
     "/_not-found/page": [
       "static/chunks/webpack.js",
