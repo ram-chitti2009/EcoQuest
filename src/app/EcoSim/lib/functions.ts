@@ -29,34 +29,83 @@ export async function getRegionMetrics(bounds: RegionBounds): Promise<RegionMetr
     
     console.log('Fetching region metrics with bounds:', bounds);
     
-    // First, let's check if there's any data in the table at all
-    const { data: allData, error: countError } = await supabase
-      .from('grid_cells')
-      .select('id, lat_min, lat_max, lng_min, lng_max, trash_density, cleanliness_score, greenery_score, carbon_emissions')
-      .limit(10);
-    
-    console.log('Sample data from grid_cells:', allData);
-    console.log('Count query error:', countError);
-    
-    // Query for grid cells that overlap with the view bounds
-    // A cell overlaps if: cell_max >= view_min AND cell_min <= view_max
-    const { data, error } = await supabase
-      .from('grid_cells')
-      .select('trash_density, cleanliness_score, greenery_score, carbon_emissions')
-      .gte('lat_max', bounds.latMin)  // Cell's max lat >= view's min lat
-      .lte('lat_min', bounds.latMax)  // Cell's min lat <= view's max lat
-      .gte('lng_max', bounds.lngMin)  // Cell's max lng >= view's min lng
-      .lte('lng_min', bounds.lngMax); // Cell's min lng <= view's max lng
+    // Define Chester County bounds
+    const chesterBounds = {
+      latMin: 39.72,
+      latMax: 40.23,
+      lngMin: -76.01,
+      lngMax: -75.33,
+    };
 
-    console.log('Filtered data:', data);
-    console.log('Query error:', error);
+    // Check if viewport intersects with Chester County
+    const viewIntersectsChester = !(
+      bounds.latMax < chesterBounds.latMin ||
+      bounds.latMin > chesterBounds.latMax ||
+      bounds.lngMax < chesterBounds.lngMin ||
+      bounds.lngMin > chesterBounds.lngMax
+    );
 
-    if (error) {
-      console.error('Error fetching region metrics:', error);
-      return null;
+    console.log('View intersects Chester County:', viewIntersectsChester);
+
+    let allCellData: GridCellData[] = [];
+
+    // If we intersect with Chester County, get Chester County cells
+    if (viewIntersectsChester) {
+      console.log('Fetching Chester County cells...');
+      
+      const { data: chesterData, error: chesterError } = await supabase
+        .from('chester_county_grid_cells')
+        .select('trash_density, cleanliness_score, greenery_score, carbon_emissions')
+        .gte('lat_max', bounds.latMin)
+        .lte('lat_min', bounds.latMax)
+        .gte('lng_max', bounds.lngMin)
+        .lte('lng_min', bounds.lngMax);
+
+      if (chesterError) {
+        console.error('Error fetching Chester County cells:', chesterError);
+      } else if (chesterData) {
+        console.log(`Found ${chesterData.length} Chester County cells`);
+        allCellData.push(...chesterData);
+      }
     }
 
-    if (!data || data.length === 0) {
+    // Always try to get global cells (excluding Chester County area)
+    console.log('Fetching global cells...');
+    
+    const { data: globalData, error: globalError } = await supabase
+      .from('grid_cells')
+      .select('trash_density, cleanliness_score, greenery_score, carbon_emissions, lat_min, lat_max, lng_min, lng_max')
+      .gte('lat_max', bounds.latMin)
+      .lte('lat_min', bounds.latMax)
+      .gte('lng_max', bounds.lngMin)
+      .lte('lng_min', bounds.lngMax);
+
+    if (globalError) {
+      console.error('Error fetching global cells:', globalError);
+    } else if (globalData) {
+      // Filter out cells that are in Chester County (to avoid double counting)
+      const filteredGlobalData = globalData.filter((cell: any) => {
+        const centerLat = (cell.lat_min + cell.lat_max) / 2;
+        const centerLng = (cell.lng_min + cell.lng_max) / 2;
+        return !isInChesterCounty(centerLat, centerLng);
+      });
+      
+      console.log(`Found ${globalData.length} total global cells, ${filteredGlobalData.length} after Chester filtering`);
+      
+      // Add only the metric data (not the coordinate data) to avoid type issues
+      const globalMetrics = filteredGlobalData.map(cell => ({
+        trash_density: cell.trash_density,
+        cleanliness_score: cell.cleanliness_score,
+        greenery_score: cell.greenery_score,
+        carbon_emissions: cell.carbon_emissions
+      }));
+      
+      allCellData.push(...globalMetrics);
+    }
+
+    console.log(`Total cells for analysis: ${allCellData.length}`);
+
+    if (allCellData.length === 0) {
       console.log('No data found for bounds:', bounds);
       return {
         avgTrash: 0,
@@ -67,19 +116,22 @@ export async function getRegionMetrics(bounds: RegionBounds): Promise<RegionMetr
       };
     }
 
-    const totalCells = data.length;
-    const avgTrash = data.reduce((sum: number, cell: GridCellData) => sum + (cell.trash_density || 0), 0) / totalCells;
-    const avgCleanliness = data.reduce((sum: number, cell: GridCellData) => sum + (cell.cleanliness_score || 0), 0) / totalCells;
-    const avgGreenery = data.reduce((sum: number, cell: GridCellData) => sum + (cell.greenery_score || 0), 0) / totalCells;
-    const avgCarbon = data.reduce((sum: number, cell: GridCellData) => sum + (cell.carbon_emissions || 0), 0) / totalCells;
+    const totalCells = allCellData.length;
+    const avgTrash = allCellData.reduce((sum: number, cell: GridCellData) => sum + (cell.trash_density || 0), 0) / totalCells;
+    const avgCleanliness = allCellData.reduce((sum: number, cell: GridCellData) => sum + (cell.cleanliness_score || 0), 0) / totalCells;
+    const avgGreenery = allCellData.reduce((sum: number, cell: GridCellData) => sum + (cell.greenery_score || 0), 0) / totalCells;
+    const avgCarbon = allCellData.reduce((sum: number, cell: GridCellData) => sum + (cell.carbon_emissions || 0), 0) / totalCells;
 
-    return {
+    const result = {
       avgTrash,
       avgCleanliness,
       avgGreenery,
       avgCarbon,
       totalCells,
     };
+
+    console.log('Calculated metrics:', result);
+    return result;
   } catch (error) {
     console.error('Error in getRegionMetrics:', error);
     return null;

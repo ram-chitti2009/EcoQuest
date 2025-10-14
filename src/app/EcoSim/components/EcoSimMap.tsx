@@ -18,6 +18,7 @@ interface EcoSimMapProps {
   center?: [number, number]
   zoom?: number
   onBoundsChange?: (bounds: { latMin: number; latMax: number; lngMin: number; lngMax: number }) => void
+  showLocationSearch?: boolean
 }
 
 interface ChesterGridCell {
@@ -32,12 +33,45 @@ interface ChesterGridCell {
   carbon_emissions: number | null
 }
 
-export default function EcoSimMap({ center = [-75.514, 40.036], zoom = 12, onBoundsChange }: EcoSimMapProps) {
+export default function EcoSimMap({ center = [-75.514, 40.036], zoom = 12, onBoundsChange, showLocationSearch = true }: EcoSimMapProps) {
   const mapContainer = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<any>(null)
   const [mapError, setMapError] = useState<string | null>(null)
   const [isMapLoading, setIsMapLoading] = useState(true)
   const [mapboxLoaded, setMapboxLoaded] = useState(false)
+  const [searchQuery, setSearchQuery] = useState("")
+  const [isSearching, setIsSearching] = useState(false)
+
+  // Location search function using Mapbox Geocoding API
+  const searchLocation = async (query: string) => {
+    if (!query.trim() || !mapRef.current) return
+
+    setIsSearching(true)
+    try {
+      const response = await fetch(
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${mapboxgl.accessToken}&limit=1`
+      )
+      const data = await response.json()
+      
+      if (data.features && data.features.length > 0) {
+        const [lng, lat] = data.features[0].center
+        mapRef.current.flyTo({
+          center: [lng, lat],
+          zoom: 14,
+          duration: 2000
+        })
+      }
+    } catch (error) {
+      console.error("Error searching location:", error)
+    } finally {
+      setIsSearching(false)
+    }
+  }
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    searchLocation(searchQuery)
+  }
 
   useEffect(() => {
     const checkMapbox = setInterval(() => {
@@ -61,7 +95,19 @@ export default function EcoSimMap({ center = [-75.514, 40.036], zoom = 12, onBou
           cell.cleanliness_score * 0.3 -
           Math.min((cell.carbon_emissions || 0) * 2, 50) * 0.1
 
-        const color = score > 70 ? "#10b981" : score > 50 ? "#eab308" : score > 30 ? "#f97316" : "#ef4444"
+        // Enhanced color scheme with darker, more visible colors
+        let color
+        if (score > 80) {
+          color = "#059669" // darker emerald for excellent
+        } else if (score > 60) {
+          color = "#16a34a" // darker green for good
+        } else if (score > 40) {
+          color = "#ca8a04" // darker yellow for moderate
+        } else if (score > 20) {
+          color = "#dc2626" // darker red for poor
+        } else {
+          color = "#991b1b" // very dark red for critical
+        }
 
         return {
           type: "Feature",
@@ -144,13 +190,41 @@ export default function EcoSimMap({ center = [-75.514, 40.036], zoom = 12, onBou
             id: "grid-cells-layer",
             type: "fill",
             source: "grid-cells",
-            paint: { "fill-color": ["get", "color"], "fill-opacity": 0.7 },
+            paint: { 
+              "fill-color": ["get", "color"], 
+              "fill-opacity": [
+                "interpolate",
+                ["linear"],
+                ["zoom"],
+                8, 0.12,  // Slightly more visible at low zoom
+                12, 0.18, // More visible at medium zoom
+                16, 0.25  // Better visibility when zoomed in
+              ]
+            },
           })
           map.addLayer({
             id: "grid-cells-borders",
             type: "line",
             source: "grid-cells",
-            paint: { "line-color": "#ffffff", "line-width": 0.5, "line-opacity": 0.3 },
+            paint: { 
+              "line-color": "#ffffff", 
+              "line-width": [
+                "interpolate",
+                ["linear"],
+                ["zoom"],
+                8, 0.1,
+                12, 0.15,
+                16, 0.2
+              ],
+              "line-opacity": [
+                "interpolate",
+                ["linear"],
+                ["zoom"],
+                8, 0.05,  // Almost invisible at low zoom
+                12, 0.08, // Very light at medium zoom
+                16, 0.12  // Still very light when zoomed in
+              ]
+            },
           })
         }
 
@@ -175,7 +249,14 @@ export default function EcoSimMap({ center = [-75.514, 40.036], zoom = 12, onBou
                 source: "chester-grid-cells",
                 paint: {
                   "fill-color": ["get", "color"],
-                  "fill-opacity": 0.75,
+                  "fill-opacity": [
+                    "interpolate",
+                    ["linear"],
+                    ["zoom"],
+                    8, 0.15,   // More visible at low zoom
+                    12, 0.22,  // Better visibility at medium zoom  
+                    16, 0.30   // Good visibility when zoomed in
+                  ]
                 },
               })
               map.addLayer({
@@ -184,8 +265,22 @@ export default function EcoSimMap({ center = [-75.514, 40.036], zoom = 12, onBou
                 source: "chester-grid-cells",
                 paint: {
                   "line-color": "#ffffff",
-                  "line-width": 0.5,
-                  "line-opacity": 0.4,
+                  "line-width": [
+                    "interpolate",
+                    ["linear"],
+                    ["zoom"],
+                    8, 0.1,
+                    12, 0.15,
+                    16, 0.2
+                  ],
+                  "line-opacity": [
+                    "interpolate",
+                    ["linear"],
+                    ["zoom"],
+                    8, 0.03,  // Almost invisible at low zoom
+                    12, 0.06, // Very light at medium zoom
+                    16, 0.1   // Still very light when zoomed in
+                  ]
                 },
               })
 
@@ -347,6 +442,87 @@ export default function EcoSimMap({ center = [-75.514, 40.036], zoom = 12, onBou
       }}
     >
       <link href="https://api.mapbox.com/mapbox-gl-js/v3.1.0/mapbox-gl.css" rel="stylesheet" />
+
+      {/* Location Search Bar */}
+      {showLocationSearch && (
+        <div
+          style={{
+            position: "absolute",
+            top: "1rem",
+            left: "1rem",
+            right: "1rem",
+            zIndex: 20,
+            display: "flex",
+            justifyContent: "center",
+          }}
+        >
+          <form onSubmit={handleSearchSubmit} style={{ width: "100%", maxWidth: "400px" }}>
+            <div
+              style={{
+                display: "flex",
+                background: "rgba(255, 255, 255, 0.95)",
+                backdropFilter: "blur(10px)",
+                borderRadius: "0.75rem",
+                padding: "0.5rem",
+                boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+                border: "1px solid rgba(255, 255, 255, 0.2)",
+              }}
+            >
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search for a location..."
+                style={{
+                  flex: 1,
+                  padding: "0.5rem 1rem",
+                  border: "none",
+                  background: "transparent",
+                  outline: "none",
+                  fontSize: "0.875rem",
+                  color: "#374151",
+                }}
+                disabled={isSearching}
+              />
+              <button
+                type="submit"
+                disabled={isSearching || !searchQuery.trim()}
+                style={{
+                  padding: "0.5rem 1rem",
+                  background: isSearching ? "#9ca3af" : "#10b981",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "0.5rem",
+                  fontSize: "0.875rem",
+                  fontWeight: "500",
+                  cursor: isSearching || !searchQuery.trim() ? "not-allowed" : "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                }}
+              >
+                {isSearching ? (
+                  <>
+                    <div
+                      style={{
+                        width: "1rem",
+                        height: "1rem",
+                        border: "2px solid rgba(255, 255, 255, 0.3)",
+                        borderTopColor: "#ffffff",
+                        borderRadius: "50%",
+                        animation: "spin 1s linear infinite",
+                      }}
+                    ></div>
+                    Searching...
+                  </>
+                ) : (
+                  <>🔍 Search</>
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
 
       {isMapLoading && (
         <div
