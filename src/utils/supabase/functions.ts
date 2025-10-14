@@ -2328,7 +2328,7 @@ export async function joinUnifiedEvent(eventId: number, userId: string): Promise
 
     const { data: event } = await supabase
       .from('eco_events')
-      .select('participants, max_participants')
+      .select('participants, max_participants, lat, lng, category')
       .eq('id', eventId)
       .single();
 
@@ -2341,6 +2341,17 @@ export async function joinUnifiedEvent(eventId: number, userId: string): Promise
       .insert([{ event_id: eventId, user_id: userId }]);
 
     if (error) throw error;
+
+    // Update grid cell data for cleanup events
+    if (event && event.category === 'cleanup' && event.lat && event.lng) {
+      try {
+        await updateGridCellForCleanupEvent(event.lat, event.lng);
+      } catch (gridError) {
+        console.error('Error updating grid cell for cleanup event:', gridError);
+        // Don't fail the join if grid update fails, just log the error
+      }
+    }
+
     return { success: true, message: 'Joined successfully!' };
   } catch (error) {
     console.error('Error joining event:', error);
@@ -2470,7 +2481,7 @@ export async function getDashboardMetricsUnified(userId?: string): Promise<{
       error: hasError
     };
   } catch (error) {
-    console.error('Error in getDashboardMetricsUnified:', error);is
+    console.error('Error in getDashboardMetricsUnified:', error);
     return {
       eventsThisMonth: 0,
       totalParticipants: 0,
@@ -3098,4 +3109,87 @@ export function gridCellsToGeoJSON(cells: GridCell[]) {
     type: "FeatureCollection",
     features: cells.map(gridCellToGeoJSONFeature),
   };
+}
+
+/**
+ * Helper function to check if coordinates are within Chester County bounds
+ */
+function isInChesterCountyHelper(lat: number, lng: number): boolean {
+  return (
+    lat >= 39.72 && lat <= 40.23 &&
+    lng >= -76.01 && lng <= -75.55 // Updated eastern boundary to exclude Wilmington, DE
+  );
+}
+
+/**
+ * Helper function to update Chester County grid cells
+ */
+async function updateChesterCountyGridCellHelper(
+  id: string,
+  updates: {
+    trash_density?: number;
+    greenery_score?: number;
+    cleanliness_score?: number;
+    carbon_emissions?: number;
+  }
+) {
+  const { data, error } = await supabase
+    .from('chester_county_grid_cells')
+    .update({
+      ...updates,
+      last_updated: new Date().toISOString()
+    })
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error updating chester county grid cell", error);
+    throw error;
+  }
+  return data;
+}
+
+/**
+ * Update grid cell data when someone participates in a cleanup event
+ * Improves cleanliness score and reduces trash density for the cell containing the event location
+ */
+async function updateGridCellForCleanupEvent(lat: number, lng: number): Promise<void> {
+  if (isInChesterCountyHelper(lat, lng)) {
+    // Update Chester County grid cell
+    const { data: cell, error } = await supabase
+      .from('chester_county_grid_cells')
+      .select('id, trash_density, cleanliness_score')
+      .gte('lat_min', lat)
+      .lte('lat_max', lat)
+      .gte('lng_min', lng)
+      .lte('lng_max', lng)
+      .limit(1)
+      .single();
+
+    if (!error && cell) {
+      await updateChesterCountyGridCellHelper(cell.id, {
+        trash_density: Math.max(0, cell.trash_density - 5), // Reduce trash by 5 points
+        cleanliness_score: Math.min(100, cell.cleanliness_score + 3) // Increase cleanliness by 3 points
+      });
+    }
+  } else {
+    // Update global grid cell
+    const { data: cell, error } = await supabase
+      .from('grid_cells')
+      .select('id, trash_density, cleanliness_score')
+      .gte('lat_min', lat)
+      .lte('lat_max', lat)
+      .gte('lng_min', lng)
+      .lte('lng_max', lng)
+      .limit(1)
+      .single();
+
+    if (!error && cell) {
+      await updateGridCell(cell.id, {
+        trash_density: Math.max(0, cell.trash_density - 5), // Reduce trash by 5 points
+        cleanliness_score: Math.min(100, cell.cleanliness_score + 3) // Increase cleanliness by 3 points
+      });
+    }
+  }
 }

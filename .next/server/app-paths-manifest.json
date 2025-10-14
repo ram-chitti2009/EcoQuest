@@ -1,7 +1,6 @@
 {
   "/_not-found/page": "app/_not-found/page.js",
-  "/EcoSim/page": "app/EcoSim/page.js",
-  "/litterLens/page": "app/litterLens/page.js",
+  "/ecoQuestLandingPage/page": "app/ecoQuestLandingPage/page.js",
   "/community-cleanup/page": "app/community-cleanup/page.js",
-  "/litterAnalysis/page": "app/litterAnalysis/page.js"
+  "/EcoSim/page": "app/EcoSim/page.js"
 }
