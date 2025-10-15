@@ -159,10 +159,10 @@ export default function EcoSimMap({ center = [-75.514, 40.036], zoom = 12, onBou
 
       try {
         const chesterBounds = {
-          latMin: 39.72,
-          latMax: 40.23,
-          lngMin: -76.01,
-          lngMax: -75.33,
+          latMin: 39.7167,
+          latMax: 40.1833,
+          lngMin: -76.2417,
+          lngMax: -75.325,
         }
 
         const viewIntersectsChester = !(
@@ -171,6 +171,13 @@ export default function EcoSimMap({ center = [-75.514, 40.036], zoom = 12, onBou
           boundsObj.lngMax < chesterBounds.lngMin ||
           boundsObj.lngMin > chesterBounds.lngMax
         )
+
+        // Additional check: only load Chester County cells if viewport center is actually in Chester County
+        const viewportCenterLat = (boundsObj.latMin + boundsObj.latMax) / 2
+        const viewportCenterLng = (boundsObj.lngMin + boundsObj.lngMax) / 2
+        const viewportCenterInChester = isInChesterCounty(viewportCenterLat, viewportCenterLng)
+
+        const shouldLoadChesterCells = viewIntersectsChester && viewportCenterInChester
 
         const globalCells = await getGridCellsInBounds(boundsObj)
 
@@ -226,9 +233,72 @@ export default function EcoSimMap({ center = [-75.514, 40.036], zoom = 12, onBou
               ]
             },
           })
+
+          // Add click handler for global grid cells
+          map.on("click", "grid-cells-layer", (e: any) => {
+            if (e.features && e.features[0]) {
+              const props = e.features[0].properties
+              const healthScore = Math.round(props?.ecoScore || 0)
+              
+              // Determine location based on click coordinates
+              const clickLat = e.lngLat.lat
+              const clickLng = e.lngLat.lng
+              const locationText = isInChesterCounty(clickLat, clickLng) ? "Chester County, PA" : "Global Region"
+              
+              new mapboxgl.Popup({
+                className: "eco-popup",
+                closeButton: true,
+                closeOnClick: true,
+              })
+                .setLngLat(e.lngLat)
+                .setHTML(`
+                  <div class="p-4 min-w-[240px] bg-white/95 backdrop-blur-md rounded-xl">
+                    <div class="flex items-center gap-2 mb-3">
+                      <div class="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                      <h3 class="font-bold text-blue-700">${locationText}</h3>
+                    </div>
+                    <div class="mb-3 p-3 bg-gradient-to-br from-blue-50 to-sky-50 rounded-lg">
+                      <p class="text-xs text-gray-600 mb-1">Environmental Health</p>
+                      <p class="text-2xl font-bold text-blue-600">${healthScore}%</p>
+                    </div>
+                    <div class="space-y-2 text-sm">
+                      <div class="flex justify-between items-center">
+                        <span class="text-gray-600">Trash:</span>
+                        <span class="font-semibold text-red-600">${props?.trash_density?.toFixed(1)}</span>
+                      </div>
+                      <div class="flex justify-between items-center">
+                        <span class="text-gray-600">Greenery:</span>
+                        <span class="font-semibold text-emerald-600">${props?.greenery_score?.toFixed(0)}%</span>
+                      </div>
+                      <div class="flex justify-between items-center">
+                        <span class="text-gray-600">Cleanliness:</span>
+                        <span class="font-semibold text-blue-600">${props?.cleanliness_score?.toFixed(0)}%</span>
+                      </div>
+                      <div class="flex justify-between items-center">
+                        <span class="text-gray-600">Carbon:</span>
+                        <span class="font-semibold text-orange-600">${props?.carbon_emissions?.toFixed(1)}t</span>
+                      </div>
+                    </div>
+                    <div class="mt-3 pt-3 border-t border-gray-200">
+                      <p class="text-xs text-blue-700 font-medium">Global Grid Data</p>
+                    </div>
+                  </div>
+                `)
+                .addTo(map)
+            }
+          })
+
+          // Add mouse handlers for global grid cells
+          map.on("mouseenter", "grid-cells-layer", () => {
+            map.getCanvas().style.cursor = "pointer"
+          })
+
+          map.on("mouseleave", "grid-cells-layer", () => {
+            map.getCanvas().style.cursor = ""
+          })
         }
 
-        if (viewIntersectsChester) {
+        if (shouldLoadChesterCells) {
           const chesterCells = await getChesterCountryGridCellsInBounds({
             north: boundsObj.latMax,
             south: boundsObj.latMin,
@@ -288,6 +358,12 @@ export default function EcoSimMap({ center = [-75.514, 40.036], zoom = 12, onBou
                 if (e.features && e.features[0]) {
                   const props = e.features[0].properties
                   const healthScore = Math.round(props?.ecoScore || 0)
+                  
+                  // Determine location based on click coordinates
+                  const clickLat = e.lngLat.lat
+                  const clickLng = e.lngLat.lng
+                  const locationText = isInChesterCounty(clickLat, clickLng) ? "Chester County, PA" : "Current Location"
+                  
                   new mapboxgl.Popup({
                     className: "eco-popup",
                     closeButton: true,
@@ -298,7 +374,7 @@ export default function EcoSimMap({ center = [-75.514, 40.036], zoom = 12, onBou
                       <div class="p-4 min-w-[240px] bg-white/95 backdrop-blur-md rounded-xl">
                         <div class="flex items-center gap-2 mb-3">
                           <div class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-                          <h3 class="font-bold text-emerald-700">Chester County, PA</h3>
+                          <h3 class="font-bold text-emerald-700">${locationText}</h3>
                         </div>
                         <div class="mb-3 p-3 bg-gradient-to-br from-emerald-50 to-sky-50 rounded-lg">
                           <p class="text-xs text-gray-600 mb-1">Environmental Health</p>

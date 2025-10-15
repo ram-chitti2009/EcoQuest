@@ -104,7 +104,7 @@
 │                                              │
 │    1. Get user lat/lng from user_profiles   │
 │    2. Check if in Chester County            │
-│       (39.72-40.23°N, -76.01 to -75.33°W)  │
+│       (39.7167-40.1833°N, -76.2417 to -75.325°W)  │
 └──────┬───────────────────────────────────────┘
        │
        ▼
@@ -313,7 +313,7 @@ src/app/EcoSim/
 │ Coverage: Chester County, PA only          │
 │ Resolution: 0.005° × 0.005° (~0.35 mi)    │
 │ Total Cells: ~10,404                       │
-│ Bounds: 39.72-40.23°N, -76.01 to -75.33°W│
+│ Bounds: 39.7167-40.1833°N, -76.2417 to -75.325°W│
 └─────────────────────────────────────────────┘
 ```
 

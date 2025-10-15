@@ -10,7 +10,7 @@ This implementation adds hyper-specific environmental tracking for Chester Count
 - Same structure as global `grid_cells` table
 - Resolution: 0.005° × 0.005° (~0.35 miles × 0.35 miles)
 - Coverage: ~10,404 cells covering Chester County, PA
-- Bounds: 39.72°N to 40.23°N, 76.01°W to 75.33°W
+- Bounds: 39.7167°N to 40.1833°N, 76.2417°W to 75.325°W
 
 **Schema:**
 ```sql
@@ -41,8 +41,8 @@ All existing triggers have been updated to automatically detect user location an
 ```sql
 -- Automatic Chester County detection
 is_chester_county := (
-    user_lat >= 39.72 AND user_lat <= 40.23 AND 
-    user_lng >= -76.01 AND user_lng <= -75.33
+    user_lat >= 39.7167 AND user_lat <= 40.1833 AND 
+    user_lng >= -76.2417 AND user_lng <= -75.325
 );
 
 -- Update appropriate grid based on location
