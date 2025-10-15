@@ -2724,10 +2724,10 @@ export async function getGridCellsInBounds(bounds: MapBound): Promise<GridCell[]
     const { data, error } = await supabase
       .from('grid_cells')
       .select('*')
-      .gte('lat_min', bounds.latMin)
-      .lte('lat_max', bounds.latMax)
-      .gte('lng_min', bounds.lngMin)
-      .lte('lng_max', bounds.lngMax)
+      .lte('lat_min', bounds.latMax)
+      .gte('lat_max', bounds.latMin)
+      .lte('lng_min', bounds.lngMax)
+      .gte('lng_max', bounds.lngMin)
       .order('lat_min', { ascending: true });
 
     if (error) throw error;
