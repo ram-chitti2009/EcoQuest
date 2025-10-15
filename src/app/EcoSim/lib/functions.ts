@@ -56,10 +56,10 @@ export async function getRegionMetrics(bounds: RegionBounds): Promise<RegionMetr
       const { data: chesterData, error: chesterError } = await supabase
         .from('chester_county_grid_cells')
         .select('trash_density, cleanliness_score, greenery_score, carbon_emissions')
-        .gte('lat_max', bounds.latMin)
         .lte('lat_min', bounds.latMax)
-        .gte('lng_max', bounds.lngMin)
-        .lte('lng_min', bounds.lngMax);
+        .gte('lat_max', bounds.latMin)
+        .lte('lng_min', bounds.lngMax)
+        .gte('lng_max', bounds.lngMin);
 
       if (chesterError) {
         console.error('Error fetching Chester County cells:', chesterError);
@@ -75,10 +75,10 @@ export async function getRegionMetrics(bounds: RegionBounds): Promise<RegionMetr
     const { data: globalData, error: globalError } = await supabase
       .from('grid_cells')
       .select('trash_density, cleanliness_score, greenery_score, carbon_emissions, lat_min, lat_max, lng_min, lng_max')
-      .gte('lat_max', bounds.latMin)
       .lte('lat_min', bounds.latMax)
-      .gte('lng_max', bounds.lngMin)
-      .lte('lng_min', bounds.lngMax);
+      .gte('lat_max', bounds.latMin)
+      .lte('lng_min', bounds.lngMax)
+      .gte('lng_max', bounds.lngMin);
 
     if (globalError) {
       console.error('Error fetching global cells:', globalError);
@@ -167,10 +167,10 @@ export async function getChesterCountryGridCellsInBounds(
   const {data, error} = await supabase
   .from('chester_county_grid_cells')
   .select('*')
-  .gte('lat_min', bounds.south)
-  .lte('lat_max', bounds.north)
-  .gte('lng_min', bounds.west)
-  .lte('lng_max', bounds.east)
+  .lte('lat_min', bounds.north)
+  .gte('lat_max', bounds.south)
+  .lte('lng_min', bounds.east)
+  .gte('lng_max', bounds.west)
 
   if(error){
     console.error("Error fetching chester county grid cells in bounds")
