@@ -3116,8 +3116,8 @@ export function gridCellsToGeoJSON(cells: GridCell[]) {
  */
 function isInChesterCountyHelper(lat: number, lng: number): boolean {
   return (
-    lat >= 39.72 && lat <= 40.23 &&
-    lng >= -76.01 && lng <= -75.55 // Updated eastern boundary to exclude Wilmington, DE
+    lat >= 39.7167 && lat <= 40.1833 &&
+    lng >= -76.2417 && lng <= -75.325
   );
 }
 

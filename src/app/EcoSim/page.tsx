@@ -611,10 +611,10 @@ export default function EcoSimPage() {
                         {(() => {
                           // Chester County bounds
                           const chesterBounds = {
-                            latMin: 39.72,
-                            latMax: 40.23,
-                            lngMin: -76.01,
-                            lngMax: -75.33,
+                            latMin: 39.7167,
+                            latMax: 40.1833,
+                            lngMin: -76.2417,
+                            lngMax: -75.325,
                           };
 
                           // Check if viewport intersects with Chester County
@@ -623,6 +623,16 @@ export default function EcoSimPage() {
                             currentBounds.latMin > chesterBounds.latMax ||
                             currentBounds.lngMax < chesterBounds.lngMin ||
                             currentBounds.lngMin > chesterBounds.lngMax
+                          );
+
+                          // Check if viewport center is in Chester County
+                          const viewportCenterLat = (currentBounds.latMin + currentBounds.latMax) / 2;
+                          const viewportCenterLng = (currentBounds.lngMin + currentBounds.lngMax) / 2;
+                          const viewportCenterInChester = (
+                            viewportCenterLat >= chesterBounds.latMin &&
+                            viewportCenterLat <= chesterBounds.latMax &&
+                            viewportCenterLng >= chesterBounds.lngMin &&
+                            viewportCenterLng <= chesterBounds.lngMax
                           );
 
                           // Check if viewport is entirely within Chester County
@@ -635,7 +645,7 @@ export default function EcoSimPage() {
 
                           if (viewWithinChester) {
                             return "Chester County, PA";
-                          } else if (viewIntersectsChester) {
+                          } else if (viewIntersectsChester && viewportCenterInChester) {
                             return "Chester County, PA + Region";
                           } else {
                             return "Current Region";

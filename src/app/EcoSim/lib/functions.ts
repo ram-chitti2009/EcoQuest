@@ -31,10 +31,10 @@ export async function getRegionMetrics(bounds: RegionBounds): Promise<RegionMetr
     
     // Define Chester County bounds
     const chesterBounds = {
-      latMin: 39.72,
-      latMax: 40.23,
-      lngMin: -76.01,
-      lngMax: -75.33,
+      latMin: 39.7167,
+      latMax: 40.1833,
+      lngMin: -76.2417,
+      lngMax: -75.325,
     };
 
     // Check if viewport intersects with Chester County
@@ -273,8 +273,8 @@ export async function findNearestChesterCountyGridCell(lat: number, lng: number)
 
 export function isInChesterCounty(lat:number, lng:number):boolean{
   return (
-    lat >= 39.72 && lat <= 40.23 &&
-    lng >= -76.01 && lng <= -75.33
+    lat >= 39.7167 && lat <= 40.1833 &&
+    lng >= -76.2417 && lng <= -75.325
   );
 }
 
