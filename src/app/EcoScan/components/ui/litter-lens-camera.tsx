@@ -1,8 +1,5 @@
-"use client"
-
-import Header from "@/app/components/Header"
 import { useLitterDetection } from "@/hooks/useLitterDetection"
-import { Activity, Leaf, Package, TrendingUp, X } from "lucide-react"
+import { Activity, Camera, Leaf, Package, Sparkles, TrendingUp, X, Zap } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 import { Button } from "./button"
 import { ConfirmationModal } from "./confirmation-modal"
@@ -30,21 +27,19 @@ export function LitterLensCamera({ onClose }: LitterLensCameraProps) {
     async function startCamera() {
       try {
         const mediaStream = await navigator.mediaDevices.getUserMedia({
-          video: { 
-            facingMode: "environment", 
+          video: {
+            facingMode: "environment",
             width: { ideal: 1920 },
             height: { ideal: 1080 }
           },
         })
         currentStream = mediaStream
         setStream(mediaStream)
-        
+
         if (videoRef.current) {
           videoRef.current.srcObject = mediaStream
-          // Ensure video plays
           try {
             await videoRef.current.play()
-            console.log("Camera started successfully")
           } catch (playError) {
             console.error("Video play error:", playError)
           }
@@ -57,12 +52,10 @@ export function LitterLensCamera({ onClose }: LitterLensCameraProps) {
 
     startCamera()
 
-    // Cleanup function to stop camera when component unmounts
     return () => {
       if (currentStream) {
         currentStream.getTracks().forEach((track) => {
           track.stop()
-          console.log("Camera track stopped")
         })
       }
     }
@@ -72,7 +65,7 @@ export function LitterLensCamera({ onClose }: LitterLensCameraProps) {
     const interval = setInterval(() => {
       setDetectionHistory((prev) => {
         const newHistory = [...prev, { time: Date.now(), count: detections.length }]
-        return newHistory.slice(-20) // Keep last 20 data points
+        return newHistory.slice(-20)
       })
     }, 1000)
 
@@ -91,7 +84,6 @@ export function LitterLensCamera({ onClose }: LitterLensCameraProps) {
   }
 
   const handleClose = () => {
-    // Stop all camera tracks before closing
     if (stream) {
       stream.getTracks().forEach((track) => {
         track.stop()
@@ -108,164 +100,152 @@ export function LitterLensCamera({ onClose }: LitterLensCameraProps) {
   }
 
   return (
-    <div
-      style={{
-        position: "relative",
-        width: "100%",
-        height: "100vh",
-        background: "#ffffff",
-        display: "flex",
-        flexDirection: "column",
-        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-        overflow: "hidden",
-      }}
-    >
-      {/* Responsive styles */}
+    <div className="relative w-full h-screen bg-slate-950 flex flex-col overflow-hidden">
       <style>{`
+        @keyframes pulse-glow {
+          0%, 100% { opacity: 1; box-shadow: 0 0 20px rgba(34, 197, 94, 0.5); }
+          50% { opacity: 0.8; box-shadow: 0 0 30px rgba(34, 197, 94, 0.8); }
+        }
+        @keyframes scan-line {
+          0% { top: 0%; opacity: 0; }
+          50% { opacity: 1; }
+          100% { top: 100%; opacity: 0; }
+        }
+        @keyframes shimmer {
+          0% { background-position: -1000px 0; }
+          100% { background-position: 1000px 0; }
+        }
+        @keyframes float {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-10px); }
+        }
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+        .scan-line {
+          animation: scan-line 3s ease-in-out infinite;
+        }
+        .shimmer {
+          background: linear-gradient(90deg, transparent, rgba(34, 197, 94, 0.1), transparent);
+          background-size: 1000px 100%;
+          animation: shimmer 3s infinite;
+        }
+        .glass-panel {
+          background: rgba(15, 23, 42, 0.85);
+          backdrop-filter: blur(20px) saturate(180%);
+          border: 1px solid rgba(34, 197, 94, 0.15);
+        }
+        .metric-card {
+          background: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.9) 100%);
+          backdrop-filter: blur(16px);
+          border: 1px solid rgba(34, 197, 94, 0.2);
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        }
+        .detection-pulse {
+          animation: pulse-glow 2s ease-in-out infinite;
+        }
+        
+        /* Responsive Styles */
         @media (max-width: 768px) {
           .camera-layout {
             flex-direction: column !important;
           }
           .metrics-sidebar {
-            flex: 0 0 auto !important;
             width: 100% !important;
-            max-height: 40vh !important;
+            max-height: 45vh !important;
             border-left: none !important;
-            border-top: 1px solid rgba(34, 197, 94, 0.15) !important;
+            border-top: 1px solid rgba(34, 197, 94, 0.2) !important;
           }
-          .camera-viewport {
-            flex: 1 !important;
+          .header-content {
+            flex-direction: column !important;
+            gap: 0.5rem !important;
+          }
+          .header-buttons {
+            flex-wrap: wrap !important;
+            justify-content: center !important;
+          }
+          .header-title {
+            font-size: 0.875rem !important;
+          }
+          .detection-indicator {
+            bottom: 4rem !important;
+            font-size: 0.875rem !important;
+            padding: 0.5rem 1rem !important;
           }
         }
+        
         @media (min-width: 769px) and (max-width: 1024px) {
           .metrics-sidebar {
-            flex: 0 0 280px !important;
+            width: 18rem !important;
+          }
+        }
+        
+        @media (max-width: 640px) {
+          .corner-brackets {
+            display: none !important;
+          }
+          .glass-panel {
+            padding: 0.75rem !important;
+          }
+          .metric-card {
+            padding: 0.75rem !important;
           }
         }
       `}</style>
-      <Header title="EcoScan" centerMessage="🔍 AI-powered real-time detection active" />
-      
-      <div
-        style={{
-          background: "linear-gradient(to bottom, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.85) 100%)",
-          backdropFilter: "blur(12px)",
-          borderBottom: "1px solid rgba(34, 197, 94, 0.15)",
-          flexShrink: 0,
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            padding: "16px 24px",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+
+      {/* Enhanced Header */}
+      <div className="glass-panel border-b border-emerald-500/20 flex-shrink-0 relative overflow-hidden">
+        <div className="shimmer absolute inset-0 pointer-events-none" />
+        <div className="header-content relative z-10 flex items-center justify-between px-6 py-4">
+          <div className="header-buttons flex items-center gap-4">
             <button
               onClick={handleClose}
-              style={{
-                padding: "6px 12px",
-                background: "rgba(34, 197, 94, 0.1)",
-                border: "1px solid rgba(34, 197, 94, 0.3)",
-                borderRadius: "8px",
-                color: "#166534",
-                fontSize: "12px",
-                fontWeight: "600",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                gap: "6px",
-                transition: "all 0.2s ease",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = "rgba(34, 197, 94, 0.15)"
-                e.currentTarget.style.borderColor = "rgba(34, 197, 94, 0.4)"
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = "rgba(34, 197, 94, 0.1)"
-                e.currentTarget.style.borderColor = "rgba(34, 197, 94, 0.3)"
-              }}
+              className="group px-4 py-2 bg-gradient-to-r from-emerald-500/20 to-teal-500/20 border border-emerald-500/30 rounded-xl text-emerald-400 font-semibold text-sm hover:from-emerald-500/30 hover:to-teal-500/30 hover:border-emerald-400/50 transition-all duration-300 flex items-center gap-2 shadow-lg hover:shadow-emerald-500/20"
             >
-              ← Back
+              <X className="w-4 h-4" />
+              <span>Exit</span>
             </button>
-            <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                <div
-                  style={{
-                    width: "6px",
-                    height: "6px",
-                    background: "#22c55e",
-                    borderRadius: "50%",
-                    boxShadow: "0 0 8px rgba(34, 197, 94, 0.6)",
-                    animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
-                  }}
-                />
-                <style>{`@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }`}</style>
-                <span
-                  style={{
-                    color: "#22c55e",
-                    fontSize: "13px",
-                    fontWeight: "600",
-                    letterSpacing: "0.03em",
-                  }}
-                >
-                  SCANNING ACTIVE
-                </span>
-              </div>
+            <div className="flex items-center gap-3 px-4 py-2 bg-emerald-500/10 rounded-xl border border-emerald-500/20">
+              <div className="detection-pulse w-2 h-2 bg-emerald-400 rounded-full" />
+              <span className="text-emerald-400 font-bold text-sm tracking-wide">AI VISION ACTIVE</span>
+              <Sparkles className="w-4 h-4 text-emerald-400" />
             </div>
           </div>
-          <Button variant="ghost" size="sm" icon={<X style={{ width: "18px", height: "18px" }} />} onClick={handleClose}>
-            CLOSE
-          </Button>
+
+          <div className="flex items-center gap-3">
+            <Camera className="w-5 h-5 text-emerald-400" />
+            <span className="header-title text-emerald-400 font-bold text-lg tracking-tight">EcoScan</span>
+          </div>
         </div>
       </div>
 
-      {/* Main content area with camera and metrics side by side */}
-      <div
-        className="camera-layout"
-        style={{
-          display: "flex",
-          flexDirection: "row",
-          flex: 1,
-          overflow: "hidden",
-          minHeight: 0,
-        }}
-      >
-        {/* Camera viewport - takes up most of the space */}
-        <div
-          className="camera-viewport"
-          style={{
-            position: "relative",
-            flex: 1,
-            background: "#000000",
-            minHeight: 0,
-            minWidth: 0,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
+      {/* Main Layout */}
+      <div className="camera-layout flex flex-1 overflow-hidden min-h-0">
+        {/* Camera Viewport */}
+        <div className="relative flex-1 bg-black flex items-center justify-center">
+          {/* Scanning effect overlay */}
+          <div className="absolute inset-0 pointer-events-none z-10">
+            <div className="scan-line absolute left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-emerald-400 to-transparent opacity-50" />
+          </div>
+
+          {/* Corner brackets for futuristic feel */}
+          <div className="corner-brackets absolute inset-4 pointer-events-none z-10">
+            <div className="absolute top-0 left-0 w-12 h-12 border-t-2 border-l-2 border-emerald-400/60 rounded-tl-lg" />
+            <div className="absolute top-0 right-0 w-12 h-12 border-t-2 border-r-2 border-emerald-400/60 rounded-tr-lg" />
+            <div className="absolute bottom-0 left-0 w-12 h-12 border-b-2 border-l-2 border-emerald-400/60 rounded-bl-lg" />
+            <div className="absolute bottom-0 right-0 w-12 h-12 border-b-2 border-r-2 border-emerald-400/60 rounded-br-lg" />
+          </div>
+
           <video
             ref={videoRef}
             autoPlay
             playsInline
             muted
-            style={{
-              width: "100%",
-              height: "100%",
-              objectFit: "contain",
-            }}
+            className="w-full h-full object-contain"
           />
           <canvas
             ref={canvasRef}
-            style={{
-              position: "absolute",
-              inset: 0,
-              width: "100%",
-              height: "100%",
-              pointerEvents: "none",
-            }}
+            className="absolute inset-0 w-full h-full pointer-events-none"
           />
 
           {detections.map((detection, index) => (
@@ -273,207 +253,142 @@ export function LitterLensCamera({ onClose }: LitterLensCameraProps) {
           ))}
 
           {!isModelLoaded && (
-            <div
-              style={{
-                position: "absolute",
-                inset: 0,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                background: "rgba(255, 255, 255, 0.98)",
-                backdropFilter: "blur(12px)",
-              }}
-            >
-              <div
-                style={{
-                  textAlign: "center",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "24px",
-                  alignItems: "center",
-                  padding: "32px",
-                }}
-              >
-                <div
-                  style={{
-                    width: "64px",
-                    height: "64px",
-                    border: "4px solid rgba(34, 197, 94, 0.2)",
-                    borderTop: "4px solid #22c55e",
-                    borderRadius: "50%",
-                    animation: "spin 1s linear infinite",
-                  }}
-                />
-                <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                  <p
-                    style={{
-                      color: "#166534",
-                      fontSize: "16px",
-                      fontWeight: "700",
-                      margin: 0,
-                      letterSpacing: "0.01em",
-                    }}
-                  >
-                    INITIALIZING AI MODEL
+            <div className="absolute inset-0 flex items-center justify-center bg-slate-950/95 backdrop-blur-sm">
+              <div className="text-center flex flex-col gap-8 items-center p-8">
+                <div className="relative">
+                  <div className="w-20 h-20 border-4 border-emerald-500/20 border-t-emerald-400 rounded-full animate-spin" />
+                  <Zap className="absolute inset-0 m-auto w-8 h-8 text-emerald-400" />
+                </div>
+                <div className="flex flex-col gap-3">
+                  <p className="text-emerald-400 text-xl font-bold tracking-wide">
+                    INITIALIZING AI ENGINE
                   </p>
-                  <p style={{ color: "#6b7280", fontSize: "13px", margin: 0 }}>
-                    Loading TensorFlow.js detection system...
+                  <p className="text-slate-400 text-sm">
+                    Loading neural network detection system...
                   </p>
                 </div>
               </div>
             </div>
           )}
+
+          {/* Detection count indicator */}
+          {detections.length > 0 && (
+            <div className="detection-indicator absolute bottom-6 left-1/2 -translate-x-1/2 z-20">
+              <div className="metric-card px-6 py-3 rounded-2xl flex items-center gap-3 detection-pulse">
+                <Sparkles className="w-5 h-5 text-emerald-400" />
+                <span className="text-emerald-400 font-bold text-lg">
+                  {detections.length} ITEM{detections.length > 1 ? "S" : ""} DETECTED
+                </span>
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Metrics sidebar - takes up remaining space on right, hidden on mobile */}
-        <div
-          className="metrics-sidebar"
-          style={{
-            flex: "0 0 320px",
-            background: "linear-gradient(to bottom, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.92) 100%)",
-            backdropFilter: "blur(16px)",
-            borderLeft: "1px solid rgba(34, 197, 94, 0.15)",
-            overflowY: "auto",
-            position: "relative",
-          }}
-        >
-        <div style={{ padding: "20px", display: "flex", flexDirection: "column", gap: "16px" }}>
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "12px",
-            }}
-          >
-            {[
-              { label: "Items Logged", value: sessionCount, icon: Package, color: "#22c55e" },
-              { label: "CO₂ Saved", value: `${totalCO2.toFixed(2)}kg`, icon: TrendingUp, color: "#10b981" },
-              { label: "Detected Now", value: detections.length, icon: Activity, color: "#059669" },
-            ].map((metric, i) => (
-              <div
-                key={i}
-                style={{
-                  padding: "16px",
-                  background: "#ffffff",
-                  border: "1px solid rgba(34, 197, 94, 0.15)",
-                  borderRadius: "12px",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "8px",
-                  boxShadow: "0 2px 8px rgba(0, 0, 0, 0.04)",
-                  position: "relative",
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                  <metric.icon style={{ width: "16px", height: "16px", color: metric.color }} />
-                  <span style={{ fontSize: "11px", color: "#6b7280", fontWeight: "600", textTransform: "uppercase" }}>
-                    {metric.label}
+        {/* Enhanced Metrics Sidebar */}
+        <div className="metrics-sidebar w-80 glass-panel border-l border-emerald-500/20 overflow-y-auto">
+          <div className="p-6 flex flex-col gap-6">
+            {/* Session Stats */}
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Activity className="w-5 h-5 text-emerald-400" />
+                <h3 className="text-emerald-400 font-bold text-sm tracking-wide uppercase">Session Stats</h3>
+              </div>
+
+              {[
+                { label: "Items Logged", value: sessionCount, icon: Package, color: "emerald", gradient: "from-emerald-500 to-teal-500" },
+                { label: "CO₂ Saved", value: `${totalCO2.toFixed(2)}kg`, icon: Leaf, color: "green", gradient: "from-green-500 to-emerald-500" },
+                { label: "Live Detection", value: detections.length, icon: Zap, color: "teal", gradient: "from-teal-500 to-cyan-500" },
+              ].map((metric, i) => (
+                <div key={i} className="metric-card p-5 rounded-2xl group hover:scale-105 transition-transform duration-300">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className={`p-2 bg-gradient-to-br ${metric.gradient} rounded-lg`}>
+                      <metric.icon className="w-4 h-4 text-white" />
+                    </div>
+                    <span className="text-slate-400 text-xs font-semibold uppercase tracking-wider">
+                      {metric.label}
+                    </span>
+                  </div>
+                  <div className={`text-3xl font-black bg-gradient-to-r ${metric.gradient} bg-clip-text text-transparent`}>
+                    {metric.value}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Activity Graph */}
+            <div className="metric-card p-5 rounded-2xl">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4 text-emerald-400" />
+                  <span className="text-slate-300 font-bold text-sm uppercase tracking-wide">
+                    Live Activity
                   </span>
                 </div>
-                <div style={{ fontSize: "24px", fontWeight: "700", color: "#166534", letterSpacing: "-0.01em" }}>
-                  {metric.value}
-                </div>
+                <span className="text-slate-500 text-xs">20s</span>
               </div>
-            ))}
+              <div className="flex items-end gap-1 h-20">
+                {detectionHistory.length > 0 ? (
+                  detectionHistory.map((point, i) => {
+                    const maxCount = Math.max(...detectionHistory.map((p) => p.count), 1)
+                    const heightPercent = (point.count / maxCount) * 100
+                    return (
+                      <div
+                        key={i}
+                        className="flex-1 rounded-t-sm transition-all duration-300 min-w-[6px]"
+                        style={{
+                          height: `${Math.max(heightPercent, 8)}%`,
+                          background: point.count > 0
+                            ? 'linear-gradient(to top, rgb(34, 197, 94), rgb(16, 185, 129))'
+                            : 'rgba(71, 85, 105, 0.3)',
+                        }}
+                      />
+                    )
+                  })
+                ) : (
+                  <div className="w-full text-center text-slate-500 text-sm py-4">
+                    Collecting data...
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Action Button */}
+            <Button
+              variant="primary"
+              size="lg"
+              onClick={handleLogItem}
+              disabled={detections.length === 0}
+              fullWidth
+              icon={<Leaf className="w-6 h-6" />}
+            >
+              {detections.length > 0 ? "LOG ITEM" : "SCANNING..."}
+            </Button>
+
+            {/* Status Indicator */}
+            <div className={`p-4 rounded-xl border transition-all duration-300 ${
+              detections.length > 0
+                ? 'bg-emerald-500/10 border-emerald-500/30'
+                : 'bg-slate-800/50 border-slate-700/30'
+            }`}>
+              <div className="flex items-center justify-center gap-3">
+                {detections.length > 0 ? (
+                  <>
+                    <div className="detection-pulse w-2 h-2 bg-emerald-400 rounded-full" />
+                    <span className="text-emerald-400 font-bold text-sm">
+                      TARGET ACQUIRED
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <div className="w-2 h-2 bg-slate-600 rounded-full animate-pulse" />
+                    <span className="text-slate-400 font-semibold text-sm">
+                      SEARCHING FOR ITEMS
+                    </span>
+                  </>
+                )}
+              </div>
+            </div>
           </div>
-
-          <div
-            style={{
-              padding: "20px",
-              background: "#ffffff",
-              border: "1px solid rgba(34, 197, 94, 0.15)",
-              borderRadius: "12px",
-              boxShadow: "0 2px 8px rgba(0, 0, 0, 0.04)",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                marginBottom: "16px",
-              }}
-            >
-              <span style={{ fontSize: "12px", fontWeight: "600", color: "#6b7280", textTransform: "uppercase" }}>
-                Detection Activity
-              </span>
-              <span style={{ fontSize: "11px", color: "#9ca3af" }}>Last 20 seconds</span>
-            </div>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "flex-end",
-                gap: "4px",
-                height: "60px",
-                justifyContent: "space-between",
-              }}
-            >
-              {detectionHistory.length > 0 ? (
-                detectionHistory.map((point, i) => {
-                  const maxCount = Math.max(...detectionHistory.map((p) => p.count), 1)
-                  const heightPercent = (point.count / maxCount) * 100
-                  return (
-                    <div
-                      key={i}
-                      style={{
-                        flex: 1,
-                        height: `${Math.max(heightPercent, 5)}%`,
-                        background: point.count > 0 ? "linear-gradient(to top, #22c55e, #10b981)" : "#e5e7eb",
-                        borderRadius: "2px 2px 0 0",
-                        transition: "height 0.3s ease",
-                        minWidth: "8px",
-                      }}
-                    />
-                  )
-                })
-              ) : (
-                <div style={{ width: "100%", textAlign: "center", color: "#9ca3af", fontSize: "13px" }}>
-                  Collecting data...
-                </div>
-              )}
-            </div>
-          </div>
-
-          <Button
-            variant="primary"
-            size="lg"
-            onClick={handleLogItem}
-            disabled={detections.length === 0}
-            fullWidth
-            icon={<Leaf style={{ width: "20px", height: "20px" }} />}
-          >
-            {detections.length > 0 ? "LOG THIS ITEM" : "NO ITEMS DETECTED"}
-          </Button>
-
-          {detections.length > 0 && (
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "8px",
-                padding: "10px",
-                background: "rgba(34, 197, 94, 0.1)",
-                border: "1px solid rgba(34, 197, 94, 0.2)",
-                borderRadius: "8px",
-              }}
-            >
-              <div
-                style={{
-                  width: "6px",
-                  height: "6px",
-                  background: "#22c55e",
-                  borderRadius: "50%",
-                  boxShadow: "0 0 8px rgba(34, 197, 94, 0.6)",
-                }}
-              />
-              <span style={{ color: "#166534", fontSize: "13px", fontWeight: "600" }}>
-                {detections.length} ITEM{detections.length > 1 ? "S" : ""} IN VIEW
-              </span>
-            </div>
-          )}
-        </div>
         </div>
       </div>
 

@@ -5,7 +5,7 @@ import type React from "react"
 import type { ButtonHTMLAttributes, ReactNode } from "react"
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "primary" | "secondary" | "ghost"
+  variant?: "primary" | "secondary" | "ghost" | "green"
   size?: "sm" | "md" | "lg"
   children: ReactNode
   icon?: ReactNode
@@ -70,6 +70,11 @@ export function Button({
       color: "#ffffff",
       border: "1px solid rgba(255, 255, 255, 0.1)",
     },
+    green: {
+      background: "#166534",
+      color: "#ffffff",
+      boxShadow: "0 4px 20px rgba(22, 101, 52, 0.25)",
+    },
   }
 
   const handleMouseEnter = (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -81,6 +86,9 @@ export function Button({
     } else if (variant === "secondary") {
       target.style.background = "rgba(15, 23, 42, 1)"
       target.style.borderColor = "rgba(148, 163, 184, 0.3)"
+    } else if (variant === "green") {
+      target.style.boxShadow = "0 6px 28px rgba(22, 101, 52, 0.4)"
+      target.style.background = "#15803e"
     } else {
       target.style.background = "rgba(255, 255, 255, 0.1)"
     }
@@ -95,6 +103,9 @@ export function Button({
     } else if (variant === "secondary") {
       target.style.background = "rgba(15, 23, 42, 0.8)"
       target.style.borderColor = "rgba(148, 163, 184, 0.2)"
+    } else if (variant === "green") {
+      target.style.boxShadow = "0 4px 20px rgba(22, 101, 52, 0.25)"
+      target.style.background = "#166534"
     } else {
       target.style.background = "rgba(255, 255, 255, 0.05)"
     }

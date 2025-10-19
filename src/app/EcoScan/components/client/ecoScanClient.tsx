@@ -3,7 +3,7 @@
 import Header from "@/app/components/Header"
 import { createClient } from "@/utils/supabase/client"
 import { getUserProfileByUserId } from "@/utils/supabase/functions"
-import { BarChart3, Camera, Globe, Sparkles, TrendingUp } from "lucide-react"
+import { BarChart3, Camera, Sparkles, TrendingUp, Zap } from "lucide-react"
 import { useEffect, useState } from "react"
 import { Button } from "../ui/button"
 import { LitterLensCamera } from "../ui/litter-lens-camera"
@@ -120,13 +120,19 @@ export default function HomePage() {
                   fontWeight: "800",
                   lineHeight: "1.1",
                   marginBottom: "24px",
-                  background: "linear-gradient(135deg, #166534 0%, #22c55e 50%, #10b981 100%)",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
                   letterSpacing: "-0.03em",
                 }}
               >
-                {isLoading ? "Loading..." : `${userName}'s EcoScan`}
+                {isLoading ? (
+                  "Loading..."
+                ) : (
+                  <>
+                    <span style={{color:"#166534"}}>
+                      {userName}
+                    </span>
+                    <span style={{ color: "#166534" }}>&apos;s EcoScan</span>
+                  </>
+                )}
               </h1>
 
               <p
@@ -143,9 +149,9 @@ export default function HomePage() {
                 environmental contribution with precision analytics.
               </p>
 
-              <div style={{ display: "flex", gap: "16px", justifyContent: "center", flexWrap: "wrap" }}>
+              <div style={{ display: "flex", gap: "16px", justifyContent: "center", flexWrap: "wrap", marginBottom: "80px" }}>
                 <Button
-                  variant="primary"
+                  variant="green"
                   size="lg"
                   icon={<Camera style={{ width: "22px", height: "22px" }} />}
                   onClick={() => setIsLensActive(true)}
@@ -157,56 +163,58 @@ export default function HomePage() {
                 </Button>
               </div>
 
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-                  gap: "24px",
-                  marginTop: "80px",
-                  maxWidth: "900px",
-                  margin: "80px auto 0",
-                }}
-              >
-                {[
-                  { label: "Items Detected", value: "10K+", icon: Camera },
-                  { label: "CO₂ Prevented", value: "2.4T", icon: TrendingUp },
-                  { label: "Active Users", value: "500+", icon: Globe },
-                ].map((stat, i) => (
-                  <div
-                    key={i}
-                    style={{
-                      padding: "32px 24px",
-                      background: "#ffffff",
-                      border: "1px solid rgba(34, 197, 94, 0.15)",
-                      borderRadius: "16px",
-                      boxShadow: "0 4px 24px rgba(0, 0, 0, 0.04)",
-                      transition: "all 0.3s ease",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.transform = "translateY(-4px)"
-                      e.currentTarget.style.boxShadow = "0 12px 40px rgba(34, 197, 94, 0.15)"
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.transform = "translateY(0)"
-                      e.currentTarget.style.boxShadow = "0 4px 24px rgba(0, 0, 0, 0.04)"
-                    }}
-                  >
-                    <stat.icon style={{ width: "32px", height: "32px", color: "#22c55e", marginBottom: "16px" }} />
-                    <div
-                      style={{
-                        fontSize: "36px",
-                        fontWeight: "700",
-                        color: "#166534",
-                        marginBottom: "8px",
-                        letterSpacing: "-0.02em",
-                      }}
-                    >
-                      {stat.value}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto mb-32">
+              {[
+                {
+                  label: "Items Scanned",
+                  value: "127.4K",
+                  change: "+23%",
+                  icon: Camera,
+                  gradient: "from-blue-500 to-cyan-500"
+                },
+                {
+                  label: "CO₂ Offset",
+                  value: "8.2T",
+                  change: "+18%",
+                  icon: TrendingUp,
+                  gradient: "from-emerald-500 to-teal-500"
+                },
+                {
+                  label: "Global Users",
+                  value: "2,847",
+                  change: "+31%",
+                  icon: Zap,
+                  gradient: "from-violet-500 to-purple-500"
+                },
+              ].map((stat, i) => (
+                <div
+                  key={i}
+                  className="group relative p-8 bg-white border border-gray-200 rounded-3xl shadow-md hover:shadow-xl transition-all duration-500 hover:scale-105 overflow-hidden"
+                >
+                  <div className={`absolute inset-0 bg-gradient-to-br ${stat.gradient} opacity-0 group-hover:opacity-5 transition-opacity duration-500`} />
+
+                  <div className="relative space-y-6">
+                    <div className="flex items-start justify-between">
+                      <div className={`p-3.5 bg-gradient-to-br ${stat.gradient} rounded-2xl shadow-lg`}>
+                        <stat.icon className="w-7 h-7 text-white" />
+                      </div>
+                      <div className="px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
+                        <span className="text-sm font-semibold text-emerald-600">{stat.change}</span>
+                      </div>
                     </div>
-                    <div style={{ fontSize: "14px", color: "#6b7280", fontWeight: "500" }}>{stat.label}</div>
+
+                    <div className="space-y-2">
+                      <div className="text-5xl font-black tracking-tight text-black">
+                        {stat.value}
+                      </div>
+                      <div className="text-sm font-medium text-gray-600 uppercase tracking-wider">
+                        {stat.label}
+                      </div>
+                    </div>
                   </div>
-                ))}
-              </div>
+                </div>
+              ))}
+            </div>
             </section>
           </main>
         </div>
