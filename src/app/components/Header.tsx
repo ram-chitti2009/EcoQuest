@@ -21,10 +21,12 @@ export default function Header({
   showUserAvatar = true,
 }: HeaderProps) {
   const [currentTime, setCurrentTime] = useState<Date>(new Date())
+  const [isClient, setIsClient] = useState(false)
   const router = useRouter()
 
   // Update currentTime every second
   useEffect(() => {
+    setIsClient(true) // Mark as client-side
     const interval = setInterval(() => {
       setCurrentTime(new Date())
     }, 1000)
@@ -73,8 +75,12 @@ export default function Header({
             {showTimeDate && (
               <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm font-medium text-gray-700 bg-gray-100 px-2 sm:px-3 py-1 sm:py-1.5 lg:py-2 rounded-lg border border-gray-200">
                 <Clock className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600 flex-shrink-0" />
-                <span className="hidden md:inline">{currentTime.toLocaleTimeString()}</span>
-                <span className="md:hidden">{currentTime.toLocaleTimeString([], { timeStyle: "short" })}</span>
+                {isClient && (
+                  <>
+                    <span className="hidden md:inline">{currentTime.toLocaleTimeString()}</span>
+                    <span className="md:hidden">{currentTime.toLocaleTimeString([], { timeStyle: "short" })}</span>
+                  </>
+                )}
               </div>
             )}
 
@@ -82,8 +88,12 @@ export default function Header({
             {showTimeDate && (
               <div className="hidden sm:flex items-center gap-1 sm:gap-2 text-xs sm:text-sm font-medium text-gray-700 bg-gray-100 px-2 sm:px-3 py-1 sm:py-1.5 lg:py-2 rounded-lg border border-gray-200">
                 <Calendar className="w-3 h-3 sm:w-4 sm:h-4 text-green-600 flex-shrink-0" />
-                <span className="hidden lg:inline">{currentTime.toLocaleDateString()}</span>
-                <span className="lg:hidden">{currentTime.toLocaleDateString([], { dateStyle: "short" })}</span>
+                {isClient && (
+                  <>
+                    <span className="hidden lg:inline">{currentTime.toLocaleDateString()}</span>
+                    <span className="lg:hidden">{currentTime.toLocaleDateString([], { dateStyle: "short" })}</span>
+                  </>
+                )}
               </div>
             )}
 

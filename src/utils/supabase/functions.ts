@@ -1,3 +1,64 @@
+// Types for EcoSim dashboard
+export type RegionMetrics = {
+  avgTrash: number
+  avgCleanliness: number
+  avgGreenery: number
+  avgCarbon: number
+  totalCells: number
+}
+export type ChangeMetrics = {
+  trash: number
+  cleanliness: number
+  greenery: number
+  carbon: number
+}
+export type HistoricalComparison = {
+  current: RegionMetrics
+  historical: RegionMetrics
+  change: ChangeMetrics
+}
+export type DashboardData = {
+  regionMetrics: RegionMetrics
+  historicalComparison: HistoricalComparison
+  healthScore: number
+}
+
+// Fetch EcoSim dashboard data from Supabase (placeholder, replace with real query)
+export async function fetchEcoSimDashboardData(): Promise<DashboardData> {
+  // TODO: Replace with real Supabase query
+  return {
+    regionMetrics: {
+      avgTrash: 12,
+      avgCleanliness: 85,
+      avgGreenery: 60,
+      avgCarbon: 30,
+      totalCells: 100
+    },
+    historicalComparison: {
+      current: {
+        avgTrash: 12,
+        avgCleanliness: 85,
+        avgGreenery: 60,
+        avgCarbon: 30,
+        totalCells: 100
+      },
+      historical: {
+        avgTrash: 15,
+        avgCleanliness: 80,
+        avgGreenery: 55,
+        avgCarbon: 35,
+        totalCells: 100
+      },
+      change: {
+        trash: -3,
+        cleanliness: 5,
+        greenery: 5,
+        carbon: -5
+      }
+    },
+    healthScore: 92
+  }
+}
 //functions to query supabase database CRUD OPS
 
 import { createClient } from "./client";
@@ -2724,10 +2785,10 @@ export async function getGridCellsInBounds(bounds: MapBound): Promise<GridCell[]
     const { data, error } = await supabase
       .from('grid_cells')
       .select('*')
-      .lte('lat_min', bounds.latMax)
-      .gte('lat_max', bounds.latMin)
-      .lte('lng_min', bounds.lngMax)
-      .gte('lng_max', bounds.lngMin)
+      .gte('lat_min', bounds.latMin)  // Cell's south edge >= map's south edge
+      .lte('lat_max', bounds.latMax)  // Cell's north edge <= map's north edge
+      .gte('lng_min', bounds.lngMin)  // Cell's west edge >= map's west edge
+      .lte('lng_max', bounds.lngMax)  // Cell's east edge <= map's east edge
       .order('lat_min', { ascending: true });
 
     if (error) throw error;
@@ -2751,8 +2812,8 @@ export async function getGridCellAtCoordinate(lat:number, lng:number):Promise<Gr
     .select('*')
     .lte('lat_min', lat)
     .gte('lat_max', lat)
-    .lte('lng_min', lng)
-    .gte('lng_max', lng)
+    .gte('lng_min', lng)
+    .lte('lng_max', lng)
     .limit(1)
     .single();
 
@@ -3160,10 +3221,10 @@ async function updateGridCellForCleanupEvent(lat: number, lng: number): Promise<
     const { data: cell, error } = await supabase
       .from('chester_county_grid_cells')
       .select('id, trash_density, cleanliness_score')
-      .gte('lat_min', lat)
-      .lte('lat_max', lat)
-      .gte('lng_min', lng)
-      .lte('lng_max', lng)
+      .lte('lat_min', lat)
+      .gte('lat_max', lat)
+      .lte('lng_min', lng)
+      .gte('lng_max', lng)
       .limit(1)
       .single();
 
@@ -3178,10 +3239,10 @@ async function updateGridCellForCleanupEvent(lat: number, lng: number): Promise<
     const { data: cell, error } = await supabase
       .from('grid_cells')
       .select('id, trash_density, cleanliness_score')
-      .gte('lat_min', lat)
-      .lte('lat_max', lat)
-      .gte('lng_min', lng)
-      .lte('lng_max', lng)
+      .lte('lat_min', lat)
+      .gte('lat_max', lat)
+      .lte('lng_min', lng)
+      .gte('lng_max', lng)
       .limit(1)
       .single();
 
