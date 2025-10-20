@@ -1,5 +1,7 @@
 {
+  "/litterLens/page": "app/litterLens/page.js",
+  "/community-cleanup/page": "app/community-cleanup/page.js",
+  "/litterAnalysis/page": "app/litterAnalysis/page.js",
+  "/dashboard/page": "app/dashboard/page.js",
   "/EcoSim/page": "app/EcoSim/page.js"
-  "/_not-found/page": "app/_not-found/page.js",
-  "/litterLens/page": "app/litterLens/page.js"
 }

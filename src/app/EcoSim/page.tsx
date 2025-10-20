@@ -1,22 +1,24 @@
 "use client"
 
-import React, { useState, useCallback, useEffect, useMemo } from "react"
-import { Calendar, MapPin, BarChart3 } from "lucide-react"
+import { BarChart3, Calendar, MapPin } from "lucide-react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 
 import Header from "../components/Header"
 import SideBar from "../components/Sidebar"
-import StableEcoSimMap from "./components/StableEcoSimMap"
-import PerformanceMonitor from "./components/PerformanceMonitor"
 import AnalyticsDashboard from "./components/AnalyticsDashboard"
-import SimpleTimeSeriesChart from "./components/SimpleTimeSeriesChart"
-import ExportPanel from "./components/ExportPanel"
-import SimpleDataVisualization from "./components/SimpleDataVisualization"
+import DifferenceMapLegend from "./components/DifferenceMapLegend"
 import ErrorBoundary from "./components/ErrorBoundary"
+import ExportPanel from "./components/ExportPanel"
+import PerformanceMonitor from "./components/PerformanceMonitor"
+import SimpleDataVisualization from "./components/SimpleDataVisualization"
+import SimpleTimeSeriesChart from "./components/SimpleTimeSeriesChart"
+import SplitScreenMap from "./components/SplitScreenMap"
+import StableEcoSimMap from "./components/StableEcoSimMap"
 // import { MapLoadingState, DataLoadingState, SimulationLoadingState } from "./components/LoadingStates"
-import { useRegionMetricsCache, useHistoricalDataCache } from "./hooks/useDataCache"
+import { useHistoricalDataCache, useRegionMetricsCache } from "./hooks/useDataCache"
 import { usePerformanceOptimization } from "./hooks/usePerformanceOptimization"
 
-import { getRegionMetrics, compareChesterCountyMetrics, debugHistoricalData, getChesterCountyHistoricalData } from "./lib/functions"
+import { compareChesterCountyMetrics, debugHistoricalData, getChesterCountyHistoricalData, getRegionMetrics } from "./lib/functions"
 
 type ViewMode = "live" | "compare"
 type TimePeriod = "week" | "month" | "180days" | "year"
@@ -320,12 +322,16 @@ function EcoSimPageContent() {
 
   return (
     <ErrorBoundary>
-      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-sky-50 to-teal-50">
-        <Header />
-        <div className="flex">
-          <SideBar />
-          
-          <main className="flex-1 p-6">
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-sky-50 to-teal-50 flex">
+        <SideBar />
+        
+        <main className="flex-1 flex flex-col">
+          <Header 
+            title="EcoSim" 
+            subtitle="Environmental Impact Simulation & Analytics"
+            centerMessage="Chester County Environmental Monitoring"
+          />
+          <div className="flex-1 p-6">
             <div className="max-w-7xl mx-auto">
             {/* Header */}
             <div className="mb-8">
@@ -372,35 +378,237 @@ function EcoSimPageContent() {
                   <>
                     <div className="flex items-center gap-2">
                       <Calendar className="w-4 h-4 text-gray-600" />
-                      <span className="text-sm font-medium text-gray-700">Period:</span>
+                      <span className="text-sm font-medium text-gray-700">Compare To:</span>
                     </div>
-                    <select
-                      value={timePeriod}
-                      onChange={(e) => setTimePeriod(e.target.value as TimePeriod)}
-                      className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="week">Last Week</option>
-                      <option value="month">Last Month</option>
-                      <option value="180days">Last 6 Months</option>
-                      <option value="year">Last Year</option>
-                    </select>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setTimePeriod("week")}
+                        className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                          timePeriod === "week"
+                            ? "bg-emerald-600 text-white shadow-md"
+                            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                        }`}
+                      >
+                        1 Week Ago
+                      </button>
+                      <button
+                        onClick={() => setTimePeriod("month")}
+                        className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                          timePeriod === "month"
+                            ? "bg-emerald-600 text-white shadow-md"
+                            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                        }`}
+                      >
+                        1 Month Ago
+                      </button>
+                      <button
+                        onClick={() => setTimePeriod("180days")}
+                        className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                          timePeriod === "180days"
+                            ? "bg-emerald-600 text-white shadow-md"
+                            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                        }`}
+                      >
+                        6 Months Ago
+                      </button>
+                      <button
+                        onClick={() => setTimePeriod("year")}
+                        className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                          timePeriod === "year"
+                            ? "bg-emerald-600 text-white shadow-md"
+                            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                        }`}
+                      >
+                        1 Year Ago
+                      </button>
+                    </div>
                   </>
                 )}
               </div>
             </div>
+
+            {/* Historical Comparison Alert */}
+            {viewMode === "compare" && isComparingData && (
+              <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg">
+                <div className="flex items-center gap-2">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                  <p className="text-sm font-medium text-blue-800">
+                    Loading historical data from {timePeriod === "week" ? "1 week" : timePeriod === "month" ? "1 month" : timePeriod === "180days" ? "6 months" : "1 year"} ago...
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {viewMode === "compare" && !isComparingData && !historicalComparison && (
+              <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded-r-lg">
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-5 h-5 text-yellow-600" />
+                  <div>
+                    <p className="text-sm font-medium text-yellow-800">No Historical Data Available</p>
+                    <p className="text-xs text-yellow-700 mt-1">
+                      Historical snapshots from {timePeriod === "week" ? "1 week" : timePeriod === "month" ? "1 month" : timePeriod === "180days" ? "6 months" : "1 year"} ago are not yet available. Data will accumulate over time.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {viewMode === "compare" && historicalComparison && (
+              <div className="bg-gradient-to-r from-emerald-50 to-sky-50 border border-emerald-200 rounded-xl p-6 shadow-sm">
+                <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                  <BarChart3 className="w-5 h-5 text-emerald-600" />
+                  Comparison: Today vs {timePeriod === "week" ? "1 Week" : timePeriod === "month" ? "1 Month" : timePeriod === "180days" ? "6 Months" : "1 Year"} Ago
+                </h3>
+                
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {/* Trash Density */}
+                  <div className="bg-white rounded-lg p-4 shadow-sm">
+                    <p className="text-xs text-gray-600 mb-1">🗑️ Trash Density</p>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-2xl font-bold text-gray-900">
+                        {historicalComparison.current.avgTrash.toFixed(1)}
+                      </span>
+                      <span className={`text-sm font-semibold flex items-center gap-1 ${
+                        historicalComparison.change.trash < 0 ? "text-green-600" : "text-red-600"
+                      }`}>
+                        {historicalComparison.change.trash < 0 ? "↓" : "↑"}
+                        {Math.abs(historicalComparison.change.trash).toFixed(1)}%
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Was: {historicalComparison.historical.avgTrash.toFixed(1)}
+                    </p>
+                  </div>
+
+                  {/* Greenery Score */}
+                  <div className="bg-white rounded-lg p-4 shadow-sm">
+                    <p className="text-xs text-gray-600 mb-1">🌳 Greenery</p>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-2xl font-bold text-gray-900">
+                        {historicalComparison.current.avgGreenery.toFixed(0)}%
+                      </span>
+                      <span className={`text-sm font-semibold flex items-center gap-1 ${
+                        historicalComparison.change.greenery > 0 ? "text-green-600" : "text-red-600"
+                      }`}>
+                        {historicalComparison.change.greenery > 0 ? "↑" : "↓"}
+                        {Math.abs(historicalComparison.change.greenery).toFixed(1)}%
+                        {/* DEBUG: Manual calculation verification */}
+                        {(() => {
+                          const current = historicalComparison.current.avgGreenery;
+                          const historical = historicalComparison.historical.avgGreenery;
+                          const manualCalc = ((current - historical) / historical) * 100;
+                          console.log(`[UI DEBUG] Greenery - Current: ${current}, Historical: ${historical}, Stored Change: ${historicalComparison.change.greenery}, Manual Calc: ${manualCalc}`);
+                          return null;
+                        })()}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Was: {historicalComparison.historical.avgGreenery.toFixed(0)}%
+                    </p>
+                  </div>
+
+                  {/* Cleanliness Score */}
+                  <div className="bg-white rounded-lg p-4 shadow-sm">
+                    <p className="text-xs text-gray-600 mb-1">✨ Cleanliness</p>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-2xl font-bold text-gray-900">
+                        {historicalComparison.current.avgCleanliness.toFixed(0)}%
+                      </span>
+                      <span className={`text-sm font-semibold flex items-center gap-1 ${
+                        historicalComparison.change.cleanliness > 0 ? "text-green-600" : "text-red-600"
+                      }`}>
+                        {historicalComparison.change.cleanliness > 0 ? "↑" : "↓"}
+                        {Math.abs(historicalComparison.change.cleanliness).toFixed(1)}%
+                        {/* DEBUG: Manual calculation verification */}
+                        {(() => {
+                          const current = historicalComparison.current.avgCleanliness;
+                          const historical = historicalComparison.historical.avgCleanliness;
+                          const manualCalc = ((current - historical) / historical) * 100;
+                          console.log(`[UI DEBUG] Cleanliness - Current: ${current}, Historical: ${historical}, Stored Change: ${historicalComparison.change.cleanliness}, Manual Calc: ${manualCalc}`);
+                          return null;
+                        })()}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Was: {historicalComparison.historical.avgCleanliness.toFixed(0)}%
+                    </p>
+                  </div>
+
+                  {/* Carbon Emissions */}
+                  <div className="bg-white rounded-lg p-4 shadow-sm">
+                    <p className="text-xs text-gray-600 mb-1">💨 Carbon</p>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-2xl font-bold text-gray-900">
+                        {historicalComparison.current.avgCarbon.toFixed(1)}t
+                      </span>
+                      <span className={`text-sm font-semibold flex items-center gap-1 ${
+                        historicalComparison.change.carbon < 0 ? "text-green-600" : "text-red-600"
+                      }`}>
+                        {historicalComparison.change.carbon < 0 ? "↓" : "↑"}
+                        {Math.abs(historicalComparison.change.carbon).toFixed(1)}%
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Was: {historicalComparison.historical.avgCarbon.toFixed(1)}t
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-4 text-center">
+                  <p className="text-xs text-gray-600">
+                    Comparing {historicalComparison.current.totalCells} current cells with {historicalComparison.historical.totalCells} historical cells
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* Main Content Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 overflow-hidden">
               {/* Left Column - Map */}
               <div className="lg:col-span-2">
                 <div className="h-[600px] max-h-[800px] rounded-xl overflow-hidden shadow-lg relative">
-                  <StableEcoSimMap
-                    center={[-75.514, 40.036]}
-                    zoom={12}
-                    onBoundsChange={handleBoundsChange}
-                    showLocationSearch={true}
-                  />
+                  {viewMode === "compare" ? (
+                    <SplitScreenMap
+                      center={[-75.514, 40.036]}
+                      zoom={11}
+                      daysAgo={
+                        timePeriod === "week" ? 7 :
+                        timePeriod === "month" ? 30 :
+                        timePeriod === "180days" ? 180 :
+                        365
+                      }
+                      timePeriodLabel={
+                        timePeriod === "week" ? "1 Week" :
+                        timePeriod === "month" ? "1 Month" :
+                        timePeriod === "180days" ? "6 Months" :
+                        "1 Year"
+                      }
+                      onBoundsChange={handleBoundsChange}
+                    />
+                  ) : (
+                    <StableEcoSimMap
+                      center={[-75.514, 40.036]}
+                      zoom={12}
+                      onBoundsChange={handleBoundsChange}
+                      showLocationSearch={true}
+                    />
+                  )}
                 </div>
+                
+                {/* Split-screen comparison legend - only show in compare mode */}
+                {viewMode === "compare" && historicalComparison && (
+                  <div className="mt-6">
+                    <DifferenceMapLegend
+                      timePeriodLabel={
+                        timePeriod === "week" ? "1 Week" :
+                        timePeriod === "month" ? "1 Month" :
+                        timePeriod === "180days" ? "6 Months" :
+                        "1 Year"
+                      }
+                      comparisonData={historicalComparison}
+                    />
+                  </div>
+                )}
                 
                 {/* Time Series Chart */}
                 <div className="mt-6">
@@ -448,8 +656,8 @@ function EcoSimPageContent() {
             </div>
 
           </div>
+          </div>
         </main>
-        </div>
       </div>
       
       {/* Performance Monitor - Development Only */}

@@ -4,7 +4,7 @@ import { getGridCellsInBounds, gridCellsToGeoJSON, subscribeToGridCellUpdates } 
 import { useCallback, useEffect, useRef, useState } from "react"
 import { getChesterCountryGridCellsInBounds, isInChesterCounty } from "../lib/functions"
 import { createRoot } from "react-dom/client"
-import MapPopup from "./MapPopup"
+import MapPopup from "../components/MapPopup"
 import type { Map as MapboxMap, MapboxGeoJSONFeature, LngLatLike, MapMouseEvent } from "mapbox-gl"
 
 // Mapbox GL module loader
