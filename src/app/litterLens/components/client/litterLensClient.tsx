@@ -4,14 +4,23 @@ import Header from "@/app/components/Header"
 import { createClient } from "@/utils/supabase/client"
 import { getUserLitterSummaries, getUserProfileByUserId, UserLitterSummary } from "@/utils/supabase/functions"
 import { BarChart3, Camera, Leaf, MapPin, Target, Upload, Users } from "lucide-react"
+import dynamic from "next/dynamic"
 import { useRouter } from "next/navigation"
 import type React from "react"
 import { useEffect, useRef, useState } from "react"
 import { Button } from "../ui/Button"
 import { Card, CardContent } from "../ui/Card"
 
+// Dynamically import EcoScan to avoid circular dependencies and reduce initial bundle
+const EcoScanClient = dynamic(() => import("@/app/EcoScan/components/client/ecoScanClient"), {
+  ssr: false,
+})
+
 export default function LitterLensHome() {
   const supabase = createClient();
+
+  // Toggle state for switching between modes
+  const [isEcoScanMode, setIsEcoScanMode] = useState(false)
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
@@ -182,13 +191,46 @@ export default function LitterLensHome() {
     }
   }
 
+  // If EcoScan mode is active, render EcoScan component instead
+  if (isEcoScanMode) {
+    return <EcoScanClient onToggleBack={() => setIsEcoScanMode(false)} />
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50">
       {/* Header */}
       <Header title="Litter Lens" centerMessage="🌍 Help clean our environment 🧹" />
+
       <main className="max-w-7xl mx-auto px-6 py-8">
         {/* Title Section */}
         <div className="mb-8">
+          {/* Toggle above user's name */}
+          <div className="mb-3">
+            <div className="inline-flex rounded-lg shadow-sm" role="group">
+              <button
+                type="button"
+                onClick={() => setIsEcoScanMode(false)}
+                className={`px-4 py-2 text-sm font-medium border border-gray-300 focus:z-10 focus:ring-2 focus:ring-green-500 focus:outline-none ${
+                  !isEcoScanMode
+                    ? 'bg-green-600 text-white border-green-600' 
+                    : 'bg-white text-gray-700 hover:bg-gray-50'
+                } rounded-l-lg`}
+              >
+                Litter Lens
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsEcoScanMode(true)}
+                className={`px-4 py-2 text-sm font-medium border border-gray-300 focus:z-10 focus:ring-2 focus:ring-green-500 focus:outline-none ${
+                  isEcoScanMode
+                    ? 'bg-green-600 text-white border-green-600' 
+                    : 'bg-white text-gray-700 hover:bg-gray-50'
+                } rounded-r-lg border-l-0`}
+              >
+                EcoScan
+              </button>
+            </div>
+          </div>
           <h2 className="text-3xl font-bold text-gray-900 mb-2">
             {userProfile.name}&apos;s <span className="text-green-600">Litter Lens</span>
           </h2>
