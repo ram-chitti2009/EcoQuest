@@ -56,10 +56,10 @@ export async function getRegionMetrics(bounds: RegionBounds): Promise<RegionMetr
       const { data: chesterData, error: chesterError } = await supabase
         .from('chester_county_grid_cells')
         .select('trash_density, cleanliness_score, greenery_score, carbon_emissions')
-        .lte('lat_min', bounds.latMax)
-        .gte('lat_max', bounds.latMin)
-        .lte('lng_min', bounds.lngMax)
-        .gte('lng_max', bounds.lngMin);
+        .gte('lat_min', bounds.latMin)
+        .lte('lat_max', bounds.latMax)
+        .gte('lng_min', bounds.lngMin)
+        .lte('lng_max', bounds.lngMax);
 
       if (chesterError) {
         console.error('Error fetching Chester County cells:', chesterError);
@@ -75,10 +75,10 @@ export async function getRegionMetrics(bounds: RegionBounds): Promise<RegionMetr
     const { data: globalData, error: globalError } = await supabase
       .from('grid_cells')
       .select('trash_density, cleanliness_score, greenery_score, carbon_emissions, lat_min, lat_max, lng_min, lng_max')
-      .lte('lat_min', bounds.latMax)
-      .gte('lat_max', bounds.latMin)
-      .lte('lng_min', bounds.lngMax)
-      .gte('lng_max', bounds.lngMin);
+      .gte('lat_min', bounds.latMin)
+      .lte('lat_max', bounds.latMax)
+      .gte('lng_min', bounds.lngMin)
+      .lte('lng_max', bounds.lngMax);
 
     if (globalError) {
       console.error('Error fetching global cells:', globalError);
@@ -167,10 +167,10 @@ export async function getChesterCountryGridCellsInBounds(
   const {data, error} = await supabase
   .from('chester_county_grid_cells')
   .select('*')
-  .lte('lat_min', bounds.north)
-  .gte('lat_max', bounds.south)
-  .lte('lng_min', bounds.east)
-  .gte('lng_max', bounds.west)
+  .gte('lat_min', bounds.south)  // Cell's south edge >= viewport's south edge
+  .lte('lat_max', bounds.north)  // Cell's north edge <= viewport's north edge
+  .gte('lng_min', bounds.west)   // Cell's west edge >= viewport's west edge
+  .lte('lng_max', bounds.east)   // Cell's east edge <= viewport's east edge
 
   if(error){
     console.error("Error fetching chester county grid cells in bounds")
@@ -287,10 +287,10 @@ export async function getGridCellForLocation(lat: number, lng: number) {
     const { data, error } = await supabase
       .from('chester_county_grid_cells')
       .select('*')
-      .gte('lat_min', lat)
-      .lte('lat_max', lat)
-      .gte('lng_min', lng)
-      .lte('lng_max', lng)
+      .lte('lat_min', lat)
+      .gte('lat_max', lat)
+      .lte('lng_min', lng)
+      .gte('lng_max', lng)
       .limit(1)
       .single();
 
@@ -300,13 +300,367 @@ export async function getGridCellForLocation(lat: number, lng: number) {
     const { data, error } = await supabase
       .from('grid_cells')
       .select('*')
-      .gte('lat_min', lat)
-      .lte('lat_max', lat)
-      .gte('lng_min', lng)
-      .lte('lng_max', lng)
+      .lte('lat_min', lat)
+      .gte('lat_max', lat)
+      .lte('lng_min', lng)
+      .gte('lng_max', lng)
       .limit(1)
       .single();
 
     return { data, error, gridType: 'global' };
+  }
+}
+
+//Chester county historical snapshots crud
+
+export async function createChesterCountySnapshot():Promise<{success:boolean,error:any}> {
+
+  try{
+    const supabase = createClient();
+    const { error } = await supabase.rpc('snapshot_chester_county_grid_cells');
+    return { success: !error, error };
+  } catch (error) {
+    console.error("Error creating Chester County snapshot:", error);
+    return { success: false, error };
+  }
+}
+
+/**
+ * Get chester county grid ells from x days ago
+ * used for histroical comparisons(30,60,90,180,365)
+ */
+
+export async function getChesterCountyHistoricalData(
+  daysAgo: number,
+  bounds?: { north: number; south: number; east: number; west: number }
+): Promise<{ data: any[]; error: any }> {
+  try {
+    const supabase = createClient();
+    const targetDate = new Date();
+    targetDate.setDate(targetDate.getDate() - daysAgo);
+    
+    console.log('[getChesterCountyHistoricalData] Looking for snapshots around', targetDate.toISOString());
+    
+    // First, find the closest snapshot date
+    const { data: closestSnapshot, error: snapshotError } = await supabase
+      .from('chester_county_grid_cells_history')
+      .select('recorded_at')
+      .lte('recorded_at', targetDate.toISOString())
+      .order('recorded_at', { ascending: false })
+      .limit(1)
+  .single();
+    
+    if (snapshotError || !closestSnapshot) {
+      console.log('[getChesterCountyHistoricalData] No snapshots found before', targetDate.toISOString());
+      return { data: [], error: 'No historical snapshots available' };
+    }
+    
+    console.log('[getChesterCountyHistoricalData] Found closest snapshot at:', closestSnapshot.recorded_at);
+    
+    // Now get all cells from that exact snapshot date
+    let query = supabase
+      .from('chester_county_grid_cells_history')
+      .select('*')
+      .eq('recorded_at', closestSnapshot.recorded_at);
+    
+    if (bounds) {
+      query = query
+        .gte('lat_min', bounds.south)
+        .lte('lat_max', bounds.north)
+        .gte('lng_min', bounds.west)
+        .lte('lng_max', bounds.east);
+    }
+    
+    const { data, error } = await query;
+    
+    if (error) throw error;
+    console.log('[getChesterCountyHistoricalData] Retrieved', data?.length || 0, 'historical cells');
+    return { data: data || [], error: null };
+  } catch (error) {
+    console.error('[getChesterCountyHistoricalData] Error:', error);
+    return { data: [], error };
+  }
+}
+
+
+/**
+ * Compare current chester county metrics with historical data
+ * returns current metrics historical metrics and percentage changes
+ */
+
+export async function compareChesterCountyMetrics(
+  daysAgo: number,
+  bounds?: { north: number; south: number; east: number; west: number }
+): Promise<{
+  data: {
+    current: {
+      avgTrash: number;
+      avgCleanliness: number;
+      avgGreenery: number;
+      avgCarbon: number;
+      totalCells: number;
+    };
+    historical: {
+      avgTrash: number;
+      avgCleanliness: number;
+      avgGreenery: number;
+      avgCarbon: number;
+      totalCells: number;
+    };
+    change: {
+      trash: number;
+      cleanliness: number;
+      greenery: number;
+      carbon: number;
+    };
+  } | null;
+  error: any;
+}> {
+  try {
+    const supabase = createClient();
+    
+    console.log('[compareChesterCountyMetrics] Comparing data from', daysAgo, 'days ago');
+    
+    // Get current Chester County data
+    let currentQuery = supabase
+      .from('chester_county_grid_cells')
+      .select('trash_density, cleanliness_score, greenery_score, carbon_emissions');
+    
+    if (bounds) {
+      currentQuery = currentQuery
+        .gte('lat_min', bounds.south)
+        .lte('lat_max', bounds.north)
+        .gte('lng_min', bounds.west)
+        .lte('lng_max', bounds.east);
+    }
+    
+    const { data: currentCells, error: currentError } = await currentQuery;
+    
+    if (currentError) throw currentError;
+    
+    console.log('[compareChesterCountyMetrics] Found', currentCells?.length || 0, 'current cells');
+    
+    // Get historical data
+    const { data: historicalCells, error: historicalError } = await getChesterCountyHistoricalData(daysAgo, bounds);
+    
+    if (historicalError) throw historicalError;
+    
+    console.log('[compareChesterCountyMetrics] Found', historicalCells?.length || 0, 'historical cells');
+    
+    if (!currentCells || currentCells.length === 0 || !historicalCells || historicalCells.length === 0) {
+      console.log('[compareChesterCountyMetrics] Insufficient data - current:', currentCells?.length, 'historical:', historicalCells?.length);
+      return { data: null, error: 'Insufficient data for comparison' };
+    }
+    
+    // Calculate averages for current data
+    const calcAvg = (cells: any[], field: string) => 
+      cells.reduce((sum, cell) => sum + (cell[field] || 0), 0) / cells.length;
+    
+    const current = {
+      avgTrash: calcAvg(currentCells, 'trash_density'),
+      avgCleanliness: calcAvg(currentCells, 'cleanliness_score'),
+      avgGreenery: calcAvg(currentCells, 'greenery_score'),
+      avgCarbon: calcAvg(currentCells, 'carbon_emissions'),
+      totalCells: currentCells.length
+    };
+    
+    const historical = {
+      avgTrash: calcAvg(historicalCells, 'trash_density'),
+      avgCleanliness: calcAvg(historicalCells, 'cleanliness_score'),
+      avgGreenery: calcAvg(historicalCells, 'greenery_score'),
+      avgCarbon: calcAvg(historicalCells, 'carbon_emissions'),
+      totalCells: historicalCells.length
+    };
+    
+    // Calculate percentage changes (avoid division by zero)
+    const change = {
+      trash: historical.avgTrash === 0 ? 0 : ((current.avgTrash - historical.avgTrash) / historical.avgTrash) * 100,
+      cleanliness: historical.avgCleanliness === 0 ? 0 : ((current.avgCleanliness - historical.avgCleanliness) / historical.avgCleanliness) * 100,
+      greenery: historical.avgGreenery === 0 ? 0 : ((current.avgGreenery - historical.avgGreenery) / historical.avgGreenery) * 100,
+      carbon: historical.avgCarbon === 0 ? 0 : ((current.avgCarbon - historical.avgCarbon) / historical.avgCarbon) * 100
+    };
+    
+    console.log('[compareChesterCountyMetrics] Comparison successful - Changes:', change);
+    
+    return { data: { current, historical, change }, error: null };
+  } catch (error) {
+    console.error('[compareChesterCountyMetrics] Error:', error);
+    return { data: null, error };
+  }
+}
+
+
+/**
+ * Get all available historical snapshots for chester county
+ * returns unique dates when snapshots were taken
+ * useful for showing available comparison dates in UI
+ */
+
+/**
+ * Debug function to check historical data availability
+ */
+export async function debugHistoricalData() {
+  try {
+    const supabase = createClient();
+    
+    // Count total snapshots
+    const { count: totalCount } = await supabase
+      .from('chester_county_grid_cells_history')
+      .select('*', { count: 'exact', head: true });
+    
+    // Get unique snapshot dates
+    const { data: snapshots } = await supabase
+      .from('chester_county_grid_cells_history')
+      .select('recorded_at')
+      .order('recorded_at', { ascending: false });
+    
+    const uniqueDates = [...new Set(snapshots?.map(s => s.recorded_at) || [])];
+    
+    console.log('[debugHistoricalData] Total snapshots:', totalCount);
+    console.log('[debugHistoricalData] Unique dates:', uniqueDates.length);
+    console.log('[debugHistoricalData] Most recent snapshot:', uniqueDates[0]);
+    console.log('[debugHistoricalData] All unique dates:', uniqueDates);
+    
+    return { totalCount, uniqueDates };
+  } catch (error) {
+    console.error('[debugHistoricalData] Error:', error);
+    return null;
+  }
+}
+
+export async function getAvailableChesterCountySnapshots():Promise<{ data: Date[]; error: any }> {
+try{
+  const supabase = createClient();
+  const { data, error } = await supabase
+  .from('chester_county_grid_cells_history')
+  .select('recorded_at')
+  .order('recorded_at', { ascending: false });
+
+  if(error){
+    console.error("Error fetching available chester county snapshots", error);
+    throw error;
+  }
+
+  //Get Unique dates 
+    const uniqueDates = [...new Set(data?.map(item => 
+      new Date(item.recorded_at).toISOString().split('T')[0]
+    ))].map(dateStr => new Date(dateStr));
+
+    return{data:uniqueDates, error:null};
+} catch (error) {
+  console.error("Error in getAvailableChesterCountySnapshots", error);
+  return { data: [], error };
+
+  }
+}
+
+/**
+ * Get Chester County historical data for a specific date range
+ * Useful for custom date comparisons
+ */
+export async function getChesterCountyHistoricalDataByDateRange(
+  startDate: string,
+  endDate: string,
+  bounds?: { north: number; south: number; east: number; west: number }
+): Promise<{ data: any[]; error: any }> {
+  try {
+    const supabase = createClient();
+    let query = supabase
+      .from('chester_county_grid_cells_history')
+      .select('*')
+      .gte('recorded_at', startDate)
+      .lte('recorded_at', endDate)
+      .order('recorded_at', { ascending: false });
+    
+    if (bounds) {
+      query = query
+        .gte('lat_min', bounds.south)
+        .lte('lat_max', bounds.north)
+        .gte('lng_min', bounds.west)
+        .lte('lng_max', bounds.east);
+    }
+    
+    const { data, error } = await query;
+    
+    if (error) throw error;
+    return { data: data || [], error: null };
+  } catch (error) {
+    console.error('Error fetching Chester County historical data by date range:', error);
+    return { data: [], error };
+  }
+}
+
+/**
+ * Get historical snapshot count for a specific grid cell
+ * useful for tracking how many times a cell has been snapshotted
+ */
+
+export async function getChesterCountyCellSnapshotCount(
+  gridCellId: string
+): Promise<{ count: number; error: any }> {
+  try {
+    const supabase = createClient();
+    const { count, error } = await supabase
+      .from('chester_county_grid_cells_history')
+      .select('*', { count: 'exact', head: true })
+      .eq('grid_cell_id', gridCellId);
+    
+    if (error) throw error;
+    return { count: count || 0, error: null };
+  } catch (error) {
+    console.error('Error fetching cell snapshot count:', error);
+    return { count: 0, error };
+  }
+}
+
+
+/**
+ * Get trend data for a specific grid cell over time
+ * returns all historical records for the cell ordered by date
+ * useful for showing time series trends in UI
+ */
+
+export async function getChesterCountyCellTrend(
+  gridCellId: string
+): Promise<{ data: any[]; error: any }> {
+  try {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('chester_county_grid_cells_history')
+      .select('*')
+      .eq('grid_cell_id', gridCellId)
+      .order('recorded_at', { ascending: true });
+
+    if (error) throw error;
+    return { data: data || [], error: null };
+  } catch (error) {
+    console.error('Error fetching cell trend data:', error);
+    return { data: [], error };
+  }
+}
+
+/**
+ * Delete old chester county snapshots
+ * keep only snapshots from the last X days
+ */
+
+export async function deleteOldChesterCountySnapshots(
+  daysToKeep:number=365
+):Promise<{success:boolean,error:any}> {
+
+  try{
+    const cutOffDate = new Date();
+    cutOffDate.setDate(cutOffDate.getDate() - daysToKeep);
+    const supabase = createClient();
+    const { error } = await supabase
+    .from('chester_county_grid_cells_history')
+    .delete()
+    .lt('recorded_at', cutOffDate.toISOString());
+
+    if(error) throw error;
+    return { success: true, error: null };
+  } catch (error) {
+    console.error('Error deleting old Chester County snapshots:', error);
+    return { success: false, error };
   }
 }

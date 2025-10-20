@@ -1,7 +1,9 @@
 "use client"
 import { getGridCellsInBounds, gridCellsToGeoJSON, subscribeToGridCellUpdates } from "@/utils/supabase/functions"
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState, useMemo } from "react"
 import { getChesterCountryGridCellsInBounds, isInChesterCounty } from "../lib/functions"
+import * as turf from '@turf/turf'
+import { points } from "@turf/turf"
 
 let mapboxgl: any = null
 if (typeof window !== "undefined") {
@@ -41,6 +43,8 @@ export default function EcoSimMap({ center = [-75.514, 40.036], zoom = 12, onBou
   const [mapboxLoaded, setMapboxLoaded] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [isSearching, setIsSearching] = useState(false)
+  const [gridCells, setGridCells] = useState<any[]>([])
+  const debounceTimer = useRef<NodeJS.Timeout | null>(null)
 
   // Location search function using Mapbox Geocoding API
   const searchLocation = async (query: string) => {
@@ -138,6 +142,73 @@ export default function EcoSimMap({ center = [-75.514, 40.036], zoom = 12, onBou
     }
   }
 
+  // Debounce function to limit the rate of function execution
+  const debounce = (func: Function, delay: number) => {
+    return (...args: any[]) => {
+      if (debounceTimer.current) {
+        clearTimeout(debounceTimer.current);
+      }
+      debounceTimer.current = setTimeout(() => {
+        func(...args);
+      }, delay);
+    };
+  };
+
+  // Function to stabilize grid cells using Turf.js
+  const stabilizeGridCells = (cells: any[]) => {
+    if (!cells.length) return [];
+    
+    // Create a point for each cell's center
+    const points = cells.map(cell => {
+      const centerLng = (cell.lng_min + cell.lng_max) / 2;
+      const centerLat = (cell.lat_min + cell.lat_max) / 2;
+      return turf.point([centerLng, centerLat], { 
+        id: cell.id,
+        ...cell
+      });
+    });
+
+    // Create a collection of points
+    const pointsCollection = turf.featureCollection(points);
+    
+    // Perform point clustering to identify stable positions
+    const clustered = turf.clustersKmeans(pointsCollection, {
+      numberOfClusters: Math.ceil(points.length / 2), // Adjust clustering density as needed
+      mutate: true
+    });
+
+    // Get the stabilized positions
+    return cells.map(cell => {
+      const point = points.find(p => p.properties.id === cell.id);
+      if (!point) return cell;
+      
+      // Get the cluster this point belongs to
+      const clusterId = point.properties.cluster;
+      const clusterPoints = points.filter(p => p.properties.cluster === clusterId);
+      
+      // Calculate centroid of the cluster
+      if (clusterPoints.length > 1) {
+        const cluster = turf.featureCollection(clusterPoints);
+        const centroid = turf.centroid(cluster);
+        const [lng, lat] = centroid.geometry.coordinates;
+        
+        // Update cell position to be at the cluster centroid
+        const cellSizeLng = (cell.lng_max - cell.lng_min) / 2;
+        const cellSizeLat = (cell.lat_max - cell.lat_min) / 2;
+        
+        return {
+          ...cell,
+          lng_min: lng - cellSizeLng,
+          lng_max: lng + cellSizeLng,
+          lat_min: lat - cellSizeLat,
+          lat_max: lat + cellSizeLat
+        };
+      }
+      
+      return cell;
+    });
+  };
+
   // Memoize the loadCells function to prevent recreation on every render
   const loadCells = useCallback(
     async (map: any) => {
@@ -179,15 +250,19 @@ export default function EcoSimMap({ center = [-75.514, 40.036], zoom = 12, onBou
 
         const shouldLoadChesterCells = viewIntersectsChester && viewportCenterInChester
 
-        const globalCells = await getGridCellsInBounds(boundsObj)
+        let globalCells = await getGridCellsInBounds(boundsObj)
 
-        const filteredGlobalCells = globalCells.filter((cell) => {
+        globalCells = globalCells.filter((cell) => {
           const centerLat = (cell.lat_min + cell.lat_max) / 2
           const centerLng = (cell.lng_min + cell.lng_max) / 2
           return !isInChesterCounty(centerLat, centerLng)
         })
 
-        const globalGeoJSON = gridCellsToGeoJSON(filteredGlobalCells)
+        // Stabilize the grid cells
+        const stabilizedCells = stabilizeGridCells(globalCells)
+        setGridCells(stabilizedCells)
+        
+        const globalGeoJSON = gridCellsToGeoJSON(stabilizedCells)
 
         if (map.getSource("grid-cells")) {
           map.getSource("grid-cells").setData(globalGeoJSON)
@@ -493,6 +568,28 @@ export default function EcoSimMap({ center = [-75.514, 40.036], zoom = 12, onBou
 
     setTimeout(initializeMap, 100)
   }, [center, zoom, loadCells, mapboxLoaded])
+
+  useEffect(() => {
+    // Handle map movement with debounce
+    if (!mapRef.current) return
+
+    const map = mapRef.current
+    const debouncedLoadCells = debounce(() => loadCells(map), 300) // 300ms debounce
+
+    map.on('moveend', debouncedLoadCells)
+    map.on('zoomend', debouncedLoadCells)
+
+    // Initial load
+    debouncedLoadCells()
+
+    return () => {
+      map.off('moveend', debouncedLoadCells)
+      map.off('zoomend', debouncedLoadCells)
+      if (debounceTimer.current) {
+        clearTimeout(debounceTimer.current)
+      }
+    }
+  }, [loadCells])
 
   useEffect(() => {
     return () => {
