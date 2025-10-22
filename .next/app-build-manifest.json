@@ -6,31 +6,25 @@
       "static/css/app/layout.css",
       "static/chunks/app/layout.js"
     ],
-    "/community-cleanup/page": [
+    "/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/css/app/community-cleanup/page.css",
-      "static/chunks/app/community-cleanup/page.js"
+      "static/chunks/app/page.js"
     ],
-    "/litterLens/page": [
+    "/ecoQuestLandingPage/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/litterLens/page.js"
-    ],
-    "/litterAnalysis/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/litterAnalysis/page.js"
+      "static/chunks/app/ecoQuestLandingPage/page.js"
     ],
     "/dashboard/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/dashboard/page.js"
     ],
-    "/EcoSim/page": [
+    "/_not-found/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/EcoSim/page.js"
+      "static/chunks/app/_not-found/page.js"
     ]
   }
 }

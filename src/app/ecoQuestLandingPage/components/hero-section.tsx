@@ -1,5 +1,7 @@
 "use client"
 
+import { createClient } from "@/utils/supabase/client"
+import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { Button } from "./button"
 import { ParticleEffect } from "./particle-effect"
@@ -10,6 +12,25 @@ export function HeroSection() {
   useEffect(() => {
     setIsVisible(true)
   }, [])
+
+  // Supabase auth-aware CTA
+  const supabase = createClient()
+  const router = useRouter()
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      setIsLoggedIn(!!session)
+    }
+    checkAuth()
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsLoggedIn(!!session)
+    })
+
+    return () => subscription.unsubscribe()
+  }, [supabase])
 
   return (
     <>
@@ -84,10 +105,35 @@ export function HeroSection() {
 
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Button variant="primary" size="lg" pulse>
-                Explore EcoQuest
+              <Button
+                variant="primary"
+                size="lg"
+                pulse
+                onClick={() => {
+                  // Scroll to top then navigate based on auth state (matches Navigation behavior)
+                  window.scrollTo({ top: 0, behavior: 'instant' })
+                  if (isLoggedIn) router.push('/dashboard')
+                  else router.push('/login')
+                }}
+              >
+                {isLoggedIn ? 'Go to Dashboard' : 'Explore EcoQuest'}
               </Button>
-              <Button variant="outline" size="lg">
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={() => {
+                  const el = document.getElementById('impact') as HTMLElement | null
+                  if (el) {
+                    // Account for fixed navigation height (approx 80px)
+                    const navHeight = 80
+                    const top = el.getBoundingClientRect().top + window.pageYOffset - navHeight
+                    window.scrollTo({ top, behavior: 'smooth' })
+                  } else {
+                    // Fallback to basic scrollIntoView
+                    (el as HTMLElement | null)?.scrollIntoView?.({ behavior: 'smooth', block: 'start' })
+                  }
+                }}
+              >
                 Watch Demo
               </Button>
             </div>
