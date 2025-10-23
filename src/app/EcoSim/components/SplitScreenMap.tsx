@@ -54,9 +54,21 @@ export default function SplitScreenMap({
   const [searchQuery, setSearchQuery] = useState("")
   const [isSearching, setIsSearching] = useState(false)
   const [searchError, setSearchError] = useState<string | null>(null)
+  const [historicalSnapshotDate, setHistoricalSnapshotDate] = useState<string | null>(null)
   
   const lastBoundsRef = useRef<string>("")
   const isLoadingRef = useRef(false)
+  const daysAgoRef = useRef(daysAgo)
+  
+  // Store event handler references so we can properly remove them
+  const clickHandlersRef = useRef<Map<string, any>>(new Map())
+  const mouseEnterHandlersRef = useRef<Map<string, any>>(new Map())
+  const mouseLeaveHandlersRef = useRef<Map<string, any>>(new Map())
+
+  // Update ref when daysAgo prop changes
+  useEffect(() => {
+    daysAgoRef.current = daysAgo
+  }, [daysAgo])
 
   // Chester County bounds - memoized to prevent re-creation
   const CHESTER_COUNTY_BOUNDS = useMemo(() => ({
@@ -152,7 +164,7 @@ export default function SplitScreenMap({
   }, [])
 
   // Helper function to convert cells to GeoJSON - memoized to prevent re-creation
-  const cellsToGeoJSON = useCallback((cells: ChesterGridCell[]) => {
+  const cellsToGeoJSON = useCallback((cells: ChesterGridCell[], includeTimestamp: boolean = false) => {
     return {
       type: "FeatureCollection",
       features: cells.map((cell) => {
@@ -185,6 +197,7 @@ export default function SplitScreenMap({
             greenery: cell.greenery_score,
             cleanliness: cell.cleanliness_score,
             carbon: cell.carbon_emissions || 0,
+            recorded_at: includeTimestamp && cell.recorded_at ? cell.recorded_at : null,
           },
         }
       }),
@@ -201,14 +214,17 @@ export default function SplitScreenMap({
   }, [])
 
   // Load data for both maps
-  const loadMapData = useCallback(async (bounds: any) => {
+  const loadMapData = useCallback(async (bounds: any, forceDaysAgo?: number) => {
     if (isLoadingRef.current) return
 
+    const daysToUse = forceDaysAgo !== undefined ? forceDaysAgo : daysAgoRef.current
+    
     const boundsKey = JSON.stringify({
       s: bounds.getSouth(),
       n: bounds.getNorth(),
       w: bounds.getWest(),
-      e: bounds.getEast()
+      e: bounds.getEast(),
+      days: daysToUse
     })
     if (boundsKey === lastBoundsRef.current) return
 
@@ -232,11 +248,22 @@ export default function SplitScreenMap({
 
       if (currentResult && Array.isArray(currentResult)) {
         console.log('[SplitScreenMap] Loaded', currentResult.length, 'current cells')
+        
+        // Log sample of current data for debugging
+        if (currentResult.length > 0) {
+          const sample = currentResult[0]
+          console.log(`[SplitScreenMap] Current sample:`, {
+            trash: sample.trash_density,
+            greenery: sample.greenery_score,
+            cleanliness: sample.cleanliness_score
+          })
+        }
+        
         setCurrentCells(currentResult)
       }
 
       // Load historical data with proper bounds format
-      const historicalResult = await getChesterCountyHistoricalData(daysAgo, {
+      const historicalResult = await getChesterCountyHistoricalData(daysToUse, {
         north,
         south,
         east,
@@ -244,11 +271,34 @@ export default function SplitScreenMap({
       })
 
       if (historicalResult && !historicalResult.error && Array.isArray(historicalResult.data)) {
-        console.log('[SplitScreenMap] Loaded', historicalResult.data.length, 'historical cells from', daysAgo, 'days ago')
+        console.log(`[SplitScreenMap] ===== HISTORICAL DATA LOADED =====`)
+        console.log(`[SplitScreenMap] Time period: ${daysToUse} days ago`)
+        console.log(`[SplitScreenMap] Total cells: ${historicalResult.data.length}`)
+        
+        // Log sample of historical data for debugging
+        if (historicalResult.data.length > 0) {
+          const sample = historicalResult.data[0]
+          const avgTrash = historicalResult.data.reduce((sum, c) => sum + c.trash_density, 0) / historicalResult.data.length
+          const avgGreenery = historicalResult.data.reduce((sum, c) => sum + c.greenery_score, 0) / historicalResult.data.length
+          
+          console.log(`[SplitScreenMap] Historical snapshot date: ${sample.recorded_at}`)
+          console.log(`[SplitScreenMap] Historical averages - Trash: ${avgTrash.toFixed(2)}, Greenery: ${avgGreenery.toFixed(2)}`)
+          console.log(`[SplitScreenMap] Historical sample cell:`, {
+            recorded_at: sample.recorded_at,
+            trash: sample.trash_density,
+            greenery: sample.greenery_score,
+            cleanliness: sample.cleanliness_score
+          })
+          // Store the snapshot date for display
+          setHistoricalSnapshotDate(sample.recorded_at)
+        }
+        
         setHistoricalCells(historicalResult.data)
+        console.log(`[SplitScreenMap] ===================================`)
       } else {
         console.warn('[SplitScreenMap] No historical data:', historicalResult?.error)
         setHistoricalCells([])
+        setHistoricalSnapshotDate(null)
       }
 
       if (onBoundsChange) {
@@ -265,7 +315,7 @@ export default function SplitScreenMap({
       setIsLoading(false)
       isLoadingRef.current = false
     }
-  }, [daysAgo, onBoundsChange])
+  }, [onBoundsChange])
 
   // Initialize both maps - ONLY once when mapbox loads
   useEffect(() => {
@@ -346,19 +396,31 @@ export default function SplitScreenMap({
   const updateMapLayer = useCallback((map: any, cells: ChesterGridCell[], layerId: string) => {
     if (!map || !map.isStyleLoaded()) return
     
+    const isHistorical = layerId === "historical"
     console.log('[SplitScreenMap] Updating', layerId, 'layer with', cells.length, 'cells')
     
     const sourceId = `${layerId}-grid-source`
     const fillLayerId = `${layerId}-grid-fill`
     const lineLayerId = `${layerId}-grid-line`
 
+    // Remove old event listeners using stored references
+    if (map.getLayer(fillLayerId)) {
+      const oldClickHandler = clickHandlersRef.current.get(fillLayerId)
+      const oldMouseEnterHandler = mouseEnterHandlersRef.current.get(fillLayerId)
+      const oldMouseLeaveHandler = mouseLeaveHandlersRef.current.get(fillLayerId)
+      
+      if (oldClickHandler) map.off("click", fillLayerId, oldClickHandler)
+      if (oldMouseEnterHandler) map.off("mouseenter", fillLayerId, oldMouseEnterHandler)
+      if (oldMouseLeaveHandler) map.off("mouseleave", fillLayerId, oldMouseLeaveHandler)
+    }
+
     // Remove existing layers and source
     if (map.getLayer(fillLayerId)) map.removeLayer(fillLayerId)
     if (map.getLayer(lineLayerId)) map.removeLayer(lineLayerId)
     if (map.getSource(sourceId)) map.removeSource(sourceId)
 
-    // Add new source and layers
-    const geojson = cellsToGeoJSON(cells)
+    // Add new source and layers - include timestamp for historical data
+    const geojson = cellsToGeoJSON(cells, isHistorical)
     
     map.addSource(sourceId, {
       type: "geojson",
@@ -395,9 +457,20 @@ export default function SplitScreenMap({
       },
     })
 
-    // Add popup on click with black text on white background and easy-to-close button
-    map.on("click", fillLayerId, (e: any) => {
+    // Create and store click handler
+    const clickHandler = (e: any) => {
       const properties = e.features[0].properties
+      
+      // Format the recorded_at date if it exists
+      const recordedDate = properties.recorded_at 
+        ? new Date(properties.recorded_at).toLocaleDateString('en-US', { 
+            year: 'numeric', 
+            month: 'short', 
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          })
+        : null
       
       new mapboxgl.Popup({
         className: 'grid-cell-popup',
@@ -410,8 +483,13 @@ export default function SplitScreenMap({
         .setHTML(`
           <div style="padding: 12px 16px; min-width: 220px; background: white; border-radius: 8px;">
             <h3 style="font-weight: bold; margin-bottom: 10px; color: #111827; font-size: 15px; border-bottom: 2px solid #e5e7eb; padding-bottom: 6px; padding-right: 20px;">
-              📊 Cell Details
+              📊 Cell Details${recordedDate ? ' (Historical)' : ' (Current)'}
             </h3>
+            ${recordedDate ? `
+            <div style="background: #dbeafe; border-left: 3px solid #3b82f6; padding: 6px 8px; margin-bottom: 8px; border-radius: 4px;">
+              <span style="color: #1e40af; font-size: 11px; font-weight: 600;">📅 Snapshot: ${recordedDate}</span>
+            </div>
+            ` : ''}
             <div style="display: grid; gap: 6px; font-size: 13px;">
               <div style="display: flex; justify-content: space-between; align-items: center;">
                 <span style="color: #374151; font-weight: 500;">Score:</span>
@@ -440,16 +518,27 @@ export default function SplitScreenMap({
           </div>
         `)
         .addTo(map)
-    })
+    }
 
-    // Change cursor on hover
-    map.on("mouseenter", fillLayerId, () => {
+    // Create and store mouse enter handler
+    const mouseEnterHandler = () => {
       map.getCanvas().style.cursor = "pointer"
-    })
+    }
 
-    map.on("mouseleave", fillLayerId, () => {
+    // Create and store mouse leave handler
+    const mouseLeaveHandler = () => {
       map.getCanvas().style.cursor = ""
-    })
+    }
+
+    // Store handlers for later removal
+    clickHandlersRef.current.set(fillLayerId, clickHandler)
+    mouseEnterHandlersRef.current.set(fillLayerId, mouseEnterHandler)
+    mouseLeaveHandlersRef.current.set(fillLayerId, mouseLeaveHandler)
+
+    // Add event listeners
+    map.on("click", fillLayerId, clickHandler)
+    map.on("mouseenter", fillLayerId, mouseEnterHandler)
+    map.on("mouseleave", fillLayerId, mouseLeaveHandler)
   }, [cellsToGeoJSON, getScoreColor])
 
   // Update current map layer
@@ -481,6 +570,30 @@ export default function SplitScreenMap({
       updateMapLayer(map, historicalCells, "historical")
     }
   }, [historicalCells, updateMapLayer])
+
+  // Reload data when daysAgo changes
+  useEffect(() => {
+    if (!currentMapRef.current) return
+    
+    console.log('[SplitScreenMap] ========================================')
+    console.log('[SplitScreenMap] TIME PERIOD CHANGED!')
+    console.log('[SplitScreenMap] New daysAgo value:', daysAgo)
+    console.log('[SplitScreenMap] Clearing cached data and reloading...')
+    console.log('[SplitScreenMap] ========================================')
+    
+    // Reset the bounds key to force reload
+    lastBoundsRef.current = ""
+    isLoadingRef.current = false
+    
+    // Clear current data to show loading state
+    setHistoricalCells([])
+    setHistoricalSnapshotDate(null)
+    
+    // Trigger a reload by getting current bounds and calling loadMapData
+    const bounds = currentMapRef.current.getBounds()
+    loadMapData(bounds, daysAgo)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [daysAgo])
 
   return (
     <div className="relative w-full h-full">
@@ -528,7 +641,14 @@ export default function SplitScreenMap({
           <div className="absolute top-4 left-4 z-10 bg-white px-4 py-2 rounded-lg shadow-lg">
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-              <span className="text-sm font-bold text-gray-900">{timePeriodLabel} Ago</span>
+              <div>
+                <span className="text-sm font-bold text-gray-900">{timePeriodLabel} Ago</span>
+                {historicalSnapshotDate && (
+                  <p className="text-xs text-gray-500">
+                    Snapshot: {new Date(historicalSnapshotDate).toLocaleDateString()}
+                  </p>
+                )}
+              </div>
             </div>
           </div>
           {historicalCells.length === 0 && !isLoading && (
