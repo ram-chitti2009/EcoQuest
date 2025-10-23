@@ -457,7 +457,14 @@ function EcoSimPageContent() {
               <div className="bg-gradient-to-r from-emerald-50 to-sky-50 border border-emerald-200 rounded-xl p-6 shadow-sm">
                 <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
                   <BarChart3 className="w-5 h-5 text-emerald-600" />
-                  Comparison: Today vs {timePeriod === "week" ? "1 Week" : timePeriod === "month" ? "1 Month" : timePeriod === "180days" ? "6 Months" : "1 Year"} Ago
+                  Comparison: Today vs {timePeriod === "week" ? "1 Week" : timePeriod === "month" ? "1 Month" : timePeriod === "180days" ? "6 Months" : "1 Year"} Ago ({daysAgo} days)
+                  {/* DEBUG: Show which time period we're comparing */}
+                  {(() => {
+                    console.log(`[UI] Displaying comparison for: ${timePeriod} (${daysAgo} days)`);
+                    console.log(`[UI] Historical data:`, historicalComparison.historical);
+                    console.log(`[UI] Current data:`, historicalComparison.current);
+                    return null;
+                  })()}
                 </h3>
                 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -466,17 +473,17 @@ function EcoSimPageContent() {
                     <p className="text-xs text-gray-600 mb-1">🗑️ Trash Density</p>
                     <div className="flex items-baseline gap-2">
                       <span className="text-2xl font-bold text-gray-900">
-                        {historicalComparison.current.avgTrash.toFixed(1)}
+                        {historicalComparison.current.avgTrash.toFixed(2)}
                       </span>
                       <span className={`text-sm font-semibold flex items-center gap-1 ${
                         historicalComparison.change.trash < 0 ? "text-green-600" : "text-red-600"
                       }`}>
                         {historicalComparison.change.trash < 0 ? "↓" : "↑"}
-                        {Math.abs(historicalComparison.change.trash).toFixed(1)}%
+                        {Math.abs(historicalComparison.change.trash).toFixed(2)}%
                       </span>
                     </div>
                     <p className="text-xs text-gray-500 mt-1">
-                      Was: {historicalComparison.historical.avgTrash.toFixed(1)}
+                      Was: {historicalComparison.historical.avgTrash.toFixed(2)}
                     </p>
                   </div>
 
@@ -485,25 +492,17 @@ function EcoSimPageContent() {
                     <p className="text-xs text-gray-600 mb-1">🌳 Greenery</p>
                     <div className="flex items-baseline gap-2">
                       <span className="text-2xl font-bold text-gray-900">
-                        {historicalComparison.current.avgGreenery.toFixed(0)}%
+                        {historicalComparison.current.avgGreenery.toFixed(2)}%
                       </span>
                       <span className={`text-sm font-semibold flex items-center gap-1 ${
                         historicalComparison.change.greenery > 0 ? "text-green-600" : "text-red-600"
                       }`}>
                         {historicalComparison.change.greenery > 0 ? "↑" : "↓"}
-                        {Math.abs(historicalComparison.change.greenery).toFixed(1)}%
-                        {/* DEBUG: Manual calculation verification */}
-                        {(() => {
-                          const current = historicalComparison.current.avgGreenery;
-                          const historical = historicalComparison.historical.avgGreenery;
-                          const manualCalc = ((current - historical) / historical) * 100;
-                          console.log(`[UI DEBUG] Greenery - Current: ${current}, Historical: ${historical}, Stored Change: ${historicalComparison.change.greenery}, Manual Calc: ${manualCalc}`);
-                          return null;
-                        })()}
+                        {Math.abs(historicalComparison.change.greenery).toFixed(2)}%
                       </span>
                     </div>
                     <p className="text-xs text-gray-500 mt-1">
-                      Was: {historicalComparison.historical.avgGreenery.toFixed(0)}%
+                      Was: {historicalComparison.historical.avgGreenery.toFixed(2)}%
                     </p>
                   </div>
 
@@ -512,25 +511,17 @@ function EcoSimPageContent() {
                     <p className="text-xs text-gray-600 mb-1">✨ Cleanliness</p>
                     <div className="flex items-baseline gap-2">
                       <span className="text-2xl font-bold text-gray-900">
-                        {historicalComparison.current.avgCleanliness.toFixed(0)}%
+                        {historicalComparison.current.avgCleanliness.toFixed(2)}%
                       </span>
                       <span className={`text-sm font-semibold flex items-center gap-1 ${
                         historicalComparison.change.cleanliness > 0 ? "text-green-600" : "text-red-600"
                       }`}>
                         {historicalComparison.change.cleanliness > 0 ? "↑" : "↓"}
-                        {Math.abs(historicalComparison.change.cleanliness).toFixed(1)}%
-                        {/* DEBUG: Manual calculation verification */}
-                        {(() => {
-                          const current = historicalComparison.current.avgCleanliness;
-                          const historical = historicalComparison.historical.avgCleanliness;
-                          const manualCalc = ((current - historical) / historical) * 100;
-                          console.log(`[UI DEBUG] Cleanliness - Current: ${current}, Historical: ${historical}, Stored Change: ${historicalComparison.change.cleanliness}, Manual Calc: ${manualCalc}`);
-                          return null;
-                        })()}
+                        {Math.abs(historicalComparison.change.cleanliness).toFixed(2)}%
                       </span>
                     </div>
                     <p className="text-xs text-gray-500 mt-1">
-                      Was: {historicalComparison.historical.avgCleanliness.toFixed(0)}%
+                      Was: {historicalComparison.historical.avgCleanliness.toFixed(2)}%
                     </p>
                   </div>
 
@@ -539,17 +530,17 @@ function EcoSimPageContent() {
                     <p className="text-xs text-gray-600 mb-1">💨 Carbon</p>
                     <div className="flex items-baseline gap-2">
                       <span className="text-2xl font-bold text-gray-900">
-                        {historicalComparison.current.avgCarbon.toFixed(1)}t
+                        {historicalComparison.current.avgCarbon.toFixed(2)}t
                       </span>
                       <span className={`text-sm font-semibold flex items-center gap-1 ${
                         historicalComparison.change.carbon < 0 ? "text-green-600" : "text-red-600"
                       }`}>
                         {historicalComparison.change.carbon < 0 ? "↓" : "↑"}
-                        {Math.abs(historicalComparison.change.carbon).toFixed(1)}%
+                        {Math.abs(historicalComparison.change.carbon).toFixed(2)}%
                       </span>
                     </div>
                     <p className="text-xs text-gray-500 mt-1">
-                      Was: {historicalComparison.historical.avgCarbon.toFixed(1)}t
+                      Was: {historicalComparison.historical.avgCarbon.toFixed(2)}t
                     </p>
                   </div>
                 </div>

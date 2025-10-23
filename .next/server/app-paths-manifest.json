@@ -1,5 +1,7 @@
 {
   "/_not-found/page": "app/_not-found/page.js",
+  "/profile/page": "app/profile/page.js",
+  "/dashboard/page": "app/dashboard/page.js",
   "/ecoQuestLandingPage/page": "app/ecoQuestLandingPage/page.js",
-  "/dashboard/page": "app/dashboard/page.js"
+  "/EcoSim/page": "app/EcoSim/page.js"
 }
