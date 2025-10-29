@@ -15,15 +15,6 @@ const allAchievements = [
   },
   {
     id: 2,
-    name: "50 kg CO₂ Saved",
-    description: "Save 50 kg of CO₂ through your eco-friendly actions",
-    icon: Leaf,
-    earned: true,
-    category: "Environmental Impact",
-    requirement: "Accumulate 50 kg CO₂ savings",
-  },
-  {
-    id: 3,
     name: "Eco Warrior",
     description: "Complete 5 different types of environmental activities",
     icon: Award,
@@ -32,7 +23,7 @@ const allAchievements = [
     requirement: "Complete 5 activity types",
   },
   {
-    id: 4,
+    id: 3,
     name: "Tree Hugger",
     description: "Plant or help maintain 10 trees",
     icon: TreePine,
@@ -41,7 +32,7 @@ const allAchievements = [
     requirement: "Plant/maintain 10 trees",
   },
   {
-    id: 5,
+    id: 4,
     name: "100 kg CO₂ Saved",
     description: "Save 100 kg of CO₂ through your eco-friendly actions",
     icon: Recycle,
@@ -50,7 +41,7 @@ const allAchievements = [
     requirement: "Accumulate 100 kg CO₂ savings",
   },
   {
-    id: 6,
+    id: 5,
     name: "Community Leader",
     description: "Organize and lead 3 community cleanup events",
     icon: Target,
@@ -59,7 +50,7 @@ const allAchievements = [
     requirement: "Organize 3 cleanup events",
   },
   {
-    id: 7,
+    id: 6,
     name: "Global Impact",
     description: "Contribute to environmental causes in 5 different locations",
     icon: Globe,
@@ -68,7 +59,7 @@ const allAchievements = [
     requirement: "Participate in 5 different locations",
   },
   {
-    id: 8,
+    id: 7,
     name: "Sustainability Star",
     description: "Maintain consistent eco-friendly habits for 30 days",
     icon: Star,

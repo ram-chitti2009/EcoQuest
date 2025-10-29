@@ -3,21 +3,21 @@
 import { parseLocalDate } from "@/utils/dateUtils"
 import { createClient } from "@/utils/supabase/client"
 import {
-    checkUserEventParticipation,
-    getEcoEventsByMonth,
-    joinEcoEvent,
-    leaveEcoEvent
+  checkUserEventParticipation,
+  getEcoEventsByMonth,
+  joinEcoEvent,
+  leaveEcoEvent
 } from "@/utils/supabase/functions"
 import {
-    ChevronLeft,
-    ChevronRight,
-    Clock,
-    Leaf,
-    MapPin,
-    Sparkles,
-    TreePine,
-    Users,
-    X
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  Leaf,
+  MapPin,
+  Sparkles,
+  TreePine,
+  Users,
+  X
 } from "lucide-react"
 import { useEffect, useState } from "react"
 import { CATEGORY_CONFIG, DAY_NAMES, MONTH_NAMES } from "./constants/calendar"
@@ -463,10 +463,10 @@ export function CompactCalendar({ onMetricsUpdate, onMonthChange }: CompactCalen
                         <div className="flex items-center justify-between">
                           <div className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all duration-300 ${
                             userJoined 
-                              ? 'bg-gradient-to-r from-emerald-100 to-green-100 text-emerald-800 border border-emerald-200' 
+                              ? 'bg-gradient-to-r from-emerald-100 to-green-100 text-emerald-900 border border-emerald-200' 
                               : isFull 
-                              ? 'bg-gradient-to-r from-red-100 to-pink-100 text-red-700 border border-red-200'
-                              : 'bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-700 border border-blue-200'
+                              ? 'bg-gradient-to-r from-red-100 to-pink-100 text-red-800 border border-red-200'
+                              : 'bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-900 border border-blue-200'
                           }`}>
                             {userJoined ? '🌱 You\'re joining!' : isFull ? '🚫 Event full' : '✨ Available'}
                           </div>
@@ -479,11 +479,11 @@ export function CompactCalendar({ onMetricsUpdate, onMonthChange }: CompactCalen
                               variant={userJoined ? 'destructive' : isFull ? 'outline' : 'default'}
                               className={`transition-all duration-300 hover:scale-105 min-w-[100px] ${
                                 actionLoading === event.id ? 'animate-pulse' : ''
-                              }`}
+                              } ${userJoined ? 'text-black font-semibold' : isFull ? 'text-red-800 font-semibold' : 'text-black font-semibold'}`}
                             >
                               {actionLoading === event.id ? (
                                 <div className="flex items-center gap-2">
-                                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                  <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
                                 </div>
                               ) : (
                                 userJoined ? 'Leave Event' : isFull ? 'Full' : 'Join Event'

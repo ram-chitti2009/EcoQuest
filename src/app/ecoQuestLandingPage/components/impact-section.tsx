@@ -1,13 +1,65 @@
 "use client"
 
+import { getCommunityStats, getEcoEventsByCategory } from "@/utils/supabase/functions"
+import { useEffect, useState } from "react"
 import { slideInFromLeftClasses, slideInFromRightClasses, useIntersectionAnimation } from "../hooks/useIntersectionAnimation"
-import { Button } from "./button"
+
+function formatCount(value: number) {
+  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1).replace(/\.0$/, "")}M`
+  if (value >= 1_000) return `${(value / 1_000).toFixed(1).replace(/\.0$/, "")}K`
+  return value.toString()
+}
 
 export function ImpactSection() {
   const { elementRef, isVisible } = useIntersectionAnimation({
     threshold: 0.2,
     rootMargin: "0px 0px -100px 0px"
   })
+
+  const [loading, setLoading] = useState(true)
+  const [stats, setStats] = useState({
+    total_carbon_saved: 0,
+    total_volunteer_hours: 0,
+    total_cleanups: 0,
+    active_users: 0
+  })
+
+  useEffect(() => {
+    let mounted = true
+    const load = async () => {
+      setLoading(true)
+      try {
+        const [communityRes, cleanupRes] = await Promise.all([
+          getCommunityStats(),
+          getEcoEventsByCategory('cleanup')
+        ])
+
+        if (!mounted) return
+
+        if (communityRes && communityRes.data) {
+          // prefer communityRes values but override total_cleanups with live eco_events count
+          const communityData = communityRes.data
+          const cleanupCount = Array.isArray(cleanupRes?.data) ? cleanupRes.data.length : communityData.total_cleanups || 0
+          setStats({
+            total_carbon_saved: communityData.total_carbon_saved || 0,
+            total_volunteer_hours: communityData.total_volunteer_hours || 0,
+            total_cleanups: cleanupCount,
+            active_users: communityData.active_users || 0
+          })
+        } else if (cleanupRes && Array.isArray(cleanupRes.data)) {
+          // fallback: use cleanup count if community stats unavailable
+          setStats(prev => ({ ...prev, total_cleanups: cleanupRes.data.length }))
+        }
+      } catch (err) {
+        console.error('Error loading community stats:', err)
+      } finally {
+        if (mounted) setLoading(false)
+      }
+    }
+
+    load()
+    return () => { mounted = false }
+  }, [])
 
   return (
     <section
@@ -33,10 +85,10 @@ export function ImpactSection() {
             {/* Impact Stats */}
             <div className="grid grid-cols-2 gap-6 mb-8">
               {[
-                { value: "450K", label: "Tons CO₂ Saved" },
-                { value: "2.8M", label: "Trees Planted" },
-                { value: "15M", label: "Plastic Bottles Avoided" },
-                { value: "890K", label: "Gallons Water Conserved" }
+                { value: loading ? '...' : formatCount(stats.total_carbon_saved), label: "Tons CO₂ Saved" },
+                { value: loading ? '...' : formatCount(stats.total_volunteer_hours), label: "Volunteer Hours" },
+                { value: 28, label: "Cleanups" },
+                { value: loading ? '...' : formatCount(stats.active_users), label: "Active Users" }
               ].map((stat, index) => (
                 <div 
                   key={index}
@@ -51,34 +103,27 @@ export function ImpactSection() {
                 </div>
               ))}
             </div>
-
-            <div className={`transform transition-all duration-700 ease-out ${
-              isVisible ? 'translate-y-0 opacity-100 delay-700' : 'translate-y-4 opacity-0'
-            }`}>
-              <Button variant="primary" size="lg">
-                View Full Impact Report
-              </Button>
-            </div>
           </div>
 
           {/* Visual */}
           <div className={`relative ${slideInFromRightClasses(isVisible)}`}>
             <div className="relative bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-8 shadow-xl">
-              {/* Placeholder for impact visualization */}
-              <div className="aspect-square bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/30 dark:to-teal-900/30 rounded-xl flex items-center justify-center">
-                <svg
-                  className="w-32 h-32 text-emerald-600 dark:text-emerald-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+              {/* Video impact visualization: try both /videos/ecoQuest.mp4 and /ecoQuest.mp4 (public/) */}
+              <div className="w-full rounded-xl overflow-hidden bg-black flex items-center justify-center">
+                <video
+                  className="w-full h-auto object-contain max-h-96"
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  preload="metadata"
+                  aria-label="Impact visualization video"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={1.5}
-                    d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
+                  <source src="/videos/ecoQuest.mp4" type="video/mp4" />
+                  <source src="/ecoQuest.mp4" type="video/mp4" />
+                  {/* Fallback poster or message */}
+                  Your browser does not support the video tag.
+                </video>
               </div>
             </div>
             {/* Decorative elements */}

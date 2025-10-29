@@ -1,5 +1,8 @@
 "use client"
 
+import { createClient } from "@/utils/supabase/client"
+import { useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
 import { scaleInClasses, slideUpClasses, useIntersectionAnimation } from "../hooks/useIntersectionAnimation"
 import { Button } from "./button"
 
@@ -8,6 +11,27 @@ export function CTASection() {
     threshold: 0.2,
     rootMargin: "0px 0px -50px 0px"
   })
+
+  const supabase = createClient()
+  const router = useRouter()
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null)
+
+  useEffect(() => {
+    let mounted = true
+    const checkUser = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!mounted) return
+        setIsAuthenticated(!!user)
+      } catch (err) {
+        console.error('Error checking auth status:', err)
+        if (mounted) setIsAuthenticated(false)
+      }
+    }
+
+    checkUser()
+    return () => { mounted = false }
+  }, [supabase.auth])
 
   return (
     <section 
@@ -29,15 +53,26 @@ export function CTASection() {
           <div className={`transform transition-all duration-700 ease-out ${
             isVisible ? 'translate-y-0 opacity-100 delay-300' : 'translate-y-4 opacity-0'
           }`}>
-            <Button variant="primary" size="lg" pulse>
-              Get Started Free
-            </Button>
-          </div>
-          <div className={`transform transition-all duration-700 ease-out ${
-            isVisible ? 'translate-y-0 opacity-100 delay-500' : 'translate-y-4 opacity-0'
-          }`}>
-            <Button variant="outline" size="lg">
-              Learn More
+            <Button
+              variant="primary"
+              size="lg"
+              pulse
+              onClick={async () => {
+                // If auth state unknown, re-check quickly
+                if (isAuthenticated === null) {
+                  try {
+                    const { data: { user } } = await supabase.auth.getUser()
+                    router.push(user ? '/dashboard' : '/login')
+                  } catch (err) {
+                    console.error('Error fetching user before navigation:', err)
+                    router.push('/login')
+                  }
+                } else {
+                  router.push(isAuthenticated ? '/dashboard' : '/login')
+                }
+              }}
+            >
+              Get Started
             </Button>
           </div>
         </div>

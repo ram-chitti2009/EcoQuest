@@ -12,7 +12,7 @@ import { useEffect, useState } from "react"
 // App-wide header component
 import { parseLocalDate } from "@/utils/dateUtils"
 import { createClient } from "@/utils/supabase/client"
-import { createCarbonActivity, getUserCarbonActivities } from "@/utils/supabase/functions"
+import { createCarbonActivity, deleteCarbonActivity, getUserCarbonActivities, getTotalCarbonSaved, updateUserStatistics } from "@/utils/supabase/functions"
 import Header from "../../../components/Header"
 
 // Type definitions
@@ -241,10 +241,11 @@ interface Activity {
 
 interface ActivityFeedProps {
   activities: Activity[]
+  onDelete?: (id: string) => void
 }
 
 // ActivityFeed: List of logged activities, grouped by month or total
-const ActivityFeed: React.FC<ActivityFeedProps> = ({ activities }) => {
+const ActivityFeed: React.FC<ActivityFeedProps> = ({ activities, onDelete }) => {
   if (activities.length === 0) {
     // Show empty state if no activities
     return (
@@ -281,9 +282,23 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({ activities }) => {
                   <div className="text-gray-500">{parseLocalDate(activity.date).toLocaleDateString()}</div>
                 </div>
               </div>
-              <div className="text-right">
+              <div className="text-right flex flex-col items-end gap-2">
                 <div className="font-bold text-emerald-600 text-lg">+{activity.carbon_saved.toFixed(1)} kg</div>
                 <div className="text-sm text-gray-500">CO₂ saved</div>
+                {/* Delete button (shows when onDelete provided) */}
+                {onDelete && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      if (!confirm('Delete this activity? This cannot be undone.')) return
+                      onDelete(activity.id)
+                    }}
+                    className="text-xs mt-1"
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" /> Delete
+                  </Button>
+                )}
               </div>
             </div>
           </CardContent>
@@ -292,6 +307,7 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({ activities }) => {
     </div>
   )
 }
+
 
 interface SettingsModalProps {
   isOpen: boolean
@@ -399,14 +415,28 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ isOpen, onClose, onSubmit
   const [activityType, setActivityType] = useState("")
   const [quantity, setQuantity] = useState("")
   const [date, setDate] = useState(new Date().toISOString().split("T")[0])
+  const [recycleMaterial, setRecycleMaterial] = useState("plastic") // default to 'plastic'
 
   // Available activity types and their carbon savings per unit
+  // Constants updated per product requirements / references
+  // Cycling: ≈ 0.193 kg CO₂ saved per km cycled (U.S. average car vs typical bike) — EPA
+  // Recycling (per 1 kg): aluminum ≈ 11.7, paper ≈ 0.88, plastic ≈ 1.5 (typical), glass ≈ 0.31, steel ≈ 1.5 — Climate Action Accelerator
   const activityOptions = [
-    { value: "Cycling (km)", label: "Cycling (km)", carbonPerUnit: 0.5 },
-    { value: "Recycling (kg)", label: "Recycling (kg)", carbonPerUnit: 2.0 },
+    { value: "Cycling (km)", label: "Cycling (km)", carbonPerUnit: 0.193 },
+    // Recycling will use a per-material factor selected in the modal (see recycleMaterials)
+    { value: "Recycling (kg)", label: "Recycling (kg)", carbonPerUnit: null as number | null },
     { value: "Community cleanup (hours)", label: "Community cleanup (hours)", carbonPerUnit: 1.5 },
     { value: "Solar energy (kWh)", label: "Solar energy (kWh)", carbonPerUnit: 0.4 },
     { value: "Tree planting (trees)", label: "Tree planting (trees)", carbonPerUnit: 22.0 },
+  ]
+
+  // Recycling materials and per-kg CO₂ savings
+  const recycleMaterials: { value: string; label: string; perKg: number }[] = [
+    { value: "aluminum", label: "Aluminum (per kg)", perKg: 11.7 },
+    { value: "paper", label: "Paper (per kg)", perKg: 0.88 },
+    { value: "plastic", label: "Plastic (per kg)", perKg: 1.5 },
+    { value: "glass", label: "Glass (per kg)", perKg: 0.31 },
+    { value: "steel", label: "Steel (per kg)", perKg: 1.5 },
   ]
 
   // Handle form submission
@@ -415,7 +445,17 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ isOpen, onClose, onSubmit
     if (!activityType || !quantity) return
 
     const selectedActivity = activityOptions.find((option) => option.value === activityType)
-    const carbonSaved = selectedActivity ? selectedActivity.carbonPerUnit * Number.parseFloat(quantity) : 0
+    let carbonSaved = 0
+    if (selectedActivity) {
+      if (selectedActivity.value === "Recycling (kg)") {
+        const material = recycleMaterials.find((m) => m.value === recycleMaterial)
+        const perKg = material?.perKg ?? 1.5
+        carbonSaved = perKg * Number.parseFloat(quantity)
+      } else {
+        // selectedActivity.carbonPerUnit may be null for recycling; guard with 0
+        carbonSaved = (selectedActivity.carbonPerUnit ?? 0) * Number.parseFloat(quantity)
+      }
+    }
 
     onSubmit({
       type: activityType,
@@ -480,6 +520,28 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ isOpen, onClose, onSubmit
               className="text-base py-3"
             />
           </div>
+
+          {/* Recycling material selector — shown only for Recycling activities */}
+          {activityType === "Recycling (kg)" && (
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-3">Material</label>
+              <Select
+                value={recycleMaterial}
+                onChange={(e) => setRecycleMaterial(e.target.value)}
+                required
+                className="text-base py-3"
+              >
+                {recycleMaterials.map((m) => (
+                  <option key={m.value} value={m.value}>
+                    {m.label}
+                  </option>
+                ))}
+              </Select>
+              <p className="text-xs text-gray-500 mt-2">
+                Typical CO₂ saved per kg: {recycleMaterials.find((m) => m.value === recycleMaterial)?.perKg ?? 1.5} kg
+              </p>
+            </div>
+          )}
 
           {/* Date input */}
           <div>
@@ -631,6 +693,51 @@ export default function CarbonTracker() {
     // Show celebration animation
     setShowCelebration(true)
     setTimeout(() => setShowCelebration(false), 2000)
+    // Recompute total carbon for the user and update user_statistics so leaderboard/backend stay in sync
+    try {
+      const { data } = await supabase.auth.getUser()
+      const user = data?.user
+      const userId = user?.id
+      if (userId) {
+        const totalRes = await getTotalCarbonSaved(userId)
+        const total = totalRes.data || 0
+        await updateUserStatistics(userId, { carbon_saved: total })
+      }
+    } catch (err) {
+      console.error('Error recalculating/updating user statistics after create:', err)
+    }
+  }
+
+  // Delete an activity by id
+  const handleDeleteActivity = async (id: string) => {
+    try {
+      const confirmed = confirm('Are you sure you want to delete this activity?')
+      if (!confirmed) return
+
+      const result = await deleteCarbonActivity(id)
+      if (result.error) {
+        console.error('Error deleting activity:', result.error)
+        return
+      }
+
+      // Remove from local state
+      setActivities((prev) => prev.filter((a) => a.id !== id))
+      // Recompute total carbon for the user and update user_statistics so leaderboard/backend stay in sync
+      try {
+        const { data } = await supabase.auth.getUser()
+        const user = data?.user
+        const userId = user?.id
+        if (userId) {
+          const totalRes = await getTotalCarbonSaved(userId)
+          const total = totalRes.data || 0
+          await updateUserStatistics(userId, { carbon_saved: total })
+        }
+      } catch (err) {
+        console.error('Error recalculating/updating user statistics after delete:', err)
+      }
+    } catch (error) {
+      console.error('Error deleting activity:', error)
+    }
   }
 
   return (
@@ -841,7 +948,7 @@ export default function CarbonTracker() {
                     </div>
                   </div>
 
-                  <ActivityFeed activities={monthlyActivities} />
+                  <ActivityFeed activities={monthlyActivities} onDelete={handleDeleteActivity} />
                 </TabsContent>
 
                 <TabsContent value="total" activeTab={activeTab}>
@@ -852,7 +959,7 @@ export default function CarbonTracker() {
                     </div>
                   </div>
 
-                  <ActivityFeed activities={activities} />
+                  <ActivityFeed activities={activities} onDelete={handleDeleteActivity} />
                 </TabsContent>
               </div>
             </div>

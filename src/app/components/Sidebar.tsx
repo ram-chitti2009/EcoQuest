@@ -33,7 +33,6 @@ import {
   type LucideIcon,
   Menu,
   Mic,
-  Settings,
   Trash2,
   Trophy,
   User,
@@ -455,7 +454,6 @@ export const SideBar = () => {
           "p-4 border-t border-teal-600/50 space-y-1",
           "bg-teal-800/30 backdrop-blur-sm"
         )}>
-          <NavItem icon={Settings} label="Settings" href="#" isCollapsed={isCollapsed} />
           <NavItem
             onClick={handleLogout}
             icon={LogOutIcon}

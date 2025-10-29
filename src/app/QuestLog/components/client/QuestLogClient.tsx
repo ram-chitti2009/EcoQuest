@@ -500,7 +500,7 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ isOpen, onClose, onSubmit
                 min="0"
                 step="0.1"
                 required
-                className="text-base py-3"
+                className="text-base py-3 text-gray-900"
               />
             </div>
 

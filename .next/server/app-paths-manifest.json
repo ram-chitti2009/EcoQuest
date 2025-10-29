@@ -1,7 +1,10 @@
 {
   "/_not-found/page": "app/_not-found/page.js",
-  "/profile/page": "app/profile/page.js",
-  "/dashboard/page": "app/dashboard/page.js",
-  "/ecoQuestLandingPage/page": "app/ecoQuestLandingPage/page.js",
-  "/EcoSim/page": "app/EcoSim/page.js"
+  "/community-cleanup/page": "app/community-cleanup/page.js",
+  "/carbon-clash/page": "app/carbon-clash/page.js",
+  "/carbon-tracker/page": "app/carbon-tracker/page.js",
+  "/learningPatch/page": "app/learningPatch/page.js",
+  "/QuestLog/page": "app/QuestLog/page.js",
+  "/leaderboard/page": "app/leaderboard/page.js",
+  "/dashboard/page": "app/dashboard/page.js"
 }
