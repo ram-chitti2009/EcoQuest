@@ -17,6 +17,12 @@ import { Card, CardContent, CardHeader } from "./components/ui/card"
 import { Clock, Crown, Star, Trophy, Users } from "./components/ui/icons"
 import { Progress } from "./components/ui/progress"
 
+// Utility to format numbers safely with up to 2 decimal places
+function formatNumber(value?: number | null) {
+  if (value == null || Number.isNaN(Number(value))) return "0"
+  return Number(value).toLocaleString(undefined, { maximumFractionDigits: 2 })
+}
+
 // Extended interface for leaderboard with joined data
 interface LeaderboardWithStats extends Leaderboard {
   user_statistics?: {
@@ -303,7 +309,7 @@ export default function Component() {
     console.log("getMetricLabel called - selectedMetric:", selectedMetric, "entry:", entry.name, "user_statistics:", entry.user_statistics)
     switch (selectedMetric) {
       case "carbon":
-        return `${entry.user_statistics?.carbon_saved || 0} kg CO₂ saved`
+        return `${formatNumber(entry.user_statistics?.carbon_saved || 0)} kg CO₂ saved`
       case "events":
         return `${entry.user_statistics?.cleanups_participated || 0} events joined`
       case "hours":
@@ -312,7 +318,7 @@ export default function Component() {
         const calculatedPoints = calculateMetricValue(entry, "points")
         return `${calculatedPoints.toFixed(1)} eco points`
       default:
-        return `${entry.user_statistics?.carbon_saved || 0} kg CO₂ saved`
+        return `${formatNumber(entry.user_statistics?.carbon_saved || 0)} kg CO₂ saved`
     }
   }
 
@@ -605,7 +611,7 @@ export default function Component() {
                       <div className="text-3xl">🌱</div>
                       <div className="text-right">
                         <div className="text-2xl font-bold bg-gradient-to-r from-green-500 to-emerald-600 bg-clip-text text-transparent">
-                          {communityStats.total_carbon_saved}
+                          {formatNumber(communityStats.total_carbon_saved)}
                         </div>
                         <p className="text-xs text-gray-600 font-medium">kg CO₂ Saved</p>
                       </div>

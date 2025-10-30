@@ -13,6 +13,11 @@ interface CommunityStatsCardProps {
 }
 
 export const CommunityStatsCard = ({ stats }: CommunityStatsCardProps) => {
+  // Utility to format numbers for display (max 2 decimal places)
+  const formatNumber = (value?: number | null) => {
+    if (value == null || Number.isNaN(Number(value))) return '0'
+    return Number(value).toLocaleString(undefined, { maximumFractionDigits: 2 })
+  }
   // Calculate monthly goals based on total users
   const carbonMonthlyGoal = 300 * stats.active_users
   const volunteerHoursYearlyGoal = 75 * stats.active_users
@@ -33,7 +38,7 @@ export const CommunityStatsCard = ({ stats }: CommunityStatsCardProps) => {
           <div className="flex items-center justify-between mb-2">
             <div className="text-2xl">🌱</div>
             <div className="text-right">
-              <div className="text-xl font-bold text-green-600">{stats.total_carbon_saved}</div>
+              <div className="text-xl font-bold text-green-600">{formatNumber(stats.total_carbon_saved)}</div>
               <p className="text-xs text-gray-600">kg CO₂ Saved</p>
             </div>
           </div>

@@ -1,12 +1,5 @@
 {
   "/_not-found/page": "app/_not-found/page.js",
-  "/favicon.ico/route": "app/favicon.ico/route.js",
-  "/litterLens/page": "app/litterLens/page.js",
-  "/profile/page": "app/profile/page.js",
-  "/community-cleanup/page": "app/community-cleanup/page.js",
-  "/eco-echo/page": "app/eco-echo/page.js",
-  "/EcoSim/page": "app/EcoSim/page.js",
-  "/QuestLog/page": "app/QuestLog/page.js",
   "/dashboard/page": "app/dashboard/page.js",
-  "/carbon-tracker/page": "app/carbon-tracker/page.js"
+  "/leaderboard/page": "app/leaderboard/page.js"
 }

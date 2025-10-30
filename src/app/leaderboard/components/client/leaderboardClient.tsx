@@ -1,16 +1,21 @@
 "use client"
 
+import Header from "@/app/components/Header"
+import { getCommunityStats, getLeaderboardWithUserData, Leaderboard } from "@/utils/supabase/functions"
 import { Atom } from "lucide-react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Avatar } from "../ui/avatar"
 import { Badge } from "../ui/badge"
 import { Button } from "../ui/button"
 import { Card, CardContent, CardHeader } from "../ui/card"
 import { Clock, Crown, Star, Trophy, Users } from "../ui/icons"
 import { Progress } from "../ui/progress"
-import Header from "@/app/components/Header"
-import { getLeaderboardWithUserData, getCommunityStats, Leaderboard } from "@/utils/supabase/functions"
-import { useEffect } from "react"
+
+// Utility to format numbers safely with up to 2 decimal places
+function formatNumber(value?: number | null) {
+  if (value == null || Number.isNaN(Number(value))) return "0"
+  return Number(value).toLocaleString(undefined, { maximumFractionDigits: 2 })
+}
 
 // Extended interface for leaderboard with joined data
 interface LeaderboardWithStats extends Leaderboard {
@@ -91,7 +96,7 @@ export default function Component() {
     console.log("Selected metric:", selectedMetric, "Entry user_statistics:", entry.user_statistics)
     switch (selectedMetric) {
       case "carbon":
-        return `${entry.user_statistics?.carbon_saved || 0} kg CO₂ saved`
+        return `${formatNumber(entry.user_statistics?.carbon_saved || 0)} kg CO₂ saved`
       case "events":
         return `${entry.user_statistics?.cleanups_participated || 0} events joined`
       case "hours":
@@ -100,7 +105,7 @@ export default function Component() {
         console.log("XP value:", entry.user_statistics?.xp)
         return `${entry.user_statistics?.xp || 0} eco points`
       default:
-        return `${entry.user_statistics?.carbon_saved || 0} kg CO₂ saved`
+        return `${formatNumber(entry.user_statistics?.carbon_saved || 0)} kg CO₂ saved`
     }
   }
 
@@ -381,8 +386,8 @@ export default function Component() {
                     <div className="flex items-center justify-between mb-2">
                       <div className="text-3xl">🌱</div>
                       <div className="text-right">
-                        <div className="text-2xl font-bold bg-gradient-to-r from-green-500 to-emerald-600 bg-clip-text text-transparent">
-                          {communityStats.total_carbon_saved}
+                          <div className="text-2xl font-bold bg-gradient-to-r from-green-500 to-emerald-600 bg-clip-text text-transparent">
+                          {formatNumber(communityStats.total_carbon_saved)}
                         </div>
                         <p className="text-xs text-gray-600 font-medium">kg CO₂ Saved</p>
                       </div>
