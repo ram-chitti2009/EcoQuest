@@ -255,10 +255,11 @@ export const QuestCalendar = ({ onMetricsUpdate }: QuestCalendarProps) => {
             {dayEvents.slice(0, 2).map((event, index) => (
               <div
                 key={index}
-                className={`px-0.5 sm:px-1 py-0.5 rounded text-[10px] sm:text-xs font-medium text-white w-full overflow-hidden ${
+                className={`px-0.5 sm:px-1 py-0.5 rounded text-[10px] sm:text-xs font-medium text-black w-full overflow-hidden ${
                   event.type === "cleanup" ? "bg-emerald-600" : event.type === "workshop" ? "bg-teal-600" : "bg-green-600"
                 }`}
                 title={event.title}
+                style={{ color: 'black' }}
               >
                 <div className="truncate w-full">
                   <span className="hidden sm:inline">{event.title.length > 12 ? event.title.slice(0, 12) + '...' : event.title}</span>
@@ -434,7 +435,7 @@ export const QuestCalendar = ({ onMetricsUpdate }: QuestCalendarProps) => {
                           }`}
                         />
                         <div className="flex-1">
-                          <span className="text-xs sm:text-sm font-medium">{event.title}</span>
+                          <span className="text-xs sm:text-sm font-medium text-gray-900">{event.title}</span>
                           {event.time && (
                             <span className="text-xs text-gray-500 ml-2">at {event.time}</span>
                           )}

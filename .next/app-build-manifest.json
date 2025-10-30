@@ -21,25 +21,30 @@
       "static/chunks/main-app.js",
       "static/chunks/app/dashboard/page.js"
     ],
-    "/carbon-tracker/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/carbon-tracker/page.js"
-    ],
     "/leaderboard/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/leaderboard/page.js"
     ],
+    "/eco-echo/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/eco-echo/page.js"
+    ],
+    "/litterLens/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/litterLens/page.js"
+    ],
+    "/EcoSim/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/EcoSim/page.js"
+    ],
     "/profile/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/profile/page.js"
-    ],
-    "/QuestLog/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/QuestLog/page.js"
     ],
     "/community-cleanup/page": [
       "static/chunks/webpack.js",
@@ -47,35 +52,15 @@
       "static/css/app/community-cleanup/page.css",
       "static/chunks/app/community-cleanup/page.js"
     ],
-    "/EcoSim/page": [
+    "/QuestLog/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/EcoSim/page.js"
+      "static/chunks/app/QuestLog/page.js"
     ],
-    "/litterLens/page": [
+    "/carbon-tracker/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/litterLens/page.js"
-    ],
-    "/calendar/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/calendar/page.js"
-    ],
-    "/eco-echo/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/eco-echo/page.js"
-    ],
-    "/carbon-clash/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/carbon-clash/page.js"
-    ],
-    "/learningPatch/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/learningPatch/page.js"
+      "static/chunks/app/carbon-tracker/page.js"
     ],
     "/_not-found/page": [
       "static/chunks/webpack.js",

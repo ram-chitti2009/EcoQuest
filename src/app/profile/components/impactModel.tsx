@@ -131,7 +131,7 @@ export const ImpactModal: React.FC<ImpactModalProps> = ({ userStats }) => {
           {/* Monthly Progress */}
           <Card className="shadow-lg">
             <CardHeader>
-              <CardTitle className="flex items-center gap-3">
+              <CardTitle className="flex items-center gap-3 text-gray-900">
                 <Target className="w-6 h-6 text-blue-600" />
                 Monthly Progress
               </CardTitle>
@@ -166,7 +166,7 @@ export const ImpactModal: React.FC<ImpactModalProps> = ({ userStats }) => {
           {/* Recent Achievements */}
           <Card className="shadow-lg">
             <CardHeader>
-              <CardTitle className="flex items-center gap-3">
+              <CardTitle className="flex items-center gap-3 text-gray-900">
                 <Award className="w-6 h-6 text-yellow-600" />
                 Impact Achievements
               </CardTitle>
