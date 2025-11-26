@@ -1,11 +1,15 @@
 {
   "compilerOptions": {
     "target": "ES2017",
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "allowJs": true,
     "skipLibCheck": true,
-    "strict": false,            // DISABLE strict mode
-    "noUnusedLocals": false,    // ignore unused vars
+    "strict": false, // DISABLE strict mode
+    "noUnusedLocals": false, // ignore unused vars
     "noUnusedParameters": false,
     "noEmit": true,
     "esModuleInterop": true,
@@ -15,9 +19,26 @@
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": true,
-    "plugins": [{ "name": "next" }],
-    "paths": { "@/*": ["./src/*"] }
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ]
+    },
+    "strictNullChecks": true
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "scripts/generateGridCells.js"],
-  "exclude": ["node_modules"]
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    "scripts/generateGridCells.js"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
 }

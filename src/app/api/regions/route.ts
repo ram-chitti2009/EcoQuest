@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
@@ -44,18 +44,27 @@ export async function GET(request: NextRequest) {
     // Get cookies asynchronously - this fixes the Next.js 13+ warning
     const cookieStore = await cookies();
 
-    // Create Supabase client with proper async cookie handling
-    const supabase = createClient(
+    // Create Supabase client with proper async cookie handling using @supabase/ssr
+    const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
       {
-        auth: {
-          getSession: async () => {
-            // Get the session token from cookies
-            const token = cookieStore.get('sb-ovmeiqclpdchakrqrjle-auth-token')?.value;
-            return token ? { data: { session: { access_token: token } }, error: null } : { data: { session: null }, error: null };
-          }
-        }
+        cookies: {
+          getAll() {
+            return cookieStore.getAll();
+          },
+          setAll(cookiesToSet) {
+            try {
+              cookiesToSet.forEach(({ name, value, options }) =>
+                cookieStore.set(name, value, options)
+              );
+            } catch {
+              // The `setAll` method was called from a Server Component.
+              // This can be ignored if you have middleware refreshing
+              // user sessions.
+            }
+          },
+        },
       }
     );
 

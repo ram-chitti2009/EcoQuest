@@ -280,7 +280,7 @@ export const QuestCalendar = ({ onMetricsUpdate }: QuestCalendarProps) => {
     const daysInMonth = getDaysInMonth(currentMonth, currentYear)
     const firstDay = getFirstDayOfMonth(currentMonth, currentYear)
 
-    const calendarDays = []
+    const calendarDays: React.ReactElement[] = []
 
     for (let i = 0; i < firstDay; i++) {
       calendarDays.push(

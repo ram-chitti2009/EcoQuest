@@ -1,8 +1,16 @@
 "use client";
+
+export const dynamic = 'force-dynamic'
+
+import dynamicImport from "next/dynamic";
 import SidebarWrapper from "../components/SidebarWrapper";
-import EcoEcho from "./components/client/ecoEchoCoverClient";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
 import LoadingScreen from "@/components/LoadingScreen";
+
+const EcoEcho = dynamicImport(
+  () => import("./components/client/ecoEchoCoverClient"),
+  { ssr: false }
+);
 
 export default function ApplicationHub() {
   const checking = useRequireAuth();

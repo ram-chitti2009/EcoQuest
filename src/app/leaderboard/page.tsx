@@ -1,5 +1,7 @@
 "use client"
 
+export const dynamic = 'force-dynamic'
+
 import Header from "@/app/components/Header"
 import SidebarWrapper from "@/app/components/SidebarWrapper"
 import LoadingScreen from "@/components/LoadingScreen"

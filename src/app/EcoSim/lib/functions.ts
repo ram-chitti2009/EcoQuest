@@ -1,5 +1,9 @@
 // EcoSim specific functions
-import { createClient } from '@/utils/supabase/client';
+// Lazy import to avoid creating Supabase client during module initialization
+async function getSupabaseClient() {
+  const { createClient } = await import('@/utils/supabase/client');
+  return createClient();
+}
 
 export interface RegionMetrics {
   avgTrash: number;
@@ -25,7 +29,7 @@ interface GridCellData {
 
 export async function getRegionMetrics(bounds: RegionBounds): Promise<RegionMetrics | null> {
   try {
-    const supabase = createClient();
+    const supabase = await getSupabaseClient();
     
     console.log('Fetching region metrics with bounds:', bounds);
     
@@ -142,7 +146,7 @@ export async function getRegionMetrics(bounds: RegionBounds): Promise<RegionMetr
 //Chester County Grid CRUD functions
 
 export async function getChesterCountryGridCells(){
-  const supabase = createClient();
+  const supabase = await getSupabaseClient();
   const {data, error} = await supabase
   .from('chester_county_grid_cells')
   .select('*')
@@ -163,7 +167,7 @@ export async function getChesterCountryGridCellsInBounds(
     west:number;
   }
 ){
-  const supabase = createClient();
+  const supabase = await getSupabaseClient();
   const {data, error} = await supabase
   .from('chester_county_grid_cells')
   .select('*')
@@ -181,7 +185,7 @@ export async function getChesterCountryGridCellsInBounds(
 }
 
 export async function getChesterCountyGridCell(id:string){
-  const supabase = createClient();
+  const supabase = await getSupabaseClient();
   const {data, error} = await supabase
   .from('chester_county_grid_cells')
   .select('*')
@@ -205,7 +209,7 @@ export async function updateChesterCountyGridCell(
     carbon_emissions?:number;
   }
 ){
-  const supabase = createClient();
+  const supabase = await getSupabaseClient();
   const{data, error} = await supabase
   .from('chester_county_grid_cells')
   .update({
@@ -224,7 +228,7 @@ export async function updateChesterCountyGridCell(
 }
 
 export async function getChesterCountyEnvironmentalStats() {
-  const supabase = createClient();
+  const supabase = await getSupabaseClient();
   const { data, error } = await supabase
     .from('chester_county_grid_cells')
     .select('trash_density, greenery_score, cleanliness_score, carbon_emissions');
@@ -260,7 +264,7 @@ export async function getChesterCountyEnvironmentalStats() {
 }
 
 export async function findNearestChesterCountyGridCell(lat: number, lng: number) {
-  const supabase = createClient();
+  const supabase = await getSupabaseClient();
   const {data, error} = await supabase.rpc('find_grid_cell_for_activity', { lat, lng });
   
   if (error) {
@@ -280,7 +284,7 @@ export function isInChesterCounty(lat:number, lng:number):boolean{
 
 // Unified grid cell fetcher (returns either Chester County or global)
 export async function getGridCellForLocation(lat: number, lng: number) {
-  const supabase = createClient();
+  const supabase = await getSupabaseClient();
   
   if (isInChesterCounty(lat, lng)) {
     // Find Chester County cell
@@ -316,7 +320,7 @@ export async function getGridCellForLocation(lat: number, lng: number) {
 export async function createChesterCountySnapshot():Promise<{success:boolean,error:any}> {
 
   try{
-    const supabase = createClient();
+    const supabase = await getSupabaseClient();
     const { error } = await supabase.rpc('snapshot_chester_county_grid_cells');
     return { success: !error, error };
   } catch (error) {
@@ -335,7 +339,7 @@ export async function getChesterCountyHistoricalData(
   bounds?: { north: number; south: number; east: number; west: number }
 ): Promise<{ data: any[]; error: any }> {
   try {
-    const supabase = createClient();
+    const supabase = await getSupabaseClient();
     const targetDate = new Date();
     targetDate.setDate(targetDate.getDate() - daysAgo);
     
@@ -417,7 +421,7 @@ export async function compareChesterCountyMetrics(
   error: any;
 }> {
   try {
-    const supabase = createClient();
+    const supabase = await getSupabaseClient();
     
     console.log('[compareChesterCountyMetrics] Comparing data from', daysAgo, 'days ago');
     
@@ -501,7 +505,7 @@ export async function compareChesterCountyMetrics(
  */
 export async function debugHistoricalData() {
   try {
-    const supabase = createClient();
+    const supabase = await getSupabaseClient();
     
     // Count total snapshots
     const { count: totalCount } = await supabase
@@ -530,7 +534,7 @@ export async function debugHistoricalData() {
 
 export async function getAvailableChesterCountySnapshots():Promise<{ data: Date[]; error: any }> {
 try{
-  const supabase = createClient();
+  const supabase = await getSupabaseClient();
   const { data, error } = await supabase
   .from('chester_county_grid_cells_history')
   .select('recorded_at')
@@ -564,7 +568,7 @@ export async function getChesterCountyHistoricalDataByDateRange(
   bounds?: { north: number; south: number; east: number; west: number }
 ): Promise<{ data: any[]; error: any }> {
   try {
-    const supabase = createClient();
+    const supabase = await getSupabaseClient();
     let query = supabase
       .from('chester_county_grid_cells_history')
       .select('*')
@@ -599,7 +603,7 @@ export async function getChesterCountyCellSnapshotCount(
   gridCellId: string
 ): Promise<{ count: number; error: any }> {
   try {
-    const supabase = createClient();
+    const supabase = await getSupabaseClient();
     const { count, error } = await supabase
       .from('chester_county_grid_cells_history')
       .select('*', { count: 'exact', head: true })
@@ -624,7 +628,7 @@ export async function getChesterCountyCellTrend(
   gridCellId: string
 ): Promise<{ data: any[]; error: any }> {
   try {
-    const supabase = createClient();
+    const supabase = await getSupabaseClient();
     const { data, error } = await supabase
       .from('chester_county_grid_cells_history')
       .select('*')
@@ -651,7 +655,7 @@ export async function deleteOldChesterCountySnapshots(
   try{
     const cutOffDate = new Date();
     cutOffDate.setDate(cutOffDate.getDate() - daysToKeep);
-    const supabase = createClient();
+    const supabase = await getSupabaseClient();
     const { error } = await supabase
     .from('chester_county_grid_cells_history')
     .delete()

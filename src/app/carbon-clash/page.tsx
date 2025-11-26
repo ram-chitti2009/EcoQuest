@@ -1,4 +1,7 @@
 "use client";
+
+export const dynamic = 'force-dynamic'
+
 import SidebarWrapper from "../components/SidebarWrapper";
 import CarbonClashClient from "./components/client/carbonClashClient";
 

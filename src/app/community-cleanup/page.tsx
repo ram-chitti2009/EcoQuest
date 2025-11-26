@@ -1,10 +1,17 @@
 "use client";
 
+export const dynamic = 'force-dynamic'
+
 import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { useEffect } from "react";
+import dynamicImport from "next/dynamic";
 import LoadingScreen from "../components/loading";
 import SidebarWrapper from "../components/SidebarWrapper";
-import CommunityCleanupMap from "./components/client/community-map";
+
+const CommunityCleanupMap = dynamicImport(
+  () => import("./components/client/community-map"),
+  { ssr: false }
+);
 
 export default function EcDbPage() {
   const checking = useRequireAuth();

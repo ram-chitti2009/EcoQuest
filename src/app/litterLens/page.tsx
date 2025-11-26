@@ -1,9 +1,16 @@
 "use client";
 
+export const dynamic = 'force-dynamic'
+
+import dynamicImport from "next/dynamic";
 import SidebarWrapper from "../components/SidebarWrapper";
-import EcDbClient from "./components/client/litterLensClient";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
 import LoadingScreen from "@/components/LoadingScreen";
+
+const EcDbClient = dynamicImport(
+  () => import("./components/client/litterLensClient"),
+  { ssr: false }
+);
 
 export default function EcDbPage() {
   const checking = useRequireAuth();

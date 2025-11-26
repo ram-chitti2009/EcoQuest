@@ -1,4 +1,7 @@
 "use client";
+
+export const dynamic = 'force-dynamic'
+
 import SidebarWrapper from "../components/SidebarWrapper";
 import LearningPatch from "./components/client/learningPatchClient";
 import { useRequireAuth } from "@/hooks/useRequireAuth";

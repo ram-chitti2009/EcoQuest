@@ -295,25 +295,35 @@ const DataVisualization: React.FC<DataVisualizationProps> = ({
           </div>
         )}
 
-        {activeTab === "comparison" && historicalComparison && (
-          <div className="h-full">
-            <h4 className="text-sm font-medium text-gray-700 mb-4">Historical Comparison</h4>
-            <div className="space-y-4">
-              {chartData.map((item, index) => (
-                <div key={index} className="p-4 bg-gray-50 rounded-lg">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium text-gray-800">{item.name}</span>
-                    <div className="flex items-center gap-2">
-                      {getChangeIcon(item.change)}
-                      <span className={`text-sm font-medium ${getChangeColor(item.change, item.name !== "Trash Density" && item.name !== "Carbon Emissions")}`}>
-                        {item.change > 0 ? '+' : ''}{item.change.toFixed(1)}%
-                      </span>
+        {activeTab === "comparison" && historicalComparison && (() => {
+          const comparisonData = chartData.map(item => {
+            const itemKey = item.name.toLowerCase().replace(/\s+/g, '') as keyof typeof historicalComparison.change;
+            return {
+              ...item,
+              historical: historicalComparison.historical[itemKey as keyof typeof historicalComparison.historical] || 0,
+              change: historicalComparison.change[itemKey] || 0
+            };
+          });
+          
+          return (
+            <div className="h-full">
+              <h4 className="text-sm font-medium text-gray-700 mb-4">Historical Comparison</h4>
+              <div className="space-y-4">
+                {comparisonData.map((item, index) => (
+                  <div key={index} className="p-4 bg-gray-50 rounded-lg">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-medium text-gray-800">{item.name}</span>
+                      <div className="flex items-center gap-2">
+                        {getChangeIcon(item.change)}
+                        <span className={`text-sm font-medium ${getChangeColor(item.change, item.name !== "Trash Density" && item.name !== "Carbon Emissions")}`}>
+                          {item.change > 0 ? '+' : ''}{item.change.toFixed(1)}%
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-center justify-between text-sm text-gray-600">
-                    <span>Current: {formatValue(item.value, item.unit)}</span>
-                    <span>Historical: {formatValue(item.historical, item.unit)}</span>
-                  </div>
+                    <div className="flex items-center justify-between text-sm text-gray-600">
+                      <span>Current: {formatValue(item.value, item.unit)}</span>
+                      <span>Historical: {formatValue(item.historical, item.unit)}</span>
+                    </div>
                   <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
                     <div 
                       className="h-2 rounded-full transition-all duration-500"
@@ -327,7 +337,8 @@ const DataVisualization: React.FC<DataVisualizationProps> = ({
               ))}
             </div>
           </div>
-        )}
+          );
+        })()}
 
         {activeTab === "radar" && (
           <div className="h-full">

@@ -1,4 +1,7 @@
 "use client";
+
+export const dynamic = 'force-dynamic'
+
 import { LocationPrompt } from "@/components/LocationPrompt";
 import SidebarWrapper from "../components/SidebarWrapper";
 import DashboardClient from "./Components/client/DashboardClient";

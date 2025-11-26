@@ -1,4 +1,7 @@
 "use client";
+
+export const dynamic = 'force-dynamic'
+
 import SidebarWrapper from "../components/SidebarWrapper";
 import QuestLogClient from "./components/client/QuestLogClient";
 

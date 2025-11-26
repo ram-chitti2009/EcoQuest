@@ -1,9 +1,17 @@
 "use client";
+
+export const dynamic = 'force-dynamic'
+
+import dynamicImport from "next/dynamic";
 import SidebarWrapper from "../components/SidebarWrapper";
-import CarbonTrackerClient from "./components/client/carbonTrackerClient";
 
 import { useRequireAuth } from "@/hooks/useRequireAuth";
 import LoadingScreen from "@/components/LoadingScreen";
+
+const CarbonTrackerClient = dynamicImport(
+  () => import("./components/client/carbonTrackerClient"),
+  { ssr: false }
+);
 
 export default function CarbonTrackerPage() {
   const checking = useRequireAuth();

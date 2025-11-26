@@ -1,9 +1,19 @@
 "use client";
-import { createClient } from '@/utils/supabase/client';
-import { useState } from 'react';
+
+export const dynamic = 'force-dynamic'
+
+import { useState, useEffect } from 'react';
 
 export default function ResetPasswordPage() {
-  const supabase = createClient();
+  const [supabase, setSupabase] = useState<any>(null);
+
+  useEffect(() => {
+    const initSupabase = async () => {
+      const { createClient } = await import('@/utils/supabase/client');
+      setSupabase(createClient());
+    };
+    initSupabase();
+  }, []);
   const [email, setEmail] = useState('');
   const [newEmail, setNewEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -12,6 +22,7 @@ export default function ResetPasswordPage() {
   // Password Recovery Function
   const handlePasswordReset = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!supabase) return;
     console.log("Password reset attempted");
     
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
@@ -29,6 +40,7 @@ export default function ResetPasswordPage() {
   // Update User Function
   const handleUpdateUser = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!supabase) return;
     console.log("User update attempted");
     
     const updateData: { email?: string; password?: string } = {};

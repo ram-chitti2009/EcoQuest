@@ -1,5 +1,7 @@
 "use client"
 
+export const dynamic = 'force-dynamic'
+
 import { BarChart3, Calendar, MapPin } from "lucide-react"
 import { useCallback, useEffect, useMemo, useState } from "react"
 

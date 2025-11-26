@@ -1,24 +1,31 @@
 "use client";
 
-import React from 'react';
+export const dynamic = 'force-dynamic'
+
+import React, { useEffect } from 'react';
+import dynamicImport from "next/dynamic";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
 import LoadingScreen from "@/components/LoadingScreen";
 import SidebarWrapper from "../components/SidebarWrapper";
-import { LocationPermission } from '@/components/LocationPermission';
 import { createClient } from '@/utils/supabase/client';
+
+const LocationPermission = dynamicImport(
+  () => import('@/components/LocationPermission').then(mod => ({ default: mod.LocationPermission })),
+  { ssr: false }
+);
 
 export default function LocationSettingsPage() {
   const checking = useRequireAuth();
-  const supabase = createClient();
   const [user, setUser] = React.useState<{ id: string } | null>(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const getUser = async () => {
+      const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
     };
     getUser();
-  }, [supabase]);
+  }, []);
 
   if (checking) {
     return <LoadingScreen />;

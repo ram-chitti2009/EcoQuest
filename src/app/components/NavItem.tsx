@@ -2,7 +2,6 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LucideCrop as LucideProps } from "lucide-react"
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
 
@@ -11,7 +10,7 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 interface NavItemProps {
-  icon: React.ComponentType<LucideProps>
+  icon: React.ComponentType<{ size?: number } & React.SVGProps<SVGSVGElement>>
   label: string
   href: string
   isCollapsed?: boolean

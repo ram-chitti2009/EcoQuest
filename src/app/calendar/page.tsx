@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = 'force-dynamic'
+
 import { useRequireAuth } from "@/hooks/useRequireAuth";
 import LoadingScreen from "../components/loading";
 import SidebarWrapper from "../components/SidebarWrapper";

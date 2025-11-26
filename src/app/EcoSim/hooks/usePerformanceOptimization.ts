@@ -44,7 +44,7 @@ export function usePerformanceOptimization(options: OptimizationOptions = {}) {
     func: T,
     delay: number = debounceMs
   ): T => {
-    const timeoutRef = useRef<NodeJS.Timeout>()
+    const timeoutRef = useRef<NodeJS.Timeout | null>(null)
     
     return ((...args: Parameters<T>) => {
       if (timeoutRef.current) {
@@ -77,18 +77,18 @@ export function usePerformanceOptimization(options: OptimizationOptions = {}) {
   // Retry mechanism with exponential backoff
   const useRetry = useCallback(async <T>(
     operation: () => Promise<T>,
-    maxRetries: number = maxRetries,
+    retryCount: number = maxRetries,
     baseDelay: number = retryDelay
   ): Promise<T> => {
     let lastError: Error | null = null
     
-    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    for (let attempt = 0; attempt <= retryCount; attempt++) {
       try {
         return await operation()
       } catch (error) {
         lastError = error instanceof Error ? error : new Error('Unknown error')
         
-        if (attempt === maxRetries) {
+        if (attempt === retryCount) {
           throw lastError
         }
         
@@ -136,8 +136,8 @@ export function usePerformanceOptimization(options: OptimizationOptions = {}) {
     callback: (entries: IntersectionObserverEntry[]) => void,
     options: IntersectionObserverInit = {}
   ) => {
-    const observerRef = useRef<IntersectionObserver>()
-    const elementRef = useRef<HTMLElement>()
+    const observerRef = useRef<IntersectionObserver | null>(null)
+    const elementRef = useRef<HTMLElement | null>(null)
 
     useEffect(() => {
       if (!enableLazyLoading) return

@@ -1,4 +1,7 @@
 "use client";
+
+export const dynamic = 'force-dynamic'
+
 import { createClient } from '@/utils/supabase/client';
 import { ArrowRight } from "lucide-react";
 import Image from 'next/image';
@@ -7,7 +10,15 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 export default function SignInPage() {
-  const supabase = createClient();
+  const [supabase, setSupabase] = useState<any>(null);
+
+  useEffect(() => {
+    const initSupabase = async () => {
+      const { createClient } = await import('@/utils/supabase/client');
+      setSupabase(createClient());
+    };
+    initSupabase();
+  }, []);
   const router = useRouter();
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -19,6 +30,7 @@ export default function SignInPage() {
   }, [])
 
   const handleGoogle = async () => {
+    if (!supabase) return;
     console.log("Google login attempted");
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -36,6 +48,7 @@ export default function SignInPage() {
   };
 
   const handleApple = async () => {
+    if (!supabase) return;
     console.log("Apple login attempted");
     await supabase.auth.signInWithOAuth({
       provider: 'apple',
@@ -47,6 +60,7 @@ export default function SignInPage() {
 
   const handleEmailSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!supabase) return;
     console.log("Login attempted");
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
@@ -56,7 +70,7 @@ export default function SignInPage() {
       const user = data?.user;
       if (user && !user.email_confirmed_at) {
         setMessage({ type: 'error', text: 'Please confirm your email before logging in.' });
-        await supabase.auth.signOut();
+        if (supabase) await supabase.auth.signOut();
       } else {
         setMessage({ type: 'success', text: 'Signed in!' });
         router.push('/dashboard');

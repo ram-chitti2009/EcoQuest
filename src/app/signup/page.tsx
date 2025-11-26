@@ -1,4 +1,7 @@
 "use client";
+
+export const dynamic = 'force-dynamic'
+
 import { createClient } from '@/utils/supabase/client';
 import Image from 'next/image'
 import Link from 'next/link'
@@ -6,7 +9,15 @@ import { useEffect, useState } from 'react';
 import { ArrowRight } from "lucide-react";
 
 export default function SignInPage() {
-  const supabase = createClient();
+  const [supabase, setSupabase] = useState<any>(null);
+
+  useEffect(() => {
+    const initSupabase = async () => {
+      const { createClient } = await import('@/utils/supabase/client');
+      setSupabase(createClient());
+    };
+    initSupabase();
+  }, []);
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [message, setMessage] = useState<{ type: 'error' | 'success', text: string } | null>(null)
@@ -17,6 +28,7 @@ export default function SignInPage() {
   }, [])
 
   const handleGoogle = async () => {
+    if (!supabase) return;
     console.log("Google login attempted");
     await supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -27,6 +39,7 @@ export default function SignInPage() {
   };
 
   const handleApple = async () => {
+    if (!supabase) return;
     console.log("Apple login attempted");
     await supabase.auth.signInWithOAuth({
       provider: 'apple',
@@ -38,6 +51,7 @@ export default function SignInPage() {
 
   const handleEmailSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!supabase) return;
     console.log("Signup attempted");
     const { error } = await supabase.auth.signUp({ email, password });
     if (error) {

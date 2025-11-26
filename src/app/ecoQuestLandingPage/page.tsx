@@ -1,15 +1,19 @@
 "use client"
 
+export const dynamic = 'force-dynamic'
+
+import dynamicImport from "next/dynamic";
 import { useTheme } from "../../contexts/ThemeContext"
-import { CommunitySection } from "./components/community-section"
-import { CTASection } from "./components/cta-section"
 import { FeaturesSection } from "./components/features-section"
 import { Footer } from "./components/footer"
-import { HeroSection } from "./components/hero-section"
-import { ImpactSection } from "./components/impact-section"
-import { Navigation } from "./components/navigation"
 import ParticleSystem from "./components/particle-system"
 import { SectionTransition } from "./components/section-transition"
+
+const Navigation = dynamicImport(() => import("./components/navigation").then(mod => ({ default: mod.Navigation })), { ssr: false });
+const HeroSection = dynamicImport(() => import("./components/hero-section").then(mod => ({ default: mod.HeroSection })), { ssr: false });
+const ImpactSection = dynamicImport(() => import("./components/impact-section").then(mod => ({ default: mod.ImpactSection })), { ssr: false });
+const CTASection = dynamicImport(() => import("./components/cta-section").then(mod => ({ default: mod.CTASection })), { ssr: false });
+const CommunitySection = dynamicImport(() => import("./components/community-section").then(mod => ({ default: mod.CommunitySection })), { ssr: false });
 
 export default function Home() {
   const { mounted } = useTheme()

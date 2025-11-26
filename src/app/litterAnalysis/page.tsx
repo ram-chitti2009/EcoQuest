@@ -1,6 +1,16 @@
 "use client"
 
-import { createClient } from "@/utils/supabase/client"
+export const dynamic = 'force-dynamic'
+
+// Lazy import to avoid creating Supabase client during module initialization
+let supabaseInstance: any = null;
+const getSupabaseClient = async () => {
+  if (!supabaseInstance) {
+    const { createClient } = await import("@/utils/supabase/client");
+    supabaseInstance = createClient();
+  }
+  return supabaseInstance;
+};
 import { createUnifiedEvent, createUserLitterReport, joinUnifiedEvent } from "@/utils/supabase/functions"
 import { AlertTriangle, ArrowLeft, Calendar, CheckCircle, MapPin, Recycle, Trash2, X } from "lucide-react"
 import { useRouter } from "next/navigation"
@@ -26,8 +36,8 @@ interface AnalysisData {
   }
 }
 
-const supabase = createClient()
 const getSupabaseToken = async () => {
+  const supabase = await getSupabaseClient();
   const { data: { session } } = await supabase.auth.getSession()
 
   console.log(session)
@@ -64,6 +74,7 @@ export default function AnalyzePage() {
       console.log(token)
       
       // Get user session to extract user_id
+      const supabase = await getSupabaseClient();
       const { data: { session } } = await supabase.auth.getSession()
       const userId = session?.user?.id
 
@@ -201,6 +212,7 @@ export default function AnalyzePage() {
     setIsSubmittingCleanup(true)
     
     try {
+      const supabase = await getSupabaseClient();
       const { data: { session } } = await supabase.auth.getSession()
       const userId = session?.user?.id
 

@@ -25,6 +25,7 @@ export default function SidebarWrapper({ loading }: { loading: boolean }) {
   const pathname = usePathname();
 
   if (loading) return null; // Don't even evaluate pathname while loading
+  if (!pathname) return null; // Handle null pathname
 
   const showSidebar = sidebarRoutes.some((route) => pathname.startsWith(route));
 
