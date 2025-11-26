@@ -10,6 +10,26 @@ function formatCount(value: number) {
   return value.toString()
 }
 
+function formatTons(value: number) {
+  // Convert kg to tons (divide by 1000) and format with appropriate precision
+  const tons = value / 1000
+  if (tons >= 1_000_000) {
+    const millions = tons / 1_000_000
+    return `${(Math.round(millions * 10) / 10).toFixed(1)}M`.replace(/\.0M$/, "M")
+  }
+  if (tons >= 1_000) {
+    const thousands = tons / 1_000
+    return `${(Math.round(thousands * 10) / 10).toFixed(1)}K`.replace(/\.0K$/, "K")
+  }
+  // For values under 1000 tons, round to whole number if >= 10, otherwise 1 decimal
+  if (tons >= 10) {
+    return Math.round(tons).toString()
+  }
+  // For small values, show 1 decimal place but remove trailing zero
+  const rounded = Math.round(tons * 10) / 10
+  return rounded % 1 === 0 ? rounded.toString() : rounded.toFixed(1)
+}
+
 export function ImpactSection() {
   const { elementRef, isVisible } = useIntersectionAnimation({
     threshold: 0.2,
@@ -85,7 +105,7 @@ export function ImpactSection() {
             {/* Impact Stats */}
             <div className="grid grid-cols-2 gap-6 mb-8">
               {[
-                { value: loading ? '...' : formatCount(stats.total_carbon_saved), label: "Tons CO₂ Saved" },
+                { value: loading ? '...' : formatTons(stats.total_carbon_saved), label: "Tons CO₂ Saved" },
                 { value: loading ? '...' : formatCount(stats.total_volunteer_hours), label: "Volunteer Hours" },
                 { value: 28, label: "Cleanups" },
                 { value: loading ? '...' : formatCount(stats.active_users), label: "Active Users" }
