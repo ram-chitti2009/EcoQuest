@@ -93,7 +93,7 @@ export default function AnalyzePage() {
       const formData = new FormData()
       formData.append('file', blob, fileName)
 
-      const apiResponse = await fetch('http://localhost:8000/classify-trash', {
+      const apiResponse = await fetch('https://ecoquest-python.onrender.com/classify-trash', {
         headers, 
         method: 'POST',
         body: formData,

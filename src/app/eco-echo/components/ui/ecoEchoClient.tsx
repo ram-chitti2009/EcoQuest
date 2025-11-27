@@ -203,7 +203,7 @@ export function EcoEchoChat() {
         headers["Authorization"] = `Bearer ${token}`;
       }
 
-      const response = await fetch("http://localhost:8000/ask", {
+      const response = await fetch("https://ecoquest-python.onrender.com/ask", {
         method: "POST",
         headers,
         body: JSON.stringify({ 

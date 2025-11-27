@@ -7,27 +7,20 @@ import { slideInFromLeftClasses, slideInFromRightClasses, useIntersectionAnimati
 function formatCount(value: number) {
   if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1).replace(/\.0$/, "")}M`
   if (value >= 1_000) return `${(value / 1_000).toFixed(1).replace(/\.0$/, "")}K`
-  return value.toString()
+  return Math.round(value).toString()
 }
 
-function formatTons(value: number) {
-  // Convert kg to tons (divide by 1000) and format with appropriate precision
-  const tons = value / 1000
-  if (tons >= 1_000_000) {
-    const millions = tons / 1_000_000
-    return `${(Math.round(millions * 10) / 10).toFixed(1)}M`.replace(/\.0M$/, "M")
+function formatCarbon(value: number) {
+  // Format carbon saved value - show exact numbers, round to avoid floating point issues
+  if (value >= 1_000_000) {
+    return `${Math.round(value / 1_000_000)}M`
   }
-  if (tons >= 1_000) {
-    const thousands = tons / 1_000
-    return `${(Math.round(thousands * 10) / 10).toFixed(1)}K`.replace(/\.0K$/, "K")
+  if (value >= 10_000) {
+    // For values >= 10K, show as "XK" format
+    return `${Math.round(value / 1_000)}K`
   }
-  // For values under 1000 tons, round to whole number if >= 10, otherwise 1 decimal
-  if (tons >= 10) {
-    return Math.round(tons).toString()
-  }
-  // For small values, show 1 decimal place but remove trailing zero
-  const rounded = Math.round(tons * 10) / 10
-  return rounded % 1 === 0 ? rounded.toString() : rounded.toFixed(1)
+  // For values < 10K, show the exact whole number (no rounding to K)
+  return Math.round(value).toString()
 }
 
 export function ImpactSection() {
@@ -105,7 +98,7 @@ export function ImpactSection() {
             {/* Impact Stats */}
             <div className="grid grid-cols-2 gap-6 mb-8">
               {[
-                { value: loading ? '...' : formatTons(stats.total_carbon_saved), label: "Tons CO₂ Saved" },
+                { value: loading ? '...' : formatCarbon(stats.total_carbon_saved), label: "kg CO₂ Saved" },
                 { value: loading ? '...' : formatCount(stats.total_volunteer_hours), label: "Volunteer Hours" },
                 { value: 28, label: "Cleanups" },
                 { value: loading ? '...' : formatCount(stats.active_users), label: "Active Users" }

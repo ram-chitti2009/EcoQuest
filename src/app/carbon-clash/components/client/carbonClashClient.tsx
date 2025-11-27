@@ -159,7 +159,7 @@ export default function CarbonClashQuiz() {
           headers['Authorization'] = `Bearer ${token}`
         }
         
-        const response = await fetch("http://localhost:8000/quiz-bot", {
+        const response = await fetch("https://ecoquest-python.onrender.com/quiz-bot", {
           method: 'POST',
           headers: headers
         })
